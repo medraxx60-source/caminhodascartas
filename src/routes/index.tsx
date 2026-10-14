@@ -73,7 +73,13 @@ function Index() {
     toast.success(`${label} copiado`);
   };
 
-  const ready = p && question.trim().length >= 5 && picked.length === p.count;
+  const MIN_Q = 10;
+  const qLen = question.trim().length;
+  const qOk = qLen >= MIN_Q;
+  const missing: string[] = [];
+  if (p && !qOk) missing.push(`Escrever sua pergunta (mínimo ${MIN_Q} caracteres)`);
+  if (p && picked.length < p.count) missing.push(`Escolher mais ${p.count - picked.length} carta(s)`);
+  const ready = !!p && missing.length === 0;
 
   return (
     <main className="mx-auto min-h-screen max-w-xl px-5 pb-20">
@@ -109,12 +115,16 @@ function Index() {
           <div>
             <h2 className="text-3xl font-semibold text-primary">Sua pergunta</h2>
             <Textarea
-              className="mt-3 min-h-28 bg-card"
+              id="pergunta"
+              className={`mt-3 min-h-28 bg-card ${qOk ? "" : "border-destructive"}`}
               maxLength={1000}
               placeholder="Ex.: O que preciso saber sobre minha vida profissional nos próximos meses?"
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
             />
+            <p className={`mt-1 text-sm ${qOk ? "text-muted-foreground" : "text-destructive"}`}>
+              {qOk ? "Pergunta pronta ✓" : `Escreva sua pergunta — mínimo de ${MIN_Q} caracteres (${qLen}/${MIN_Q})`}
+            </p>
           </div>
           <div>
             <div className="flex items-baseline justify-between">
@@ -133,7 +143,15 @@ function Index() {
               })}
             </div>
           </div>
-          <Button size="lg" className="w-full" disabled={!ready || loading} onClick={submit}>
+          {missing.length > 0 && (
+            <div className="rounded-md border border-destructive p-3 text-sm text-destructive">
+              <p className="font-medium">Para continuar, falta:</p>
+              <ul className="list-disc pl-5">
+                {missing.map((m) => <li key={m}>{m}</li>)}
+              </ul>
+            </div>
+          )}
+          <Button size="lg" className="w-full" disabled={loading} onClick={ready ? submit : () => { if (!qOk) document.getElementById("pergunta")?.focus(); }}>
             {loading ? "Criando pedido..." : `Pagar ${formatBRL(p.priceCents)} via Pix`}
           </Button>
         </section>
@@ -167,12 +185,17 @@ function Index() {
             <li>Após confirmarmos o pagamento, sua leitura aparecerá nesse link.</li>
           </ol>
           <div className="space-y-2 rounded-md border border-gold p-3">
-            <p className="text-sm font-medium">Seu link privado</p>
-            <code className="block break-all text-xs">{link}</code>
-            <Button className="w-full" onClick={() => copy(link, "Link")}>Copiar link</Button>
+            <p className="text-sm font-medium">Sua página de leitura</p>
+            <Button asChild className="w-full">
+              <a href={link}>Abrir minha página de leitura</a>
+            </Button>
+            <button className="w-full text-xs text-muted-foreground underline" onClick={() => copy(link, "Link")}>Copiar link para guardar</button>
           </div>
         </DialogContent>
       </Dialog>
+      <footer className="mt-16 text-center">
+        <a href="/admin" className="text-xs text-muted-foreground underline">Área do administrador</a>
+      </footer>
     </main>
   );
 }

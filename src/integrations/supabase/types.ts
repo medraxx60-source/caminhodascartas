@@ -18,9 +18,11 @@ export type Database = {
         Row: {
           access_token: string
           cards: Json
+          client_ip_hash: string | null
           completed_at: string | null
           created_at: string
           error_message: string | null
+          generation_started_at: string | null
           id: string
           paid_at: string | null
           plan: string
@@ -32,9 +34,11 @@ export type Database = {
         Insert: {
           access_token?: string
           cards: Json
+          client_ip_hash?: string | null
           completed_at?: string | null
           created_at?: string
           error_message?: string | null
+          generation_started_at?: string | null
           id?: string
           paid_at?: string | null
           plan: string
@@ -46,9 +50,11 @@ export type Database = {
         Update: {
           access_token?: string
           cards?: Json
+          client_ip_hash?: string | null
           completed_at?: string | null
           created_at?: string
           error_message?: string | null
+          generation_started_at?: string | null
           id?: string
           paid_at?: string | null
           plan?: string
@@ -82,6 +88,31 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_order_for_generation: {
+        Args: { _id: string }
+        Returns: {
+          access_token: string
+          cards: Json
+          client_ip_hash: string | null
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          generation_started_at: string | null
+          id: string
+          paid_at: string | null
+          plan: string
+          price_cents: number
+          question: string
+          reading: string | null
+          status: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "orders"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

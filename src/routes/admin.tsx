@@ -157,7 +157,7 @@ function Orders() {
         {shown.map((o) => (
           <div key={o.id} className="rounded-lg border border-border bg-card p-4">
             <div className="flex items-baseline justify-between">
-              <span className="font-display text-2xl font-bold tracking-widest text-primary">{code(o)}</span>
+              <span className="font-mono text-xl font-bold tracking-widest text-primary">{code(o)}</span>
               <span className="text-xs text-muted-foreground">{new Date(o.created_at).toLocaleString("pt-BR")}</span>
             </div>
             <p className="text-sm font-semibold">{PLANS[o.plan as PlanId].name} · {formatBRL(o.price_cents)} · {STATUS_LABEL[o.status] ?? o.status}</p>

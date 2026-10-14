@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
 import { CardFace } from "@/components/TarotCard";
 import { PLANS, type PlanId } from "@/lib/lenormand";
 import { getOrderByToken } from "@/lib/orders.functions";
@@ -47,7 +48,8 @@ function Leitura() {
 
   return (
     <main className="mx-auto min-h-screen max-w-xl px-5 py-12">
-      <p className="text-center text-xs uppercase tracking-[0.3em] text-gold">Entre Cartas · {plan.name}</p>
+      <Link to="/" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-gold">← Voltar ao início</Link>
+      <p className="mt-4 text-center text-xs uppercase tracking-[0.3em] text-gold">Entre Cartas · {plan.name}</p>
       <h1 className="mt-3 text-center text-4xl font-bold text-primary">Sua leitura</h1>
       <div className="gold-rule mx-auto mt-5 w-40" />
       <blockquote className="mt-8 rounded-lg border border-border bg-card p-4 font-display text-xl italic">“{order.question}”</blockquote>
@@ -72,6 +74,12 @@ function Leitura() {
           <p className="mt-2 text-sm text-muted-foreground">Assim que seu Pix for confirmado, sua leitura aparecerá aqui automaticamente. Deixe esta página aberta.</p>
         </div>
       )}
+      <div className="mt-12 border-t border-border/60 pt-6 text-center">
+        <Button asChild size="lg" className="w-full">
+          <Link to="/">Voltar ao início</Link>
+        </Button>
+        <p className="mt-3 text-xs text-muted-foreground">Quer saber mais? Faça uma nova pergunta.</p>
+      </div>
     </main>
   );
 }

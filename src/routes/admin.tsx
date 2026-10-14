@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -37,22 +37,45 @@ function Admin() {
   return session ? <Gate key={session.user.id} /> : <Login />;
 }
 
+function BackLink() {
+  return <Link to="/" className="text-sm text-muted-foreground hover:text-primary">← Voltar ao site</Link>;
+}
+
 function Login() {
+  const [mode, setMode] = useState<"in" | "up">("in");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [sent, setSent] = useState(false);
   const go = async (e: React.FormEvent) => {
     e.preventDefault();
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) toast.error("E-mail ou senha inválidos.");
+    if (mode === "in") {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) toast.error(error.message.includes("confirm") ? "Confirme seu e-mail antes de entrar." : "E-mail ou senha inválidos.");
+    } else {
+      if (password.length < 8) return toast.error("A senha precisa ter pelo menos 8 caracteres.");
+      const { error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: `${window.location.origin}/admin` } });
+      if (error) toast.error(error.message.includes("weak") || error.message.includes("pwned") ? "Senha fraca ou já vazada. Escolha outra." : "Não foi possível criar a conta.");
+      else setSent(true);
+    }
   };
   return (
-    <main className="mx-auto max-w-sm px-5 py-24">
-      <h1 className="text-center text-4xl font-bold text-primary">Painel</h1>
-      <form onSubmit={go} className="mt-8 space-y-3">
-        <Input type="email" placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        <Input type="password" placeholder="Senha" value={password} onChange={(e) => setPassword(e.target.value)} required />
-        <Button className="w-full" type="submit">Entrar</Button>
-      </form>
+    <main className="mx-auto max-w-sm px-5 py-12">
+      <BackLink />
+      <h1 className="mt-10 text-center text-4xl font-bold text-primary">Painel</h1>
+      <div className="mt-6 grid grid-cols-2 gap-2">
+        <Button variant={mode === "in" ? "default" : "outline"} onClick={() => { setMode("in"); setSent(false); }}>Entrar</Button>
+        <Button variant={mode === "up" ? "default" : "outline"} onClick={() => setMode("up")}>Criar conta</Button>
+      </div>
+      {sent ? (
+        <p className="mt-6 rounded-md bg-card p-4 text-center text-sm">Conta criada! Abra o e-mail que enviamos para <b>{email}</b>, confirme e depois volte aqui para entrar.</p>
+      ) : (
+        <form onSubmit={go} className="mt-6 space-y-3">
+          <Input type="email" placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <Input type="password" placeholder={mode === "up" ? "Crie uma senha (mín. 8)" : "Senha"} value={password} onChange={(e) => setPassword(e.target.value)} required />
+          <Button className="w-full" type="submit">{mode === "in" ? "Entrar" : "Criar conta"}</Button>
+        </form>
+      )}
+      {mode === "up" && !sent && <p className="mt-4 text-center text-xs text-muted-foreground">Depois de entrar, informe o código de ativação para virar administrador.</p>}
     </main>
   );
 }

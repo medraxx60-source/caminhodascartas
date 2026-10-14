@@ -60,7 +60,10 @@ export const getOrderByToken = createServerFn({ method: "POST" })
       .select("plan, question, cards, status, reading, price_cents, created_at")
       .eq("access_token", data.token)
       .maybeSingle();
-    return row ? { ...row, status: row.status === "done" ? "done" : row.status === "rejected" ? "rejected" : "pending" } : null;
+    const s = row?.status;
+    const status: "done" | "rejected" | "generating" | "pending" =
+      s === "done" ? "done" : s === "rejected" ? "rejected" : s === "generating" ? "generating" : "pending";
+    return row ? { ...row, status } : null;
   });
 
 async function isAdmin(supabase: any, userId: string) {

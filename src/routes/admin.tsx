@@ -43,7 +43,7 @@ function Login() {
     const { error, data } = mode === "in"
       ? await supabase.auth.signInWithPassword({ email, password })
       : await supabase.auth.signUp({ email, password, options: { emailRedirectTo: `${window.location.origin}/admin` } });
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     if (mode === "up" && !data.session) toast.success("Confirme seu e-mail para entrar.");
   };
   return (

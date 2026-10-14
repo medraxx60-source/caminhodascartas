@@ -148,7 +148,7 @@ function Index() {
           <div className="flex items-center justify-between rounded-md border border-gold bg-card px-3 py-2">
             <div>
               <p className="text-xs text-muted-foreground">Número do pedido</p>
-              <p className="font-display text-2xl font-bold tracking-widest text-primary">{orderCode}</p>
+              <p className="font-mono text-xl font-bold tracking-widest text-primary">{orderCode}</p>
             </div>
             <Button variant="outline" onClick={() => copy(orderCode, "Número do pedido")}>Copiar</Button>
           </div>

@@ -60,7 +60,7 @@ export const getOrderByToken = createServerFn({ method: "POST" })
       .select("plan, question, cards, status, reading, price_cents, created_at")
       .eq("access_token", data.token)
       .maybeSingle();
-    return row ? { ...row, status: row.status === "done" ? "done" : "pending" } : null;
+    return row ? { ...row, status: row.status === "done" ? "done" : row.status === "rejected" ? "rejected" : "pending" } : null;
   });
 
 async function isAdmin(supabase: any, userId: string) {
@@ -195,5 +195,23 @@ export const adminSaveReading = createServerFn({ method: "POST" })
       .select("id")
       .maybeSingle();
     if (error || !row) throw new Error("Não foi possível salvar (o pedido já pode ter leitura).");
+    return { ok: true };
+  });
+
+// Admin rejects an order (no AI call). Only allowed while no reading exists.
+export const adminRejectOrder = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { id: string }) => ({ id: String(input.id ?? "") }))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const { data: row, error } = await context.supabase
+      .from("orders")
+      .update({ status: "rejected", error_message: null })
+      .eq("id", data.id)
+      .is("reading", null)
+      .in("status", ["pending", "error"])
+      .select("id")
+      .maybeSingle();
+    if (error || !row) throw new Error("Não foi possível recusar (o pedido pode já estar em geração ou concluído).");
     return { ok: true };
   });

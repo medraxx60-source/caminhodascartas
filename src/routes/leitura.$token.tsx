@@ -48,6 +48,11 @@ function Leitura() {
       </div>
       {order.status === "done" && order.reading ? (
         <article className="mt-10 space-y-4 whitespace-pre-line leading-relaxed">{order.reading}</article>
+      ) : order.status === "rejected" ? (
+        <div className="mt-10 rounded-lg border border-destructive bg-card p-6 text-center">
+          <p className="font-display text-2xl text-destructive">Pedido não aprovado</p>
+          <p className="mt-2 text-sm text-muted-foreground">Não conseguimos confirmar o pagamento deste pedido. Se você pagou, entre em contato informando o número do pedido.</p>
+        </div>
       ) : (
         <div className="mt-10 rounded-lg border border-gold bg-card p-6 text-center">
           <p className="font-display text-2xl text-primary">Aguardando confirmação do pagamento</p>

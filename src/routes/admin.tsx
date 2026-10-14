@@ -94,8 +94,9 @@ function Gate() {
     catch (err) { toast.error(err instanceof Error ? err.message : "Erro"); }
   };
   return (
-    <main className="mx-auto max-w-sm px-5 py-24">
-      <h1 className="text-center text-3xl font-bold text-primary">Acesso restrito</h1>
+    <main className="mx-auto max-w-sm px-5 py-12">
+      <BackLink />
+      <h1 className="mt-10 text-center text-3xl font-bold text-primary">Acesso restrito</h1>
       <p className="mt-3 text-center text-sm text-muted-foreground">Esta conta não é administradora. Se você é o proprietário, informe o código de ativação.</p>
       <form onSubmit={activate} className="mt-6 space-y-3">
         <Input type="password" placeholder="Código de ativação" value={code} onChange={(e) => setCode(e.target.value)} required />
@@ -128,7 +129,7 @@ function Orders() {
 
   const run = async (o: Order) => {
     const msg = o.status === "pending"
-      ? `Confirma que recebeu ${formatBRL(o.price_cents)} via Pix referente ao pedido ${code(o)}?`
+      ? `Confirma que recebeu ${formatBRL(o.price_cents)} via Pix referente ao pedido ${code(o)}? A IA será chamada agora para gerar a leitura.`
       : `Tentar gerar novamente a leitura do pedido ${code(o)}?`;
     if (!window.confirm(msg)) return;
     setBusy(o.id);
@@ -165,7 +166,8 @@ function Orders() {
 
   return (
     <main className="mx-auto max-w-2xl px-5 py-10">
-      <div className="flex items-center justify-between">
+      <BackLink />
+      <div className="mt-4 flex items-center justify-between">
         <h1 className="text-4xl font-bold text-primary">Pedidos</h1>
         <Button variant="ghost" onClick={() => supabase.auth.signOut()}>Sair</Button>
       </div>
@@ -196,7 +198,7 @@ function Orders() {
             )}
             {canRun(o) && !unsaved[o.id] && (
               <Button className="mt-3 w-full" disabled={busy === o.id} onClick={() => run(o)}>
-                {busy === o.id ? "Gerando..." : o.status === "pending" ? "Confirmar pagamento e gerar leitura" : "Tentar novamente"}
+                {busy === o.id ? "Gerando..." : o.status === "pending" ? "Confirmar pagamento e liberar IA" : "Tentar novamente"}
               </Button>
             )}
           </div>

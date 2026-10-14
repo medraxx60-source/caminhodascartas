@@ -5,7 +5,15 @@ import { PLANS, type PlanId } from "@/lib/lenormand";
 import { getOrderByToken } from "@/lib/orders.functions";
 
 const orderQuery = (token: string) =>
-  queryOptions({ queryKey: ["order", token], queryFn: () => getOrderByToken({ data: { token } }) });
+  queryOptions({
+    queryKey: ["order", token],
+    queryFn: () => getOrderByToken({ data: { token } }),
+    refetchInterval: (q) => {
+      const s = q.state.data?.status;
+      return s === "done" || s === "rejected" ? false : 5000;
+    },
+    refetchIntervalInBackground: false,
+  });
 
 export const Route = createFileRoute("/leitura/$token")({
   head: () => ({
@@ -53,10 +61,15 @@ function Leitura() {
           <p className="font-display text-2xl text-destructive">Pedido não aprovado</p>
           <p className="mt-2 text-sm text-muted-foreground">Não conseguimos confirmar o pagamento deste pedido. Se você pagou, entre em contato informando o número do pedido.</p>
         </div>
+      ) : order.status === "generating" ? (
+        <div className="mt-10 rounded-lg border border-gold bg-card p-6 text-center">
+          <p className="font-display text-2xl text-primary animate-pulse">Pagamento aprovado! Interpretando suas cartas…</p>
+          <p className="mt-2 text-sm text-muted-foreground">Sua leitura aparecerá aqui em instantes. Não feche esta página.</p>
+        </div>
       ) : (
         <div className="mt-10 rounded-lg border border-gold bg-card p-6 text-center">
           <p className="font-display text-2xl text-primary">Aguardando confirmação do pagamento</p>
-          <p className="mt-2 text-sm text-muted-foreground">Assim que seu Pix for confirmado, sua leitura aparecerá aqui. Volte a este link mais tarde.</p>
+          <p className="mt-2 text-sm text-muted-foreground">Assim que seu Pix for confirmado, sua leitura aparecerá aqui automaticamente. Deixe esta página aberta.</p>
         </div>
       )}
     </main>

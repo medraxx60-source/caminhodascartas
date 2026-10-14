@@ -128,8 +128,15 @@ function Orders() {
   const [tab, setTab] = useState<"pending" | "paid">("pending");
   const [unsaved, setUnsaved] = useState<Record<string, string>>({});
 
+  const [refreshing, setRefreshing] = useState(false);
   const load = () => list().then(setOrders).catch((e) => { toast.error(e.message); setOrders([]); });
-  useEffect(() => { load(); }, []);
+  const refresh = async () => {
+    setRefreshing(true);
+    try { setOrders(await list()); toast.success("Lista de pedidos atualizada"); }
+    catch (e) { toast.error(e instanceof Error ? e.message : "Erro ao atualizar"); }
+    finally { setRefreshing(false); }
+  };
+  useEffect(() => { load(); const t = setInterval(load, 30000); return () => clearInterval(t); }, []);
 
   const code = (o: Order) => o.id.slice(0, 8).toUpperCase();
   const stale = (o: Order) => o.status === "generating" && !!o.generation_started_at && Date.now() - new Date(o.generation_started_at).getTime() > STALE_MS;
@@ -182,7 +189,10 @@ function Orders() {
       <div className="mt-6 flex gap-2">
         <Button variant={tab === "pending" ? "default" : "outline"} onClick={() => setTab("pending")}>Pendentes</Button>
         <Button variant={tab === "paid" ? "default" : "outline"} onClick={() => setTab("paid")}>Pagos</Button>
-        <Button variant="ghost" onClick={load}>Atualizar</Button>
+        <Button variant="ghost" onClick={refresh} disabled={refreshing}>
+          <span className={refreshing ? "inline-block animate-spin" : "inline-block"}>↻</span>
+          {refreshing ? "Atualizando..." : "Atualizar"}
+        </Button>
       </div>
       <div className="mt-6 space-y-3">
         {orders === null && <p className="text-muted-foreground">Carregando...</p>}

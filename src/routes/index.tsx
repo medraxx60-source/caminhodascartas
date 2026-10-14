@@ -36,6 +36,7 @@ function Index() {
   const [picked, setPicked] = useState<number[]>([]);
   const [deck, setDeck] = useState(() => Array.from({ length: CARDS.length }, (_, i) => i));
   const [token, setToken] = useState<string | null>(null);
+  const [orderCode, setOrderCode] = useState("");
   const [loading, setLoading] = useState(false);
   const create = useServerFn(createOrder);
   const p = plan ? PLANS[plan] : null;
@@ -58,6 +59,7 @@ function Index() {
     setLoading(true);
     try {
       const r = await create({ data: { plan, question, cards: picked } });
+      setOrderCode(r.orderCode);
       setToken(r.token);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao criar pedido");
@@ -143,6 +145,13 @@ function Index() {
             <DialogTitle className="font-display text-3xl text-primary">Pagamento via Pix</DialogTitle>
             <DialogDescription>Valor: <strong className="text-foreground">{p && formatBRL(p.priceCents)}</strong></DialogDescription>
           </DialogHeader>
+          <div className="flex items-center justify-between rounded-md border border-gold bg-card px-3 py-2">
+            <div>
+              <p className="text-xs text-muted-foreground">Número do pedido</p>
+              <p className="font-display text-2xl font-bold tracking-widest text-primary">{orderCode}</p>
+            </div>
+            <Button variant="outline" onClick={() => copy(orderCode, "Número do pedido")}>Copiar</Button>
+          </div>
           <img src={PIX_QR_SRC} alt="QR Code Pix" className="mx-auto aspect-square w-52 rounded-md border border-border bg-card object-contain" />
           <div className="space-y-2">
             <p className="text-sm font-medium">Chave Pix</p>
@@ -153,6 +162,7 @@ function Index() {
           </div>
           <ol className="list-decimal space-y-1 pl-5 text-sm text-muted-foreground">
             <li>Abra o app do seu banco e pague o valor exato via Pix.</li>
+            <li>Na descrição do Pix, escreva o número do pedido: <strong className="text-foreground">{orderCode}</strong>.</li>
             <li>Guarde o link abaixo: é por ele que você verá sua leitura.</li>
             <li>Após confirmarmos o pagamento, sua leitura aparecerá nesse link.</li>
           </ol>

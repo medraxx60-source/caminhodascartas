@@ -61,7 +61,7 @@ function Leitura() {
           <p className="font-display text-2xl text-destructive">Pedido não aprovado</p>
           <p className="mt-2 text-sm text-muted-foreground">Não conseguimos confirmar o pagamento deste pedido. Se você pagou, entre em contato informando o número do pedido.</p>
         </div>
-      ) : (order.status as string) === "generating" ? (
+      ) : order.status === "generating" ? (
         <div className="mt-10 rounded-lg border border-gold bg-card p-6 text-center">
           <p className="font-display text-2xl text-primary animate-pulse">Pagamento aprovado! Interpretando suas cartas…</p>
           <p className="mt-2 text-sm text-muted-foreground">Sua leitura aparecerá aqui em instantes. Não feche esta página.</p>

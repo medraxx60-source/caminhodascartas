@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { CARDS, PLANS, formatBRL, type PlanId } from "@/lib/lenormand";
-import { adminConfirmAndGenerate, adminListOrders, adminSaveReading, adminStatus, claimAdmin } from "@/lib/orders.functions";
+import { adminConfirmAndGenerate, adminListOrders, adminRejectOrder, adminSaveReading, adminStatus, claimAdmin } from "@/lib/orders.functions";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -109,12 +109,20 @@ function Gate() {
 
 type Order = Awaited<ReturnType<typeof adminListOrders>>[number];
 
-const STATUS_LABEL: Record<string, string> = { pending: "Aguardando pagamento", generating: "Gerando leitura", done: "Concluído", error: "Falhou" };
+const STATUS_LABEL: Record<string, string> = { pending: "Aguardando pagamento", generating: "Gerando leitura", done: "Concluído", error: "Falhou", rejected: "Recusado" };
 
 function Orders() {
   const list = useServerFn(adminListOrders);
   const confirm = useServerFn(adminConfirmAndGenerate);
   const save = useServerFn(adminSaveReading);
+  const reject = useServerFn(adminRejectOrder);
+  const refuse = async (o: Order) => {
+    if (!window.confirm(`Recusar o pedido ${code(o)}? O cliente não receberá a leitura.`)) return;
+    setBusy(o.id);
+    try { await reject({ data: { id: o.id } }); toast.success("Pedido recusado"); }
+    catch (e) { toast.error(e instanceof Error ? e.message : "Erro"); }
+    finally { setBusy(null); load(); }
+  };
   const [orders, setOrders] = useState<Order[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [tab, setTab] = useState<"pending" | "paid">("pending");
@@ -162,7 +170,7 @@ function Orders() {
     }
   };
 
-  const shown = (orders ?? []).filter((o) => (tab === "pending" ? o.status === "pending" || o.status === "error" : o.status === "done" || o.status === "generating"));
+  const shown = (orders ?? []).filter((o) => (tab === "pending" ? o.status === "pending" || o.status === "error" : o.status === "done" || o.status === "generating" || o.status === "rejected"));
 
   return (
     <main className="mx-auto max-w-2xl px-5 py-10">
@@ -199,6 +207,11 @@ function Orders() {
             {canRun(o) && !unsaved[o.id] && (
               <Button className="mt-3 w-full" disabled={busy === o.id} onClick={() => run(o)}>
                 {busy === o.id ? "Gerando..." : o.status === "pending" ? "Confirmar pagamento e liberar IA" : "Tentar novamente"}
+              </Button>
+            )}
+            {(o.status === "pending" || o.status === "error") && !o.hasReading && !unsaved[o.id] && (
+              <Button variant="outline" className="mt-2 w-full border-destructive text-destructive" disabled={busy === o.id} onClick={() => refuse(o)}>
+                Recusar pedido
               </Button>
             )}
           </div>

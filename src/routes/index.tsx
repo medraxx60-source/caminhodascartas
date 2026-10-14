@@ -193,8 +193,10 @@ function Index() {
           </div>
         </DialogContent>
       </Dialog>
-      <footer className="mt-16 text-center">
-        <a href="/admin" className="text-xs text-muted-foreground underline">Área do administrador</a>
+      <footer className="mt-24 space-y-2 border-t border-border/60 pt-6 text-center text-xs text-muted-foreground">
+        <p>Tiragens para reflexão e autoconhecimento. Não substituem orientação médica, jurídica ou financeira.</p>
+        <p>© {new Date().getFullYear()} Entre Cartas · Todos os direitos reservados.</p>
+        <a href="/admin" className="inline-block text-muted-foreground/60 hover:underline">Acesso administrativo</a>
       </footer>
     </main>
   );

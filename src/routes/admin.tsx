@@ -6,8 +6,9 @@ import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { CARDS, PLANS, formatBRL, type PlanId } from "@/lib/lenormand";
-import { adminConfirmAndGenerate, adminListOrders } from "@/lib/orders.functions";
+import { adminConfirmAndGenerate, adminListOrders, adminSaveReading, adminStatus, claimAdmin } from "@/lib/orders.functions";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -22,6 +23,8 @@ export const Route = createFileRoute("/admin")({
   component: Admin,
 });
 
+const STALE_MS = 5 * 60 * 1000;
+
 function Admin() {
   const [session, setSession] = useState<Session | null>(null);
   const [ready, setReady] = useState(false);
@@ -31,54 +34,102 @@ function Admin() {
     return () => data.subscription.unsubscribe();
   }, []);
   if (!ready) return null;
-  return session ? <Orders /> : <Login />;
+  return session ? <Gate key={session.user.id} /> : <Login />;
 }
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [mode, setMode] = useState<"in" | "up">("in");
   const go = async (e: React.FormEvent) => {
     e.preventDefault();
-    const { error, data } = mode === "in"
-      ? await supabase.auth.signInWithPassword({ email, password })
-      : await supabase.auth.signUp({ email, password, options: { emailRedirectTo: `${window.location.origin}/admin` } });
-    if (error) { toast.error(error.message); return; }
-    if (mode === "up" && !data.session) toast.success("Confirme seu e-mail para entrar.");
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) toast.error("E-mail ou senha inválidos.");
   };
   return (
     <main className="mx-auto max-w-sm px-5 py-24">
       <h1 className="text-center text-4xl font-bold text-primary">Painel</h1>
       <form onSubmit={go} className="mt-8 space-y-3">
         <Input type="email" placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        <Input type="password" placeholder="Senha" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} />
-        <Button className="w-full" type="submit">{mode === "in" ? "Entrar" : "Criar conta"}</Button>
+        <Input type="password" placeholder="Senha" value={password} onChange={(e) => setPassword(e.target.value)} required />
+        <Button className="w-full" type="submit">Entrar</Button>
       </form>
-      <button className="mt-4 w-full text-sm text-muted-foreground underline" onClick={() => setMode(mode === "in" ? "up" : "in")}>
-        {mode === "in" ? "Primeiro acesso? Criar conta" : "Já tenho conta"}
-      </button>
+    </main>
+  );
+}
+
+function Gate() {
+  const status = useServerFn(adminStatus);
+  const claim = useServerFn(claimAdmin);
+  const [admin, setAdmin] = useState<boolean | null>(null);
+  const [code, setCode] = useState("");
+  useEffect(() => { status().then((r) => setAdmin(r.isAdmin)).catch(() => setAdmin(false)); }, []);
+  if (admin === null) return null;
+  if (admin) return <Orders />;
+  const activate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try { await claim({ data: { code } }); setAdmin(true); toast.success("Administrador ativado"); }
+    catch (err) { toast.error(err instanceof Error ? err.message : "Erro"); }
+  };
+  return (
+    <main className="mx-auto max-w-sm px-5 py-24">
+      <h1 className="text-center text-3xl font-bold text-primary">Acesso restrito</h1>
+      <p className="mt-3 text-center text-sm text-muted-foreground">Esta conta não é administradora. Se você é o proprietário, informe o código de ativação.</p>
+      <form onSubmit={activate} className="mt-6 space-y-3">
+        <Input type="password" placeholder="Código de ativação" value={code} onChange={(e) => setCode(e.target.value)} required />
+        <Button className="w-full" type="submit">Ativar administrador</Button>
+      </form>
+      <Button variant="ghost" className="mt-4 w-full" onClick={() => supabase.auth.signOut()}>Sair</Button>
     </main>
   );
 }
 
 type Order = Awaited<ReturnType<typeof adminListOrders>>[number];
 
+const STATUS_LABEL: Record<string, string> = { pending: "Aguardando pagamento", generating: "Gerando leitura", done: "Concluído", error: "Falhou" };
+
 function Orders() {
   const list = useServerFn(adminListOrders);
   const confirm = useServerFn(adminConfirmAndGenerate);
+  const save = useServerFn(adminSaveReading);
   const [orders, setOrders] = useState<Order[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [tab, setTab] = useState<"pending" | "paid">("pending");
+  const [unsaved, setUnsaved] = useState<Record<string, string>>({});
 
   const load = () => list().then(setOrders).catch((e) => { toast.error(e.message); setOrders([]); });
   useEffect(() => { load(); }, []);
 
+  const code = (o: Order) => o.id.slice(0, 8).toUpperCase();
+  const stale = (o: Order) => o.status === "generating" && !!o.generation_started_at && Date.now() - new Date(o.generation_started_at).getTime() > STALE_MS;
+  const canRun = (o: Order) => !o.hasReading && (o.status === "pending" || o.status === "error" || stale(o));
+
   const run = async (o: Order) => {
-    if (!window.confirm(`Confirma que recebeu ${formatBRL(o.price_cents)} via Pix na sua conta?`)) return;
+    const msg = o.status === "pending"
+      ? `Confirma que recebeu ${formatBRL(o.price_cents)} via Pix referente ao pedido ${code(o)}?`
+      : `Tentar gerar novamente a leitura do pedido ${code(o)}?`;
+    if (!window.confirm(msg)) return;
     setBusy(o.id);
     try {
-      await confirm({ data: { id: o.id } });
-      toast.success("Leitura gerada");
+      const r = await confirm({ data: { id: o.id } });
+      if (r.ok) toast.success("Leitura gerada e salva");
+      else {
+        setUnsaved((u) => ({ ...u, [o.id]: r.unsavedReading! }));
+        toast.error("A leitura foi gerada, mas não foi salva. Use “Salvar leitura” abaixo.");
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro");
+    } finally {
+      setBusy(null);
+      load();
+    }
+  };
+
+  const saveUnsaved = async (o: Order) => {
+    setBusy(o.id);
+    try {
+      await save({ data: { id: o.id, reading: unsaved[o.id]! } });
+      setUnsaved(({ [o.id]: _, ...rest }) => rest);
+      toast.success("Leitura salva");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro");
     } finally {
@@ -98,23 +149,31 @@ function Orders() {
       <div className="mt-6 flex gap-2">
         <Button variant={tab === "pending" ? "default" : "outline"} onClick={() => setTab("pending")}>Pendentes</Button>
         <Button variant={tab === "paid" ? "default" : "outline"} onClick={() => setTab("paid")}>Pagos</Button>
+        <Button variant="ghost" onClick={load}>Atualizar</Button>
       </div>
       <div className="mt-6 space-y-3">
         {orders === null && <p className="text-muted-foreground">Carregando...</p>}
         {orders && shown.length === 0 && <p className="text-muted-foreground">Nenhum pedido.</p>}
         {shown.map((o) => (
           <div key={o.id} className="rounded-lg border border-border bg-card p-4">
-            <div className="flex justify-between text-sm">
-              <span className="font-semibold">{PLANS[o.plan as PlanId].name} · {formatBRL(o.price_cents)}</span>
-              <span className="text-muted-foreground">{new Date(o.created_at).toLocaleString("pt-BR")}</span>
+            <div className="flex items-baseline justify-between">
+              <span className="font-display text-2xl font-bold tracking-widest text-primary">{code(o)}</span>
+              <span className="text-xs text-muted-foreground">{new Date(o.created_at).toLocaleString("pt-BR")}</span>
             </div>
+            <p className="text-sm font-semibold">{PLANS[o.plan as PlanId].name} · {formatBRL(o.price_cents)} · {STATUS_LABEL[o.status] ?? o.status}</p>
             <p className="mt-2">{o.question}</p>
             <p className="mt-1 text-xs text-muted-foreground">{(o.cards as number[]).map((c) => CARDS[c]).join(" · ")}</p>
-            <p className="mt-1 text-xs">Pedido #{o.id.slice(0, 8)} · {o.status}</p>
-            {o.error_message && <p className="mt-1 text-xs text-destructive">{o.error_message}</p>}
-            {(o.status === "pending" || o.status === "error") && (
+            {o.error_message && <p className="mt-2 rounded-md bg-destructive/10 p-2 text-sm text-destructive">{o.error_message}</p>}
+            {o.status === "generating" && !stale(o) && <p className="mt-2 text-xs text-muted-foreground">Em geração. Se não concluir em 5 minutos, será possível tentar novamente.</p>}
+            {unsaved[o.id] && (
+              <div className="mt-3 space-y-2">
+                <Textarea readOnly value={unsaved[o.id]} className="min-h-32 text-xs" />
+                <Button className="w-full" disabled={busy === o.id} onClick={() => saveUnsaved(o)}>Salvar leitura</Button>
+              </div>
+            )}
+            {canRun(o) && !unsaved[o.id] && (
               <Button className="mt-3 w-full" disabled={busy === o.id} onClick={() => run(o)}>
-                {busy === o.id ? "Gerando..." : "Confirmar pagamento e gerar leitura"}
+                {busy === o.id ? "Gerando..." : o.status === "pending" ? "Confirmar pagamento e gerar leitura" : "Tentar novamente"}
               </Button>
             )}
           </div>

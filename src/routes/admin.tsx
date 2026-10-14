@@ -52,7 +52,7 @@ function Login() {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) toast.error(error.message.includes("confirm") ? "Confirme seu e-mail antes de entrar." : "E-mail ou senha inválidos.");
     } else {
-      if (password.length < 8) return toast.error("A senha precisa ter pelo menos 8 caracteres.");
+      if (password.length < 8) { toast.error("A senha precisa ter pelo menos 8 caracteres."); return; }
       const { error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: `${window.location.origin}/admin` } });
       if (error) toast.error(error.message.includes("weak") || error.message.includes("pwned") ? "Senha fraca ou já vazada. Escolha outra." : "Não foi possível criar a conta.");
       else setSent(true);

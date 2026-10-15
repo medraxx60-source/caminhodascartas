@@ -60,7 +60,7 @@ function Leitura() {
         const [main, angels] = order.reading.split(/\n*\s*CONSELHO DOS ANJOS:?\s*/i);
         return (
           <>
-            <article className="mt-10 space-y-4 whitespace-pre-line leading-relaxed">{main.trim()}</article>
+            <article className="mt-10 space-y-4 whitespace-pre-line leading-relaxed">{(main ?? "").trim()}</article>
             {angels?.trim() && (
               <section className="mt-10 rounded-xl border-2 border-gold bg-card p-6 text-center shadow-sm">
                 <p className="text-2xl text-gold">✦</p>

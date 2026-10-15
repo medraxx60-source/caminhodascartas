@@ -204,8 +204,16 @@ function Index() {
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-display text-3xl text-primary">Pagamento via Pix</DialogTitle>
-            <DialogDescription>Valor: <strong className="text-foreground">{p && formatBRL(p.priceCents)}</strong></DialogDescription>
+            <DialogDescription>Siga os passos abaixo no app do seu banco.</DialogDescription>
           </DialogHeader>
+          <div className="rounded-xl border-2 border-gold bg-card p-4 text-center shadow-md">
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Valor exato a pagar</p>
+            <p className="font-display text-5xl font-bold text-primary">{p && formatBRL(p.priceCents)}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{p && `${p.name} · ${p.count} cartas`}</p>
+          </div>
+          <div className="rounded-md border border-destructive/60 bg-destructive/10 p-3 text-sm text-destructive">
+            <strong>⚠️ Atenção:</strong> pague <strong>exatamente {p && formatBRL(p.priceCents)}</strong>. Valores diferentes não são aprovados e a leitura não é liberada.
+          </div>
           <div className="flex items-center justify-between rounded-md border border-gold bg-card px-3 py-2">
             <div>
               <p className="text-xs text-muted-foreground">Número do pedido</p>
@@ -222,10 +230,10 @@ function Index() {
             </div>
           </div>
           <ol className="list-decimal space-y-1 pl-5 text-sm text-muted-foreground">
-            <li>Abra o app do seu banco e pague o valor exato via Pix.</li>
+            <li>No app do seu banco, escolha Pix e leia o QR Code ou cole a chave.</li>
+            <li>Digite o valor exato: <strong className="text-foreground">{p && formatBRL(p.priceCents)}</strong>.</li>
             <li>Na descrição do Pix, escreva o número do pedido: <strong className="text-foreground">{orderCode}</strong>.</li>
-            <li>Guarde o link abaixo: é por ele que você verá sua leitura.</li>
-            <li>Após confirmarmos o pagamento, sua leitura aparecerá nesse link.</li>
+            <li>Toque no botão abaixo para acompanhar sua leitura.</li>
           </ol>
           <div className="space-y-2 rounded-md border border-gold p-3">
             <p className="text-sm font-medium">Sua página de leitura</p>

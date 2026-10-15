@@ -12,14 +12,29 @@ import { createOrder } from "@/lib/orders.functions";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Entre Cartas — Consultas de Baralho Cigano" },
-      { name: "description", content: "Faça sua pergunta, escolha suas cartas e receba uma leitura de Baralho Cigano profunda e personalizada." },
-      { property: "og:title", content: "Entre Cartas — Consultas de Baralho Cigano" },
-      { property: "og:description", content: "Leituras de Lenormand personalizadas, a partir de R$ 10,90." },
+      { title: "Cartas de Tarô — Tarô Cigano online" },
+      { name: "description", content: "Faça sua pergunta objetiva sobre amor, dinheiro, saúde ou espiritualidade e receba sua leitura de Tarô Cigano." },
+      { property: "og:title", content: "Cartas de Tarô — Tarô Cigano online" },
+      { property: "og:description", content: "Leituras de Tarô Cigano personalizadas, a partir de R$ 10,90." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Index,
 });
+
+const PLAN_HINT: Record<PlanId, string> = {
+  essencial: "para uma pergunta rápida",
+  profunda: "para entender melhor a situação",
+  completa: "para uma visão completa",
+};
+
+const THEMES = [
+  { label: "Amor", example: "Como está minha vida amorosa e o que posso esperar?" },
+  { label: "Dinheiro", example: "O que preciso saber sobre minha vida financeira?" },
+  { label: "Saúde", example: "O que as cartas mostram sobre meu bem-estar?" },
+  { label: "Espiritualidade", example: "Qual mensagem espiritual preciso ouvir agora?" },
+];
 
 function shuffle(n: number) {
   const a = Array.from({ length: n }, (_, i) => i);
@@ -84,12 +99,17 @@ function Index() {
   return (
     <main className="mx-auto min-h-screen max-w-xl px-5 pb-20">
       <header className="pt-14 pb-10 text-center">
-        <p className="text-xs uppercase tracking-[0.3em] text-gold">Baralho Cigano · Lenormand</p>
-        <h1 className="mt-3 text-5xl font-bold text-primary">Entre Cartas</h1>
+        <p className="text-xs uppercase tracking-[0.3em] text-gold">Tarô Cigano · Baralho Cigano</p>
+        <h1 className="mt-3 text-5xl font-bold text-primary">Cartas de Tarô</h1>
         <div className="gold-rule mx-auto mt-5 w-40" />
-        <p className="mt-5 text-muted-foreground">Faça sua pergunta, escolha suas cartas e receba uma leitura feita para você.</p>
+        <p className="mt-5 text-lg text-muted-foreground">Faça sua pergunta objetiva: amor, dinheiro, saúde, espiritualidade.</p>
       </header>
 
+      <div className="mb-4">
+        <p className="text-sm font-semibold uppercase tracking-widest text-gold">Passo 1</p>
+        <h2 className="text-3xl font-semibold text-primary">Escolha sua consulta</h2>
+        <p className="mt-1 text-base text-muted-foreground">Toque em uma das opções abaixo.</p>
+      </div>
       <section className="space-y-3">
         {(Object.keys(PLANS) as PlanId[]).map((id) => {
           const pl = PLANS[id];
@@ -102,7 +122,7 @@ function Index() {
             >
               <div>
                 <h2 className="text-2xl font-semibold">{pl.name}</h2>
-                <p className={`text-sm ${active ? "text-primary-foreground/80" : "text-muted-foreground"}`}>{pl.count} cartas</p>
+                <p className={`text-base ${active ? "text-primary-foreground/80" : "text-muted-foreground"}`}>{pl.count} cartas · {PLAN_HINT[id]}</p>
               </div>
               <span className="font-display text-2xl font-bold text-gold">{formatBRL(pl.priceCents)}</span>
             </button>
@@ -113,10 +133,24 @@ function Index() {
       {p && (
         <section id="consulta" className="mt-12 space-y-8">
           <div>
-            <h2 className="text-3xl font-semibold text-primary">Sua pergunta</h2>
+            <p className="text-sm font-semibold uppercase tracking-widest text-gold">Passo 2</p>
+            <h2 className="text-3xl font-semibold text-primary">Escreva sua pergunta</h2>
+            <p className="mt-1 text-base text-muted-foreground">Toque em um tema para ver um exemplo, ou escreva com suas palavras.</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {THEMES.map((t) => (
+                <button
+                  key={t.label}
+                  type="button"
+                  onClick={() => setQuestion(t.example)}
+                  className="rounded-full border border-gold bg-card px-4 py-2 text-base text-primary hover:bg-primary hover:text-primary-foreground"
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
             <Textarea
               id="pergunta"
-              className={`mt-3 min-h-28 bg-card ${qOk ? "" : "border-destructive"}`}
+              className={`mt-3 min-h-28 bg-card text-base ${qOk ? "" : "border-destructive"}`}
               maxLength={1000}
               placeholder="Ex.: O que preciso saber sobre minha vida profissional nos próximos meses?"
               value={question}
@@ -127,11 +161,12 @@ function Index() {
             </p>
           </div>
           <div>
+            <p className="text-sm font-semibold uppercase tracking-widest text-gold">Passo 3</p>
             <div className="flex items-baseline justify-between">
               <h2 className="text-3xl font-semibold text-primary">Escolha suas cartas</h2>
-              <span className="text-sm text-muted-foreground">{picked.length}/{p.count}</span>
             </div>
-            <p className="mt-1 text-sm text-muted-foreground">Concentre-se na pergunta e toque em {p.count} cartas.</p>
+            <p className="mt-1 text-base text-muted-foreground">Pense na sua pergunta e toque com o dedo em {p.count} cartas.</p>
+            <p className="mt-2 text-lg font-semibold text-primary">Você já escolheu {picked.length} de {p.count}</p>
             <div className="mt-4 grid grid-cols-6 gap-2">
               {deck.map((card) => {
                 const idx = picked.indexOf(card);
@@ -195,7 +230,7 @@ function Index() {
       </Dialog>
       <footer className="mt-24 space-y-2 border-t border-border/60 pt-6 text-center text-xs text-muted-foreground">
         <p>Tiragens para reflexão e autoconhecimento. Não substituem orientação médica, jurídica ou financeira.</p>
-        <p>© {new Date().getFullYear()} Entre Cartas · Todos os direitos reservados.</p>
+        <p>© {new Date().getFullYear()} Cartas de Tarô · Todos os direitos reservados.</p>
         <a href="/admin" className="inline-block text-muted-foreground/60 hover:underline">Acesso administrativo</a>
       </footer>
     </main>

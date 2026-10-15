@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { CardBack } from "@/components/TarotCard";
 import { CARDS, PLANS, PIX_KEY, PIX_QR_SRC, formatBRL, type PlanId } from "@/lib/lenormand";
 import { createOrder } from "@/lib/orders.functions";
+import heroTarot from "@/assets/hero-tarot.jpg";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -98,11 +99,15 @@ function Index() {
 
   return (
     <main className="mx-auto min-h-screen max-w-xl px-5 pb-20">
-      <header className="pt-14 pb-10 text-center">
-        <p className="text-xs uppercase tracking-[0.3em] text-gold">Tarô Cigano · Baralho Cigano</p>
-        <h1 className="mt-3 text-5xl font-bold text-primary">Cartas de Tarô</h1>
-        <div className="gold-rule mx-auto mt-5 w-40" />
-        <p className="mt-5 text-lg text-muted-foreground">Faça sua pergunta objetiva: amor, dinheiro, saúde, espiritualidade.</p>
+      <header className="relative -mx-5 mb-10 overflow-hidden border-b-2 border-gold">
+        <img src={heroTarot} alt="Cartas de tarô sobre veludo verde com vela e estrelas douradas" width={1280} height={960} className="h-[460px] w-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/60 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 px-6 pb-8 text-center">
+          <p className="text-xs uppercase tracking-[0.3em] text-gold">Tarô Cigano · Baralho Cigano</p>
+          <h1 className="mt-2 text-5xl font-bold text-primary-foreground">Cartas de Tarô</h1>
+          <div className="gold-rule mx-auto mt-4 w-40" />
+          <p className="mt-4 text-lg text-primary-foreground/90">Faça sua pergunta objetiva: amor, dinheiro, saúde, espiritualidade.</p>
+        </div>
       </header>
 
       <div className="mb-4">

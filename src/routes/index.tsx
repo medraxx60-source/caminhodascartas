@@ -110,11 +110,7 @@ function Index() {
         </div>
       </header>
 
-      <div className="mb-4">
-        <p className="text-sm font-semibold uppercase tracking-widest text-gold">Passo 1</p>
-        <h2 className="text-3xl font-semibold text-primary">Escolha sua consulta</h2>
-        <p className="mt-1 text-base text-muted-foreground">Toque em uma das opções abaixo.</p>
-      </div>
+      <StepHeader n={1} title="Escolha sua consulta" hint="Toque em uma das opções abaixo." />
       <section className="space-y-3">
         {(Object.keys(PLANS) as PlanId[]).map((id) => {
           const pl = PLANS[id];
@@ -123,77 +119,79 @@ function Index() {
             <button
               key={id}
               onClick={() => choosePlan(id)}
-              className={`flex w-full items-center justify-between rounded-lg border p-5 text-left transition-colors ${active ? "border-gold bg-primary text-primary-foreground" : "border-border bg-card hover:border-gold"}`}
+              className={`flex w-full items-center justify-between gap-4 rounded-xl border-2 p-5 text-left shadow-sm transition-all ${active ? "border-gold bg-primary text-primary-foreground shadow-lg" : "border-border bg-card hover:border-gold"}`}
             >
-              <div>
-                <h2 className="text-2xl font-semibold">{pl.name}</h2>
-                <p className={`text-base ${active ? "text-primary-foreground/80" : "text-muted-foreground"}`}>{pl.count} cartas · {PLAN_HINT[id]}</p>
+              <div className="min-w-0">
+                <h3 className="font-display text-2xl font-semibold leading-tight">{pl.name}</h3>
+                <p className={`mt-1 text-sm ${active ? "text-primary-foreground/80" : "text-muted-foreground"}`}>{pl.count} cartas · {PLAN_HINT[id]}</p>
               </div>
-              <span className="font-display text-2xl font-bold text-gold">{formatBRL(pl.priceCents)}</span>
+              <span className="shrink-0 font-display text-2xl font-bold text-gold">{formatBRL(pl.priceCents)}</span>
             </button>
           );
         })}
       </section>
 
       {p && (
-        <section id="consulta" className="mt-12 space-y-8">
+        <section id="consulta" className="mt-14 space-y-14">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-widest text-gold">Passo 2</p>
-            <h2 className="text-3xl font-semibold text-primary">Escreva sua pergunta</h2>
-            <p className="mt-1 text-base text-muted-foreground">Toque em um tema para ver um exemplo, ou escreva com suas palavras.</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {THEMES.map((t) => (
-                <button
-                  key={t.label}
-                  type="button"
-                  onClick={() => setQuestion(t.example)}
-                  className="rounded-full border border-gold bg-card px-4 py-2 text-base text-primary hover:bg-primary hover:text-primary-foreground"
-                >
-                  {t.label}
-                </button>
-              ))}
-            </div>
-            <Textarea
-              id="pergunta"
-              className={`mt-3 min-h-28 bg-card text-base ${qOk ? "" : "border-destructive"}`}
-              maxLength={1000}
-              placeholder="Ex.: O que preciso saber sobre minha vida profissional nos próximos meses?"
-              value={question}
-              onChange={(e) => setQuestion(e.target.value)}
-            />
-            <p className={`mt-1 text-sm ${qOk ? "text-muted-foreground" : "text-destructive"}`}>
-              {qOk ? "Pergunta pronta ✓" : `Escreva sua pergunta — mínimo de ${MIN_Q} caracteres (${qLen}/${MIN_Q})`}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-widest text-gold">Passo 3</p>
-            <div className="flex items-baseline justify-between">
-              <h2 className="text-3xl font-semibold text-primary">Escolha suas cartas</h2>
-            </div>
-            <p className="mt-1 text-base text-muted-foreground">Pense na sua pergunta e toque com o dedo em {p.count} cartas.</p>
-            <p className="mt-2 text-lg font-semibold text-primary">Você já escolheu {picked.length} de {p.count}</p>
-            <div className="mt-4 grid grid-cols-6 gap-2">
-              {deck.map((card) => {
-                const idx = picked.indexOf(card);
-                return (
-                  <button key={card} onClick={() => toggle(card)} aria-label="Escolher carta">
-                    <CardBack selected={idx >= 0} order={idx >= 0 ? idx + 1 : undefined} />
+            <StepHeader n={2} title="Escreva sua pergunta" hint="Toque em um tema para ver um exemplo, ou escreva com suas palavras." />
+            <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+              <div className="flex flex-wrap gap-2">
+                {THEMES.map((t) => (
+                  <button
+                    key={t.label}
+                    type="button"
+                    onClick={() => setQuestion(t.example)}
+                    className="rounded-full border border-gold/70 bg-background px-4 py-1.5 text-sm font-medium text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
+                  >
+                    {t.label}
                   </button>
-                );
-              })}
+                ))}
+              </div>
+              <Textarea
+                id="pergunta"
+                className={`mt-4 min-h-28 bg-background text-base ${qOk ? "" : "border-destructive"}`}
+                maxLength={1000}
+                placeholder="Ex.: O que preciso saber sobre minha vida profissional nos próximos meses?"
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
+              />
+              <p className={`mt-2 text-sm ${qOk ? "text-primary" : "text-destructive"}`}>
+                {qOk ? "Pergunta pronta ✓" : `Mínimo de ${MIN_Q} caracteres (${qLen}/${MIN_Q})`}
+              </p>
             </div>
           </div>
-          {missing.length > 0 && (
-            <div className="rounded-md border border-destructive p-3 text-sm text-destructive">
-              <p className="font-medium">Para continuar, falta:</p>
-              <ul className="list-disc pl-5">
-                {missing.map((m) => <li key={m}>{m}</li>)}
-              </ul>
+          <div>
+            <StepHeader n={3} title="Escolha suas cartas" hint={`Pense na sua pergunta e toque em ${p.count} cartas.`} />
+            <div className="rounded-xl border-2 border-gold/60 bg-primary p-4 shadow-lg">
+              <p className="mb-4 text-center font-display text-xl text-primary-foreground">
+                Você já escolheu <span className="font-bold text-gold">{picked.length}</span> de {p.count}
+              </p>
+              <div className="grid grid-cols-6 gap-2">
+                {deck.map((card) => {
+                  const idx = picked.indexOf(card);
+                  return (
+                    <button key={card} onClick={() => toggle(card)} aria-label="Escolher carta">
+                      <CardBack selected={idx >= 0} order={idx >= 0 ? idx + 1 : undefined} />
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          )}
-          <Button size="lg" className="w-full" disabled={loading} onClick={ready ? submit : () => { if (!qOk) document.getElementById("pergunta")?.focus(); }}>
-            {loading ? "Criando pedido..." : `Pagar ${formatBRL(p.priceCents)} via Pix`}
-          </Button>
+          </div>
+          <div className="space-y-4">
+            {missing.length > 0 && (
+              <div className="rounded-xl border border-destructive/60 bg-card p-4 text-sm text-destructive">
+                <p className="font-semibold">Para continuar, falta:</p>
+                <ul className="mt-1 list-disc pl-5">
+                  {missing.map((m) => <li key={m}>{m}</li>)}
+                </ul>
+              </div>
+            )}
+            <Button size="lg" className="h-14 w-full rounded-xl text-lg shadow-lg" disabled={loading} onClick={ready ? submit : () => { if (!qOk) document.getElementById("pergunta")?.focus(); }}>
+              {loading ? "Criando pedido..." : `Pagar ${formatBRL(p.priceCents)} via Pix`}
+            </Button>
+          </div>
         </section>
       )}
 
@@ -239,5 +237,17 @@ function Index() {
         <a href="/admin" className="inline-block text-muted-foreground/60 hover:underline">Acesso administrativo</a>
       </footer>
     </main>
+  );
+}
+
+function StepHeader({ n, title, hint }: { n: number; title: string; hint: string }) {
+  return (
+    <div className="mb-5 flex items-start gap-4">
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-gold bg-primary font-display text-xl font-bold text-gold">{n}</span>
+      <div>
+        <h2 className="font-display text-3xl font-semibold leading-tight text-primary">{title}</h2>
+        <p className="mt-1 text-base text-muted-foreground">{hint}</p>
+      </div>
+    </div>
   );
 }

@@ -56,9 +56,22 @@ function Leitura() {
       <div className="mt-8 flex flex-wrap justify-center gap-3">
         {(order.cards as number[]).map((c, i) => <CardFace key={c} index={c} position={plan.positions[i]} />)}
       </div>
-      {order.status === "done" && order.reading ? (
-        <article className="mt-10 space-y-4 whitespace-pre-line leading-relaxed">{order.reading}</article>
-      ) : order.status === "rejected" ? (
+      {order.status === "done" && order.reading ? (() => {
+        const [main, angels] = order.reading.split(/\n*\s*CONSELHO DOS ANJOS:?\s*/i);
+        return (
+          <>
+            <article className="mt-10 space-y-4 whitespace-pre-line leading-relaxed">{(main ?? "").trim()}</article>
+            {angels?.trim() && (
+              <section className="mt-10 rounded-xl border-2 border-gold bg-card p-6 text-center shadow-sm">
+                <p className="text-2xl text-gold">✦</p>
+                <h2 className="mt-1 font-display text-3xl font-semibold text-primary">Conselho dos Anjos</h2>
+                <div className="gold-rule mx-auto mt-3 w-24" />
+                <p className="mt-4 whitespace-pre-line font-display text-xl italic leading-relaxed">{angels.trim()}</p>
+              </section>
+            )}
+          </>
+        );
+      })() : order.status === "rejected" ? (
         <div className="mt-10 rounded-lg border border-destructive bg-card p-6 text-center">
           <p className="font-display text-2xl text-destructive">Pedido não aprovado</p>
           <p className="mt-2 text-sm text-muted-foreground">Não conseguimos confirmar o pagamento deste pedido. Se você pagou, entre em contato informando o número do pedido.</p>

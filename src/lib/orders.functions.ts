@@ -45,7 +45,27 @@ export const createOrder = createServerFn({ method: "POST" })
       console.error("[createOrder] insert failed:", error?.code, error?.message);
       throw new Error("Não foi possível criar o pedido");
     }
-    return { token: row.access_token, orderCode: row.id.slice(0, 8).toUpperCase() };
+    const orderCode = row.id.slice(0, 8).toUpperCase();
+    try {
+      const lk = process.env["LOVABLE_API_KEY"];
+      const tk = process.env["TELEGRAM_API_KEY"];
+      const chats = (process.env["TELEGRAM_CHAT_IDS"] ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+      if (lk && tk && chats.length) {
+        const p = PLANS[data.plan];
+        const price = (p.priceCents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+        const text = `🔔 Novo pedido aguardando aprovação\n\nCódigo: ${orderCode}\nPlano: ${p.name} (${price})\n\nConfira o Pix no banco e aprove no painel:\nhttps://entre-cartas.lovable.app/admin`;
+        await Promise.all(chats.map((chat_id) =>
+          fetch("https://connector-gateway.lovable.dev/telegram/sendMessage", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${lk}`, "X-Connection-Api-Key": tk, "Content-Type": "application/json" },
+            body: JSON.stringify({ chat_id, text }),
+          }).then(async (r) => { if (!r.ok) console.error("[telegram]", r.status, await r.text()); }),
+        ));
+      }
+    } catch (e) {
+      console.error("[telegram] notify failed", e);
+    }
+    return { token: row.access_token, orderCode };
   });
 
 export const getOrderByToken = createServerFn({ method: "POST" })

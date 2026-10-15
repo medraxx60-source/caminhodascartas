@@ -163,20 +163,25 @@ function Index() {
           </div>
           <div>
             <StepHeader n={3} title="Escolha suas cartas" hint={`Pense na sua pergunta e toque em ${p.count} cartas.`} />
-            <div className="rounded-xl border-2 border-gold/60 bg-primary p-4 shadow-lg">
-              <p className="mb-4 text-center font-display text-xl text-primary-foreground">
-                Você já escolheu <span className="font-bold text-gold">{picked.length}</span> de {p.count}
-              </p>
+            <div className="relative rounded-2xl border border-gold/50 bg-card p-5 shadow-md outline outline-1 outline-offset-4 outline-gold/30">
+              <div className="mb-5 text-center">
+                <p className="font-display text-sm tracking-[0.3em] text-gold">✦ ✦ ✦</p>
+                <p className="mt-1 font-display text-2xl text-primary">
+                  Você já escolheu <span className="font-bold text-gold">{picked.length}</span> de {p.count}
+                </p>
+                <p className="text-sm text-muted-foreground">Toque nas cartas para escolher</p>
+              </div>
               <div className="grid grid-cols-6 gap-2">
                 {deck.map((card) => {
                   const idx = picked.indexOf(card);
                   return (
-                    <button key={card} onClick={() => toggle(card)} aria-label="Escolher carta">
+                    <button key={card} onClick={() => toggle(card)} aria-label="Escolher carta" className="rounded-md transition-transform hover:-translate-y-1">
                       <CardBack selected={idx >= 0} order={idx >= 0 ? idx + 1 : undefined} />
                     </button>
                   );
                 })}
               </div>
+              <p className="mt-5 text-center font-display text-sm tracking-[0.3em] text-gold">✦</p>
             </div>
           </div>
           <div className="space-y-4">

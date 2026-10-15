@@ -154,6 +154,7 @@ export const adminConfirmAndGenerate = createServerFn({ method: "POST" })
                   "9. Ajuste a profundidade à quantidade de cartas e à complexidade da pergunta. Para três cartas, escreva aproximadamente quatro parágrafos substanciais; para cinco ou sete cartas, aprofunde proporcionalmente, sem encher texto artificialmente.",
                   "10. Não explique como se estivesse ensinando a ler cartas. A pessoa pagou por uma consulta, não por uma aula sobre o baralho.",
                   "Escreva em parágrafos, sem títulos nem markdown pesado.",
+                  "Ao final, depois da interpretação, escreva uma linha exatamente com \"CONSELHO DOS ANJOS:\" seguida de um parágrafo curto (2 a 4 frases), acolhedor e sereno, com uma mensagem de luz e orientação ligada à pergunta, sem prometer acontecimentos.",
                 ].join("\n"),
             },
             { role: "user", content: `Pergunta: ${claimed.question}\n\nTiragem (${plan.name}, ${plan.count} cartas):\n${spread}` },

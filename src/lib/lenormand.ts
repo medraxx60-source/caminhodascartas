@@ -1,3 +1,5 @@
+import pixQrAsset from "@/assets/pix-qrcode.jpeg.asset.json";
+
 export const CARDS = [
   "O Cavaleiro", "O Trevo", "O Navio", "A Casa", "A Árvore", "As Nuvens",
   "A Cobra", "O Caixão", "O Buquê", "A Foice", "O Chicote", "Os Pássaros",
@@ -24,6 +26,6 @@ export const PLANS: Record<PlanId, { name: string; count: number; priceCents: nu
 export const formatBRL = (cents: number) =>
   (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-// Configure here: Pix key shown in the payment pop-up. QR code image goes in public/pix-qrcode.png.
-export const PIX_KEY = "SUA-CHAVE-PIX-AQUI";
-export const PIX_QR_SRC = "/pix-qrcode.png";
+// Public payment details displayed in the Pix dialog.
+export const PIX_KEY = "34cdba87-43b2-4e53-ac3a-113c86eeacca";
+export const PIX_QR_SRC = pixQrAsset.url;

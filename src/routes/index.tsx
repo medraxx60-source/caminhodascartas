@@ -217,7 +217,7 @@ function Index() {
           <div className="space-y-2">
             <p className="text-sm font-medium">Chave Pix</p>
             <div className="flex gap-2">
-              <code className="flex-1 truncate rounded-md bg-muted px-3 py-2 text-sm">{PIX_KEY}</code>
+              <code className="min-w-0 flex-1 break-all rounded-md bg-muted px-3 py-2 text-sm">{PIX_KEY}</code>
               <Button variant="outline" onClick={() => copy(PIX_KEY, "Chave Pix")}>Copiar</Button>
             </div>
           </div>

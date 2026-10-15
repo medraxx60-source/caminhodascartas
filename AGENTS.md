@@ -9,4 +9,4 @@
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
 
-- Serve the supplied Pix QR as a traced local SVG with a quiet zone; the uploaded CDN image was inaccessible, so payment display must not depend on it.
+- Serve the Pix QR from a bundled file in `src/assets` (never a CDN asset pointer — those returned 403). The supplied QR photo is white-on-black with no quiet zone, so it must be inverted to black-on-white and padded with a white margin before display, then verified to decode.

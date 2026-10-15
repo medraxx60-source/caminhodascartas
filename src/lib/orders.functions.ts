@@ -3,7 +3,7 @@ import { getRequestHeader } from "@tanstack/react-start/server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { CARDS, PLANS, type PlanId } from "./lenormand";
 
-const IP_LIMIT = 5; // orders per IP per window
+const IP_LIMIT = 20; // orders per IP per window
 const GLOBAL_LIMIT = 300; // orders per window across all clients
 const WINDOW_MS = 60 * 60 * 1000;
 

@@ -1,4 +1,4 @@
-import pixQrImage from "@/assets/pix-qrcode.svg";
+import pixQrImage from "@/assets/pix-qrcode.png";
 
 export const CARDS = [
   "O Cavaleiro", "O Trevo", "O Navio", "A Casa", "A Árvore", "As Nuvens",

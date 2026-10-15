@@ -213,7 +213,7 @@ function Index() {
             </div>
             <Button variant="outline" onClick={() => copy(orderCode, "Número do pedido")}>Copiar</Button>
           </div>
-          <img src={PIX_QR_SRC} alt="QR Code Pix" className="mx-auto aspect-square w-52 rounded-md border border-border bg-card object-contain" />
+          <img src={PIX_QR_SRC} alt="QR Code Pix" className="mx-auto aspect-square w-60 rounded-md border border-gold bg-card p-1 object-contain" />
           <div className="space-y-2">
             <p className="text-sm font-medium">Chave Pix</p>
             <div className="flex gap-2">

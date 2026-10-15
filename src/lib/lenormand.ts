@@ -1,4 +1,4 @@
-import pixQrAsset from "@/assets/pix-qrcode.jpeg.asset.json";
+import pixQrImage from "@/assets/pix-qrcode.svg";
 
 export const CARDS = [
   "O Cavaleiro", "O Trevo", "O Navio", "A Casa", "A Árvore", "As Nuvens",
@@ -28,4 +28,4 @@ export const formatBRL = (cents: number) =>
 
 // Public payment details displayed in the Pix dialog.
 export const PIX_KEY = "34cdba87-43b2-4e53-ac3a-113c86eeacca";
-export const PIX_QR_SRC = pixQrAsset.url;
+export const PIX_QR_SRC = pixQrImage;

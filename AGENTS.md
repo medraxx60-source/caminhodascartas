@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Serve the supplied Pix QR as a traced local SVG with a quiet zone; the uploaded CDN image was inaccessible, so payment display must not depend on it.

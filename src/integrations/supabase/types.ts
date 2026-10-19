@@ -19,6 +19,7 @@ export type Database = {
           access_token: string
           cards: Json
           client_ip_hash: string | null
+          client_stage: string
           completed_at: string | null
           created_at: string
           error_message: string | null
@@ -29,12 +30,14 @@ export type Database = {
           price_cents: number
           question: string
           reading: string | null
+          stage_updated_at: string | null
           status: string
         }
         Insert: {
           access_token?: string
           cards: Json
           client_ip_hash?: string | null
+          client_stage?: string
           completed_at?: string | null
           created_at?: string
           error_message?: string | null
@@ -45,12 +48,14 @@ export type Database = {
           price_cents: number
           question: string
           reading?: string | null
+          stage_updated_at?: string | null
           status?: string
         }
         Update: {
           access_token?: string
           cards?: Json
           client_ip_hash?: string | null
+          client_stage?: string
           completed_at?: string | null
           created_at?: string
           error_message?: string | null
@@ -61,6 +66,7 @@ export type Database = {
           price_cents?: number
           question?: string
           reading?: string | null
+          stage_updated_at?: string | null
           status?: string
         }
         Relationships: []
@@ -94,6 +100,7 @@ export type Database = {
           access_token: string
           cards: Json
           client_ip_hash: string | null
+          client_stage: string
           completed_at: string | null
           created_at: string
           error_message: string | null
@@ -104,6 +111,7 @@ export type Database = {
           price_cents: number
           question: string
           reading: string | null
+          stage_updated_at: string | null
           status: string
         }[]
         SetofOptions: {

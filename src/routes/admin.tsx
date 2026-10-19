@@ -23,6 +23,8 @@ export const Route = createFileRoute("/admin")({
   component: Admin,
 });
 
+const STAGE_LABEL: Record<string, string> = { pix: "Na tela do Pix (ainda não abriu a página de leitura)", waiting: "Na página de leitura, aguardando aprovação", reading: "Já abriu e está lendo a interpretação" };
+
 const STALE_MS = 5 * 60 * 1000;
 
 function Admin() {
@@ -204,6 +206,7 @@ function Orders() {
               <span className="text-xs text-muted-foreground">{new Date(o.created_at).toLocaleString("pt-BR")}</span>
             </div>
             <p className="text-sm font-semibold">{PLANS[o.plan as PlanId].name} · {formatBRL(o.price_cents)} · {STATUS_LABEL[o.status] ?? o.status}</p>
+            <p className="mt-2 inline-block rounded-full border border-gold bg-gold/10 px-3 py-1 text-xs font-semibold text-primary">Etapa atual: {STAGE_LABEL[o.client_stage] ?? o.client_stage}{o.stage_updated_at ? ` · ${new Date(o.stage_updated_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}` : ""}</p>
             <p className="mt-2">{o.question}</p>
             <p className="mt-1 text-xs text-muted-foreground">{(o.cards as number[]).map((c) => CARDS[c]).join(" · ")}</p>
             {o.error_message && <p className="mt-2 rounded-md bg-destructive/10 p-2 text-sm text-destructive">{o.error_message}</p>}

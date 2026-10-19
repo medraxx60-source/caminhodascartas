@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { CardFace } from "@/components/TarotCard";
@@ -11,10 +12,46 @@ const orderQuery = (token: string) =>
     queryFn: () => getOrderByToken({ data: { token } }),
     refetchInterval: (q) => {
       const s = q.state.data?.status;
-      return s === "done" || s === "rejected" ? false : 5000;
+      if (s === "done" || s === "rejected") return false;
+      return s === "generating" ? 2000 : 3000;
     },
     refetchIntervalInBackground: false,
   });
+
+const PROGRESS_STEPS = [
+  "Conectando às suas cartas…",
+  "Alinhando as posições…",
+  "Relacionando as cartas com a sua pergunta…",
+  "Redigindo a interpretação…",
+  "Recebendo o Conselho dos Anjos…",
+];
+
+function GeneratingProgress() {
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setElapsed((e) => e + 1), 1000);
+    return () => clearInterval(id);
+  }, []);
+  const step = Math.min(PROGRESS_STEPS.length - 1, Math.floor(elapsed / 4));
+  // Avança rápido no início e desacelera perto do fim, sem chegar a 100%.
+  const pct = Math.round(95 * (1 - Math.exp(-elapsed / 10)));
+  return (
+    <div className="mt-10 rounded-lg border border-gold bg-card p-6 text-center">
+      <p className="font-display text-2xl text-primary">Pagamento aprovado! Interpretando suas cartas…</p>
+      <div className="mx-auto mt-5 h-2 w-full max-w-sm overflow-hidden rounded-full bg-muted">
+        <div className="h-full rounded-full bg-gold transition-all duration-1000 ease-out" style={{ width: `${Math.max(5, pct)}%` }} />
+      </div>
+      <ol className="mx-auto mt-5 max-w-sm space-y-2 text-left text-sm">
+        {PROGRESS_STEPS.map((label, i) => (
+          <li key={label} className={i < step ? "text-muted-foreground" : i === step ? "font-semibold text-primary animate-pulse" : "text-muted-foreground/50"}>
+            {i < step ? "✓" : i === step ? "✦" : "○"} {i + 1}. {label}
+          </li>
+        ))}
+      </ol>
+      <p className="mt-4 text-sm text-muted-foreground">Sua leitura aparecerá aqui em instantes. Não feche esta página.</p>
+    </div>
+  );
+}
 
 export const Route = createFileRoute("/leitura/$token")({
   head: () => ({
@@ -77,10 +114,7 @@ function Leitura() {
           <p className="mt-2 text-sm text-muted-foreground">Não conseguimos confirmar o pagamento deste pedido. Se você pagou, entre em contato informando o número do pedido.</p>
         </div>
       ) : order.status === "generating" ? (
-        <div className="mt-10 rounded-lg border border-gold bg-card p-6 text-center">
-          <p className="font-display text-2xl text-primary animate-pulse">Pagamento aprovado! Interpretando suas cartas…</p>
-          <p className="mt-2 text-sm text-muted-foreground">Sua leitura aparecerá aqui em instantes. Não feche esta página.</p>
-        </div>
+        <GeneratingProgress />
       ) : (
         <div className="mt-10 rounded-lg border border-gold bg-card p-6 text-center">
           <p className="font-display text-2xl text-primary">Aguardando confirmação do pagamento</p>

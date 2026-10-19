@@ -22,6 +22,13 @@
       "when": 1791962490921,
       "tag": "0002_allow_rejected_status",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792421397145,
+      "tag": "0003_order_client_stage",
+      "breakpoints": true
     }
   ]
 }

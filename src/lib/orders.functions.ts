@@ -80,6 +80,11 @@ export const getOrderByToken = createServerFn({ method: "POST" })
       .select("plan, question, cards, status, reading, price_cents, created_at")
       .eq("access_token", data.token)
       .maybeSingle();
+    if (row) {
+      const stage = row.status === "done" ? "reading" : "waiting";
+      await supabaseAdmin.from("orders").update({ client_stage: stage, stage_updated_at: new Date().toISOString() })
+        .eq("access_token", data.token).neq("client_stage", "reading");
+    }
     const s = row?.status;
     const status: "done" | "rejected" | "generating" | "pending" =
       s === "done" ? "done" : s === "rejected" ? "rejected" : s === "generating" ? "generating" : "pending";
@@ -123,7 +128,7 @@ export const adminListOrders = createServerFn({ method: "POST" })
     await assertAdmin(context.supabase, context.userId);
     const { data, error } = await context.supabase
       .from("orders")
-      .select("id, plan, question, cards, status, price_cents, created_at, paid_at, error_message, generation_started_at, reading")
+      .select("id, plan, question, cards, status, price_cents, created_at, paid_at, error_message, generation_started_at, reading, client_stage, stage_updated_at")
       .order("created_at", { ascending: false })
       .limit(200);
     if (error) throw new Error("Não foi possível carregar os pedidos");

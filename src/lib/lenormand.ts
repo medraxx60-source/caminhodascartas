@@ -12,13 +12,13 @@ export const CARDS = [
 export type PlanId = "essencial" | "profunda" | "completa";
 
 export const PLANS: Record<PlanId, { name: string; count: number; priceCents: number; positions: string[] }> = {
-  essencial: { name: "Essencial", count: 3, priceCents: 1090, positions: ["Situação atual", "Desafio", "Tendência"] },
+  essencial: { name: "Essencial", count: 3, priceCents: 490, positions: ["Situação atual", "Desafio", "Tendência"] },
   profunda: {
-    name: "Profunda", count: 5, priceCents: 1490,
+    name: "Profunda", count: 5, priceCents: 890,
     positions: ["Situação atual", "Desafio", "Influência oculta", "Conselho", "Tendência"],
   },
   completa: {
-    name: "Completa", count: 7, priceCents: 2490,
+    name: "Completa", count: 7, priceCents: 1490,
     positions: ["Raiz da questão", "Passado recente", "Situação atual", "Desafio", "Influência oculta", "Conselho", "Desfecho provável"],
   },
 };

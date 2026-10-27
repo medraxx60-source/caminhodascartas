@@ -16,7 +16,7 @@ export const Route = createFileRoute("/")({
       { title: "Cartas de Tarô — Tarô Cigano online" },
       { name: "description", content: "Faça sua pergunta objetiva sobre amor, dinheiro, saúde ou espiritualidade e receba sua leitura de Tarô Cigano." },
       { property: "og:title", content: "Cartas de Tarô — Tarô Cigano online" },
-      { property: "og:description", content: "Leituras de Tarô Cigano personalizadas, a partir de R$ 10,90." },
+      { property: "og:description", content: "Leituras de Tarô Cigano personalizadas, a partir de R$ 4,90." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -201,46 +201,40 @@ function Index() {
       )}
 
       <Dialog open={!!token} onOpenChange={(o) => !o && setToken(null)}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-h-[90vh] overflow-y-auto pb-20 sm:pb-6">
           <DialogHeader>
-            <DialogTitle className="font-display text-3xl text-primary">Pagamento via Pix</DialogTitle>
-            <DialogDescription>Siga os passos abaixo no app do seu banco.</DialogDescription>
+            <DialogTitle className="font-display text-3xl text-primary">Finalize seu pagamento</DialogTitle>
+            <DialogDescription>Falta pouco para acessar sua leitura.</DialogDescription>
           </DialogHeader>
-          <div className="rounded-xl border-2 border-gold bg-card p-4 text-center shadow-md">
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Valor exato a pagar</p>
+          <div className="rounded-xl border border-gold bg-card p-4 text-center">
+            <p className="text-sm text-muted-foreground">{p && `${p.name} · ${p.count} cartas`}</p>
             <p className="font-display text-5xl font-bold text-primary">{p && formatBRL(p.priceCents)}</p>
-            <p className="mt-1 text-sm text-muted-foreground">{p && `${p.name} · ${p.count} cartas`}</p>
+            <p className="mt-1 text-xs text-destructive">Pague exatamente este valor para sua leitura ser liberada.</p>
           </div>
-          <div className="rounded-md border border-destructive/60 bg-destructive/10 p-3 text-sm text-destructive">
-            <strong>⚠️ Atenção:</strong> pague <strong>exatamente {p && formatBRL(p.priceCents)}</strong>. Valores diferentes não são aprovados e a leitura não é liberada.
-          </div>
-          <div className="flex items-center justify-between rounded-md border border-gold bg-card px-3 py-2">
-            <div>
-              <p className="text-xs text-muted-foreground">Número do pedido</p>
-              <p className="font-mono text-xl font-bold tracking-widest text-primary">{orderCode}</p>
-            </div>
-            <Button variant="outline" onClick={() => copy(orderCode, "Número do pedido")}>Copiar</Button>
-          </div>
-          <img src={PIX_QR_SRC} alt="QR Code Pix" className="mx-auto aspect-square w-60 rounded-md border border-gold bg-card p-1 object-contain" />
-          <div className="space-y-2">
-            <p className="text-sm font-medium">Chave Pix</p>
-            <div className="flex gap-2">
-              <code className="min-w-0 flex-1 break-all rounded-md bg-muted px-3 py-2 text-sm">{PIX_KEY}</code>
-              <Button variant="outline" onClick={() => copy(PIX_KEY, "Chave Pix")}>Copiar</Button>
+          <img src={PIX_QR_SRC} alt="QR Code Pix" className="mx-auto aspect-square w-56 rounded-md border border-gold bg-card p-1 object-contain" />
+          <div>
+            <p className="mb-1 text-xs text-muted-foreground">Chave Pix</p>
+            <div className="flex items-center gap-2">
+              <code className="min-w-0 flex-1 break-all rounded-md bg-muted px-3 py-2 text-xs">{PIX_KEY}</code>
+              <Button size="sm" variant="outline" onClick={() => copy(PIX_KEY, "Chave Pix")}>Copiar</Button>
             </div>
           </div>
           <ol className="list-decimal space-y-1 pl-5 text-sm text-muted-foreground">
-            <li>No app do seu banco, escolha Pix e leia o QR Code ou cole a chave.</li>
-            <li>Digite o valor exato: <strong className="text-foreground">{p && formatBRL(p.priceCents)}</strong>.</li>
-            <li>Na descrição do Pix, escreva o número do pedido: <strong className="text-foreground">{orderCode}</strong>.</li>
-            <li>Toque no botão abaixo para acompanhar sua leitura.</li>
+            <li>Abra o aplicativo do seu banco.</li>
+            <li>Escaneie o QR Code ou cole a chave Pix.</li>
+            <li>Digite o valor <strong className="text-foreground">{p && formatBRL(p.priceCents)}</strong> e confirme.</li>
+            <li>Volte para esta página para acompanhar sua leitura.</li>
           </ol>
-          <div className="space-y-2 rounded-md border border-gold p-3">
-            <p className="text-sm font-medium">Sua página de leitura</p>
+          <div className="flex items-center justify-between gap-2 rounded-md bg-muted px-3 py-2">
+            <p className="text-sm">Na descrição do Pix, informe: <span className="font-mono font-bold tracking-widest text-primary">{orderCode}</span></p>
+            <Button size="sm" variant="outline" onClick={() => copy(orderCode, "Número do pedido")}>Copiar</Button>
+          </div>
+          <div className="space-y-2 border-t border-border pt-3 text-center">
+            <p className="text-xs text-muted-foreground">Sua leitura ficará disponível após a confirmação do pagamento.</p>
             <Button asChild className="w-full">
-              <a href={link}>Abrir minha página de leitura</a>
+              <a href={link}>Acompanhar meu pedido</a>
             </Button>
-            <button className="w-full text-xs text-muted-foreground underline" onClick={() => copy(link, "Link")}>Copiar link para guardar</button>
+            <button className="text-xs text-muted-foreground underline" onClick={() => copy(link, "Link")}>Copiar link para guardar</button>
           </div>
         </DialogContent>
       </Dialog>
@@ -252,10 +246,11 @@ function Index() {
       <a
         href={`https://wa.me/5563991167896?text=${encodeURIComponent(orderCode ? `Olá! Preciso de ajuda com o pedido ${orderCode} no Cartas de Tarô.` : "Olá! Preciso de ajuda no Cartas de Tarô.")}`}
         target="_blank" rel="noopener noreferrer" aria-label="Precisa de ajuda? Falar no WhatsApp"
-        className="fixed bottom-5 right-5 z-[60] flex items-center gap-2 rounded-full border-2 border-gold bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-lg"
+        style={{ bottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
+        className="fixed right-3 z-[60] flex items-center gap-1.5 rounded-full border border-gold bg-primary px-2.5 py-2 text-xs font-semibold text-primary-foreground shadow-md"
       >
-        <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current" aria-hidden><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.6-4-4.7-4.2-.1-.2-1.1-1.5-1.1-2.9s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.4.6-.3.4c-.1.1-.3.3-.1.6.2.3.7 1.2 1.6 2 1.1 1 2 1.3 2.3 1.4.3.2.4.1.6-.1l.8-1c.2-.3.4-.2.6-.1l1.9.9c.3.1.5.2.5.3.1.2.1.6-.1 1.2Z"/></svg>
-        Precisa de ajuda?
+        <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current" aria-hidden><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.6-4-4.7-4.2-.1-.2-1.1-1.5-1.1-2.9s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.4.6-.3.4c-.1.1-.3.3-.1.6.2.3.7 1.2 1.6 2 1.1 1 2 1.3 2.3 1.4.3.2.4.1.6-.1l.8-1c.2-.3.4-.2.6-.1l1.9.9c.3.1.5.2.5.3.1.2.1.6-.1 1.2Z"/></svg>
+        <span className="sm:hidden">Ajuda</span><span className="hidden sm:inline">Precisa de ajuda?</span>
       </a>
     </main>
   );

@@ -98,10 +98,11 @@ function Index() {
   const ready = !!p && missing.length === 0;
 
   return (
+    <div className="mystic min-h-screen">
     <main className="mx-auto min-h-screen max-w-xl px-5 pb-20">
-      <header className="relative -mx-5 mb-10 overflow-hidden border-b-2 border-gold">
+      <header className="relative -mx-5 mb-10 overflow-hidden">
         <img src={heroTarot} alt="Cartas de tarô sobre veludo verde com vela e estrelas douradas" width={1280} height={960} className="h-[460px] w-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/60 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
         <div className="absolute inset-x-0 bottom-0 px-6 pb-8 text-center">
           <p className="text-xs uppercase tracking-[0.3em] text-gold">Tarô Cigano · Baralho Cigano</p>
           <h1 className="mt-2 text-5xl font-bold text-primary-foreground">Cartas de Tarô</h1>
@@ -163,25 +164,47 @@ function Index() {
           </div>
           <div>
             <StepHeader n={3} title="Escolha suas cartas" hint={`Pense na sua pergunta e toque em ${p.count} cartas.`} />
-            <div className="relative rounded-2xl border border-gold/50 bg-card p-5 shadow-md outline outline-1 outline-offset-4 outline-gold/30">
-              <div className="mb-5 text-center">
-                <p className="font-display text-sm tracking-[0.3em] text-gold">✦ ✦ ✦</p>
-                <p className="mt-1 font-display text-2xl text-primary">
-                  Você já escolheu <span className="font-bold text-gold">{picked.length}</span> de {p.count}
-                </p>
-                <p className="text-sm text-muted-foreground">Toque nas cartas para escolher</p>
-              </div>
-              <div className="grid grid-cols-6 gap-2">
-                {deck.map((card) => {
+            <div className="relative -mx-5 py-4">
+              <p className="text-center font-display text-sm tracking-[0.3em] text-gold">✦ ✦ ✦</p>
+              <p className="mt-1 text-center text-sm text-muted-foreground">Deslize o baralho e toque na carta que sentir</p>
+              <div className="no-scrollbar mt-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-[35%] pb-8 pt-6">
+                {deck.map((card, i) => {
                   const idx = picked.indexOf(card);
+                  const tilt = ((i % 5) - 2) * 1.5;
                   return (
-                    <button key={card} onClick={() => toggle(card)} aria-label="Escolher carta" className="rounded-md transition-transform hover:-translate-y-1">
+                    <button
+                      key={card}
+                      onClick={() => toggle(card)}
+                      aria-label="Escolher carta"
+                      style={{ transform: `rotate(${tilt}deg)` }}
+                      className="w-28 shrink-0 snap-center rounded-md transition-transform active:scale-95"
+                    >
                       <CardBack selected={idx >= 0} order={idx >= 0 ? idx + 1 : undefined} />
                     </button>
                   );
                 })}
               </div>
-              <p className="mt-5 text-center font-display text-sm tracking-[0.3em] text-gold">✦</p>
+              <div className="flex justify-center gap-2 px-5">
+                {Array.from({ length: p.count }, (_, i) => {
+                  const filled = picked[i] !== undefined;
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      disabled={!filled}
+                      onClick={() => filled && toggle(picked[i]!)}
+                      aria-label={filled ? `Desfazer carta ${i + 1}` : `Espaço ${i + 1}`}
+                      className={`flex h-14 w-10 items-center justify-center rounded-md border font-display text-lg font-bold transition-all ${filled ? "border-gold bg-gold text-primary-foreground shadow-lg" : "border-gold/40 bg-card text-muted-foreground"}`}
+                    >
+                      {i + 1}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="mt-3 text-center font-display text-xl">
+                Você já escolheu <span className="font-bold text-gold">{picked.length}</span> de {p.count}
+              </p>
+              {picked.length > 0 && <p className="text-center text-xs text-muted-foreground">Toque num número para trocar a carta</p>}
             </div>
           </div>
           <div className="space-y-4">

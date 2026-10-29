@@ -64,9 +64,10 @@ function Index() {
     setPlan(id);
   };
 
+  // Picks are final: a chosen card can never be un-flipped.
   const toggle = (card: number) => {
     if (!p) return;
-    setPicked((cur) => (cur.includes(card) ? cur.filter((c) => c !== card) : cur.length < p.count ? [...cur, card] : cur));
+    setPicked((cur) => (cur.includes(card) || cur.length >= p.count ? cur : [...cur, card]));
   };
 
   const submit = async () => {
@@ -186,7 +187,7 @@ function Index() {
             {Array.from({ length: p.count }, (_, i) => {
               const filled = picked[i] !== undefined;
               return (
-                <button key={i} type="button" disabled={!filled} onClick={() => filled && toggle(picked[i]!)}
+                <button key={i} type="button" disabled
                   aria-label={filled ? `Desfazer carta ${i + 1}` : `Espaço ${i + 1}`}
                   className={`flex h-12 w-10 items-center justify-center rounded-md border font-display text-lg font-bold shadow-inner transition-all ${filled ? "border-gold bg-gold text-primary-foreground shadow-lg" : "border-gold/40 bg-secondary text-foreground/80"}`}>
                   {i + 1}
@@ -271,9 +272,12 @@ function StepHeader({ n, title, hint }: { n: number; title: string; hint: string
 }
 
 function CardCarousel({ deck, picked, onPick }: { deck: number[]; picked: number[]; onPick: (c: number) => void }) {
+  // Infinite: `cur` is an unbounded integer; positions are computed modulo deck length.
   const [cur, setCur] = useState(Math.floor(deck.length / 2));
   const [startX, setStartX] = useState<number | null>(null);
-  const go = (d: number) => setCur((c) => Math.max(0, Math.min(deck.length - 1, c + d)));
+  const n = deck.length;
+  const go = (d: number) => setCur((c) => c + d);
+  const curMod = ((cur % n) + n) % n;
   return (
     <div className="mt-6 select-none">
       <div
@@ -287,7 +291,8 @@ function CardCarousel({ deck, picked, onPick }: { deck: number[]; picked: number
         }}
       >
         {deck.map((card, i) => {
-          const off = i - cur;
+          let off = (((i - curMod) % n) + n) % n;
+          if (off > n / 2) off -= n;
           if (Math.abs(off) > 3) return null;
           const idx = picked.indexOf(card);
           const center = off === 0;
@@ -296,9 +301,9 @@ function CardCarousel({ deck, picked, onPick }: { deck: number[]; picked: number
           return (
             <button
               key={card}
-              aria-label={center ? (idx >= 0 ? "Desfazer esta carta" : "Escolher esta carta") : "Ver esta carta"}
-              onClick={() => (center ? onPick(card) : setCur(i))}
-              style={{ transform: `translate(-50%, -50%) translateX(${x}px) scale(${scale})`, zIndex: 10 - Math.abs(off), opacity: Math.abs(off) === 3 ? 0.5 : 1 }}
+              aria-label={center ? (idx >= 0 ? "Carta já escolhida" : "Escolher esta carta") : "Ver esta carta"}
+              onClick={() => (center ? idx < 0 && onPick(card) : go(off))}
+              style={{ transform: `translate(-50%, -50%) translateX(${x}px) scale(${scale})`, zIndex: 10 - Math.abs(off), opacity: Math.abs(off) === 3 ? 0.5 : 1, transition: Math.abs(off) === 3 ? "none" : undefined }}
               className={`absolute left-1/2 top-1/2 w-52 rounded-2xl transition-all duration-300 ${center ? "shadow-2xl" : "brightness-75"}`}
             >
               <div style={{ perspective: 1000 }}>

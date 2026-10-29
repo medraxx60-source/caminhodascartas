@@ -13,9 +13,9 @@ import heroTarot from "@/assets/hero-tarot.jpg";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Cartas de Tarô — Tarô Cigano online" },
+      { title: "EntreCarta.tarô — Tarô Cigano online" },
       { name: "description", content: "Faça sua pergunta objetiva sobre amor, dinheiro, saúde ou espiritualidade e receba sua leitura de Tarô Cigano." },
-      { property: "og:title", content: "Cartas de Tarô — Tarô Cigano online" },
+      { property: "og:title", content: "EntreCarta.tarô — Tarô Cigano online" },
       { property: "og:description", content: "Leituras de Tarô Cigano personalizadas, a partir de R$ 4,90." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

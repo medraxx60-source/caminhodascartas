@@ -135,7 +135,7 @@
 }
 @utility gold-button {
   background: linear-gradient(180deg, oklch(0.4 0.13 355), oklch(0.27 0.09 350));
-  color: var(--gold);
+  color: var(--gold) !important;
   border: 1px solid color-mix(in oklch, var(--gold) 70%, transparent);
   box-shadow: 0 10px 30px -10px color-mix(in oklch, var(--gold) 40%, transparent);
 }

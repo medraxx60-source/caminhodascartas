@@ -124,3 +124,34 @@
   background: linear-gradient(90deg, transparent, var(--gold), transparent);
   height: 1px;
 }
+
+/* Home page: dark mystical gold theme (scoped so /leitura stays unchanged) */
+.mystic {
+  --background: oklch(0.16 0.015 60);
+  --foreground: oklch(0.92 0.03 85);
+  --card: oklch(0.22 0.025 60);
+  --card-foreground: oklch(0.92 0.03 85);
+  --primary: oklch(0.74 0.11 78);
+  --primary-foreground: oklch(0.16 0.015 60);
+  --secondary: oklch(0.27 0.03 60);
+  --secondary-foreground: oklch(0.92 0.03 85);
+  --muted: oklch(0.25 0.02 60);
+  --muted-foreground: oklch(0.72 0.04 80);
+  --gold: oklch(0.78 0.12 80);
+  --border: oklch(0.36 0.04 70);
+  --input: oklch(0.36 0.04 70);
+  --destructive: oklch(0.68 0.17 27);
+  background:
+    radial-gradient(ellipse at top, oklch(0.3 0.04 60) 0%, transparent 60%),
+    var(--background);
+  color: var(--foreground);
+}
+@utility gold-button {
+  background: linear-gradient(180deg, oklch(0.62 0.1 65), oklch(0.48 0.08 55));
+  color: var(--foreground);
+  box-shadow: 0 10px 30px -10px color-mix(in oklch, var(--gold) 50%, transparent);
+}
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}

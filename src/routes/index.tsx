@@ -48,6 +48,7 @@ function shuffle(n: number) {
 
 function Index() {
   const [plan, setPlan] = useState<PlanId | null>(null);
+  const [step, setStep] = useState(0);
   const [question, setQuestion] = useState("");
   const [picked, setPicked] = useState<number[]>([]);
   const [deck, setDeck] = useState(() => Array.from({ length: CARDS.length }, (_, i) => i));
@@ -59,10 +60,8 @@ function Index() {
   const link = useMemo(() => (token && typeof window !== "undefined" ? `${window.location.origin}/leitura/${token}` : ""), [token]);
 
   const choosePlan = (id: PlanId) => {
+    if (id !== plan) { setPicked([]); setDeck(shuffle(CARDS.length)); }
     setPlan(id);
-    setPicked([]);
-    setDeck(shuffle(CARDS.length));
-    setTimeout(() => document.getElementById("consulta")?.scrollIntoView({ behavior: "smooth" }), 50);
   };
 
   const toggle = (card: number) => {

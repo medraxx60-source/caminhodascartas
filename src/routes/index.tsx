@@ -157,7 +157,7 @@ function Index() {
             <div className="flex flex-wrap gap-2">
               {THEMES.map((t) => (
                 <button key={t.label} type="button" onClick={() => setQuestion(t.example)}
-                  className="rounded-full border border-gold/70 bg-background px-4 py-1.5 text-sm font-medium text-gold transition-colors hover:bg-gold hover:text-primary-foreground">
+                  className="rounded-full border border-gold/70 bg-background px-4 py-1.5 text-sm font-medium text-gold transition-colors hover:bg-gold hover:text-background">
                   {t.label}
                 </button>
               ))}
@@ -189,7 +189,7 @@ function Index() {
               return (
                 <button key={i} type="button" disabled
                   aria-label={filled ? `Desfazer carta ${i + 1}` : `Espaço ${i + 1}`}
-                  className={`flex h-12 w-10 items-center justify-center rounded-md border font-display text-lg font-bold shadow-inner transition-all ${filled ? "border-gold bg-gold text-primary-foreground shadow-lg" : "border-gold/40 bg-secondary text-foreground/80"}`}>
+                  className={`flex h-12 w-10 items-center justify-center rounded-md border font-display text-lg font-bold shadow-inner transition-all ${filled ? "border-gold bg-gold text-background shadow-lg" : "border-gold/40 bg-secondary text-foreground/80"}`}>
                   {i + 1}
                 </button>
               );

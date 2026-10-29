@@ -105,9 +105,9 @@ function Index() {
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
         <div className="absolute inset-x-0 bottom-0 px-6 pb-8 text-center">
           <p className="text-xs uppercase tracking-[0.3em] text-gold">Tarô Cigano · Baralho Cigano</p>
-          <h1 className="mt-2 text-5xl font-bold text-primary-foreground">Cartas de Tarô</h1>
+          <h1 className="mt-2 text-5xl font-bold text-foreground">Cartas de Tarô</h1>
           <div className="gold-rule mx-auto mt-4 w-40" />
-          <p className="mt-4 text-lg text-primary-foreground/90">Faça sua pergunta objetiva: amor, dinheiro, saúde, espiritualidade.</p>
+          <p className="mt-4 text-lg text-foreground/90">Faça sua pergunta objetiva: amor, dinheiro, saúde, espiritualidade.</p>
         </div>
       </header>
 
@@ -120,11 +120,11 @@ function Index() {
             <button
               key={id}
               onClick={() => choosePlan(id)}
-              className={`flex w-full items-center justify-between gap-4 rounded-xl border-2 p-5 text-left shadow-sm transition-all ${active ? "border-gold bg-primary text-primary-foreground shadow-lg" : "border-border bg-card hover:border-gold"}`}
+              className={`flex w-full items-center justify-between gap-4 rounded-xl border-2 p-5 text-left shadow-sm transition-all ${active ? "border-gold bg-secondary shadow-[0_0_30px_-8px] shadow-gold" : "border-border bg-card hover:border-gold"}`}
             >
               <div className="min-w-0">
                 <h3 className="font-display text-2xl font-semibold leading-tight">{pl.name}</h3>
-                <p className={`mt-1 text-sm ${active ? "text-primary-foreground/80" : "text-muted-foreground"}`}>{pl.count} cartas · {PLAN_HINT[id]}</p>
+                <p className={`mt-1 text-sm text-muted-foreground`}>{pl.count} cartas · {PLAN_HINT[id]}</p>
               </div>
               <span className="shrink-0 font-display text-2xl font-bold text-gold">{formatBRL(pl.priceCents)}</span>
             </button>
@@ -143,7 +143,7 @@ function Index() {
                     key={t.label}
                     type="button"
                     onClick={() => setQuestion(t.example)}
-                    className="rounded-full border border-gold/70 bg-background px-4 py-1.5 text-sm font-medium text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
+                    className="rounded-full border border-gold/70 bg-background px-4 py-1.5 text-sm font-medium text-primary transition-colors hover:bg-gold hover:text-primary-foreground"
                   >
                     {t.label}
                   </button>
@@ -216,7 +216,7 @@ function Index() {
                 </ul>
               </div>
             )}
-            <Button size="lg" className="h-14 w-full rounded-xl text-lg shadow-lg" disabled={loading} onClick={ready ? submit : () => { if (!qOk) document.getElementById("pergunta")?.focus(); }}>
+            <Button size="lg" className="gold-button h-14 w-full rounded-xl text-lg" disabled={loading} onClick={ready ? submit : () => { if (!qOk) document.getElementById("pergunta")?.focus(); }}>
               {loading ? "Criando pedido..." : `Pagar ${formatBRL(p.priceCents)} via Pix`}
             </Button>
           </div>
@@ -224,7 +224,7 @@ function Index() {
       )}
 
       <Dialog open={!!token} onOpenChange={(o) => !o && setToken(null)}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto pb-20 sm:pb-6">
+        <DialogContent className="mystic max-h-[90vh] overflow-y-auto pb-20 sm:pb-6">
           <DialogHeader>
             <DialogTitle className="font-display text-3xl text-primary">Finalize seu pagamento</DialogTitle>
             <DialogDescription>Falta pouco para acessar sua leitura.</DialogDescription>
@@ -276,13 +276,14 @@ function Index() {
         <span className="sm:hidden">Ajuda</span><span className="hidden sm:inline">Precisa de ajuda?</span>
       </a>
     </main>
+    </div>
   );
 }
 
 function StepHeader({ n, title, hint }: { n: number; title: string; hint: string }) {
   return (
     <div className="mb-5 flex items-start gap-4">
-      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-gold bg-primary font-display text-xl font-bold text-gold">{n}</span>
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-gold bg-card font-display text-xl font-bold text-gold">{n}</span>
       <div>
         <h2 className="font-display text-3xl font-semibold leading-tight text-primary">{title}</h2>
         <p className="mt-1 text-base text-muted-foreground">{hint}</p>

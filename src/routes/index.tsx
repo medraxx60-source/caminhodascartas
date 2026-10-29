@@ -313,7 +313,7 @@ function CardCarousel({ deck, picked, onPick }: { deck: number[]; picked: number
           const center = off === 0;
           const scale = 1 - Math.min(a, 3) * 0.1;
           const x = pos(o);
-          const edge = Math.abs(off) >= 3;
+          const edge = Math.abs(off) >= 4;
           return (
             <button
               key={card}

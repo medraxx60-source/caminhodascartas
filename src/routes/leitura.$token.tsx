@@ -56,10 +56,10 @@ function GeneratingProgress() {
 export const Route = createFileRoute("/leitura/$token")({
   head: () => ({
     meta: [
-      { title: "Sua leitura — Entre Cartas" },
+      { title: "Sua leitura — EntreCarta.tarô" },
       { name: "description", content: "Sua leitura privada de Baralho Cigano." },
       { name: "robots", content: "noindex, nofollow" },
-      { property: "og:title", content: "Sua leitura — Entre Cartas" },
+      { property: "og:title", content: "Sua leitura — EntreCarta.tarô" },
       { property: "og:description", content: "Leitura privada de Baralho Cigano." },
     ],
   }),

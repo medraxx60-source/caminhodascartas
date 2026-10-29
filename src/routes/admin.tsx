@@ -13,10 +13,10 @@ import { adminConfirmAndGenerate, adminListOrders, adminRejectOrder, adminSaveRe
 export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
-      { title: "Painel — Entre Cartas" },
+      { title: "Painel — EntreCarta.tarô" },
       { name: "description", content: "Painel administrativo de pedidos." },
       { name: "robots", content: "noindex, nofollow" },
-      { property: "og:title", content: "Painel — Entre Cartas" },
+      { property: "og:title", content: "Painel — EntreCarta.tarô" },
       { property: "og:description", content: "Painel administrativo." },
     ],
   }),

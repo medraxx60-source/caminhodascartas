@@ -107,7 +107,10 @@
   }
 
   body {
-    background-color: var(--color-background);
+    background:
+      radial-gradient(ellipse at top, oklch(0.3 0.04 60) 0%, transparent 60%) no-repeat,
+      var(--color-background);
+    min-height: 100vh;
     color: var(--color-foreground);
   }
 }

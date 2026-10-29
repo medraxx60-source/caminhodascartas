@@ -97,9 +97,20 @@ function Index() {
   if (p && picked.length < p.count) missing.push(`Escolher mais ${p.count - picked.length} carta(s)`);
   const ready = !!p && missing.length === 0;
 
+  const goStep = (s: number) => { setStep(s); window.scrollTo({ top: 0, behavior: "smooth" }); };
+
   return (
     <div className="mystic min-h-screen">
     <main className="mx-auto min-h-screen max-w-xl px-5 pb-20">
+      {step > 0 && (
+        <div className="flex items-center gap-3 pt-5">
+          <button onClick={() => goStep(step - 1)} aria-label="Voltar" className="flex h-11 w-11 items-center justify-center rounded-full border border-gold/50 bg-card text-gold text-xl">‹</button>
+          <p className="flex-1 text-center font-display text-xl text-foreground">Cartas de Tarô</p>
+          <span className="w-11 text-right text-xs text-muted-foreground">{step + 1}/3</span>
+        </div>
+      )}
+
+      {step === 0 && (<>
       <header className="relative -mx-5 mb-10 overflow-hidden">
         <img src={heroTarot} alt="Cartas de tarô sobre veludo verde com vela e estrelas douradas" width={1280} height={960} className="h-[460px] w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
@@ -124,102 +135,70 @@ function Index() {
             >
               <div className="min-w-0">
                 <h3 className="font-display text-2xl font-semibold leading-tight">{pl.name}</h3>
-                <p className={`mt-1 text-sm text-muted-foreground`}>{pl.count} cartas · {PLAN_HINT[id]}</p>
+                <p className="mt-1 text-sm text-muted-foreground">{pl.count} cartas · {PLAN_HINT[id]}</p>
               </div>
               <span className="shrink-0 font-display text-2xl font-bold text-gold">{formatBRL(pl.priceCents)}</span>
             </button>
           );
         })}
       </section>
+      <Button size="lg" className="gold-button mt-8 h-14 w-full rounded-xl text-lg" disabled={!p} onClick={() => goStep(1)}>
+        {p ? "Continuar" : "Escolha uma consulta acima"}
+      </Button>
+      </>)}
 
-      {p && (
-        <section id="consulta" className="mt-14 space-y-14">
-          <div>
-            <StepHeader n={2} title="Escreva sua pergunta" hint="Toque em um tema para ver um exemplo, ou escreva com suas palavras." />
-            <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
-              <div className="flex flex-wrap gap-2">
-                {THEMES.map((t) => (
-                  <button
-                    key={t.label}
-                    type="button"
-                    onClick={() => setQuestion(t.example)}
-                    className="rounded-full border border-gold/70 bg-background px-4 py-1.5 text-sm font-medium text-primary transition-colors hover:bg-gold hover:text-primary-foreground"
-                  >
-                    {t.label}
-                  </button>
-                ))}
-              </div>
-              <Textarea
-                id="pergunta"
-                className={`mt-4 min-h-28 bg-background text-base ${qOk ? "" : "border-destructive"}`}
-                maxLength={1000}
-                placeholder="Ex.: O que preciso saber sobre minha vida profissional nos próximos meses?"
-                value={question}
-                onChange={(e) => setQuestion(e.target.value)}
-              />
-              <p className={`mt-2 text-sm ${qOk ? "text-primary" : "text-destructive"}`}>
-                {qOk ? "Pergunta pronta ✓" : `Mínimo de ${MIN_Q} caracteres (${qLen}/${MIN_Q})`}
-              </p>
+      {p && step === 1 && (
+        <section className="mt-8">
+          <div className="text-center">
+            <h2 className="font-display text-3xl font-semibold text-foreground">Escreva sua pergunta</h2>
+            <p className="mt-2 text-muted-foreground">Toque em um tema para ver um exemplo, ou escreva com suas palavras.</p>
+          </div>
+          <div className="mt-6 rounded-xl border border-border bg-card p-4 shadow-sm">
+            <div className="flex flex-wrap gap-2">
+              {THEMES.map((t) => (
+                <button key={t.label} type="button" onClick={() => setQuestion(t.example)}
+                  className="rounded-full border border-gold/70 bg-background px-4 py-1.5 text-sm font-medium text-gold transition-colors hover:bg-gold hover:text-primary-foreground">
+                  {t.label}
+                </button>
+              ))}
             </div>
+            <Textarea id="pergunta" className={`mt-4 min-h-32 bg-background text-base ${qOk ? "" : "border-destructive"}`} maxLength={1000}
+              placeholder="Ex.: O que preciso saber sobre minha vida profissional nos próximos meses?"
+              value={question} onChange={(e) => setQuestion(e.target.value)} />
+            <p className={`mt-2 text-sm ${qOk ? "text-gold" : "text-destructive"}`}>
+              {qOk ? "Pergunta pronta ✓" : `Mínimo de ${MIN_Q} caracteres (${qLen}/${MIN_Q})`}
+            </p>
           </div>
-          <div>
-            <StepHeader n={3} title="Escolha suas cartas" hint={`Pense na sua pergunta e toque em ${p.count} cartas.`} />
-            <div className="relative -mx-5 py-4">
-              <p className="text-center font-display text-sm tracking-[0.3em] text-gold">✦ ✦ ✦</p>
-              <p className="mt-1 text-center text-sm text-muted-foreground">Deslize o baralho e toque na carta que sentir</p>
-              <div className="no-scrollbar mt-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-[35%] pb-8 pt-6">
-                {deck.map((card, i) => {
-                  const idx = picked.indexOf(card);
-                  const tilt = ((i % 5) - 2) * 1.5;
-                  return (
-                    <button
-                      key={card}
-                      onClick={() => toggle(card)}
-                      aria-label="Escolher carta"
-                      style={{ transform: `rotate(${tilt}deg)` }}
-                      className="w-28 shrink-0 snap-center rounded-md transition-transform active:scale-95"
-                    >
-                      <CardBack selected={idx >= 0} order={idx >= 0 ? idx + 1 : undefined} />
-                    </button>
-                  );
-                })}
-              </div>
-              <div className="flex justify-center gap-2 px-5">
-                {Array.from({ length: p.count }, (_, i) => {
-                  const filled = picked[i] !== undefined;
-                  return (
-                    <button
-                      key={i}
-                      type="button"
-                      disabled={!filled}
-                      onClick={() => filled && toggle(picked[i]!)}
-                      aria-label={filled ? `Desfazer carta ${i + 1}` : `Espaço ${i + 1}`}
-                      className={`flex h-14 w-10 items-center justify-center rounded-md border font-display text-lg font-bold transition-all ${filled ? "border-gold bg-gold text-primary-foreground shadow-lg" : "border-gold/40 bg-card text-muted-foreground"}`}
-                    >
-                      {i + 1}
-                    </button>
-                  );
-                })}
-              </div>
-              <p className="mt-3 text-center font-display text-xl">
-                Você já escolheu <span className="font-bold text-gold">{picked.length}</span> de {p.count}
-              </p>
-              {picked.length > 0 && <p className="text-center text-xs text-muted-foreground">Toque num número para trocar a carta</p>}
-            </div>
+          <Button size="lg" className="gold-button mt-8 h-14 w-full rounded-xl text-lg"
+            onClick={() => (qOk ? goStep(2) : document.getElementById("pergunta")?.focus())}>
+            {qOk ? "Escolher minhas cartas" : "Escreva sua pergunta para continuar"}
+          </Button>
+        </section>
+      )}
+
+      {p && step === 2 && (
+        <section className="mt-6">
+          <div className="text-center">
+            <h2 className="font-display text-3xl font-semibold text-foreground">Escolha {p.count} cartas</h2>
+            <p className="mx-auto mt-2 max-w-xs text-muted-foreground">Pense na sua pergunta, deslize o baralho e toque na carta que sentir.</p>
           </div>
-          <div className="space-y-4">
-            {missing.length > 0 && (
-              <div className="rounded-xl border border-destructive/60 bg-card p-4 text-sm text-destructive">
-                <p className="font-semibold">Para continuar, falta:</p>
-                <ul className="mt-1 list-disc pl-5">
-                  {missing.map((m) => <li key={m}>{m}</li>)}
-                </ul>
-              </div>
-            )}
-            <Button size="lg" className="gold-button h-14 w-full rounded-xl text-lg" disabled={loading} onClick={ready ? submit : () => { if (!qOk) document.getElementById("pergunta")?.focus(); }}>
-              {loading ? "Criando pedido..." : `Pagar ${formatBRL(p.priceCents)} via Pix`}
-            </Button>
+          <CardCarousel deck={deck} picked={picked} onPick={toggle} />
+          <div className="flex justify-center gap-2">
+            {Array.from({ length: p.count }, (_, i) => {
+              const filled = picked[i] !== undefined;
+              return (
+                <button key={i} type="button" disabled={!filled} onClick={() => filled && toggle(picked[i]!)}
+                  aria-label={filled ? `Desfazer carta ${i + 1}` : `Espaço ${i + 1}`}
+                  className={`flex h-12 w-10 items-center justify-center rounded-md border font-display text-lg font-bold shadow-inner transition-all ${filled ? "border-gold bg-gold text-primary-foreground shadow-lg" : "border-gold/40 bg-secondary text-foreground/80"}`}>
+                  {i + 1}
+                </button>
+              );
+            })}
           </div>
+          {picked.length > 0 && <p className="mt-2 text-center text-xs text-muted-foreground">Toque num número para trocar a carta</p>}
+          <Button size="lg" className="gold-button mt-8 h-14 w-full rounded-xl text-lg" disabled={loading || picked.length < p.count} onClick={submit}>
+            {loading ? "Criando pedido..." : picked.length < p.count ? `Escolha mais ${p.count - picked.length} carta(s)` : `Ver interpretação · ${formatBRL(p.priceCents)}`}
+          </Button>
         </section>
       )}
 

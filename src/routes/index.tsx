@@ -275,36 +275,59 @@ function CardCarousel({ deck, picked, onPick }: { deck: number[]; picked: number
   // Infinite: `cur` is an unbounded integer; positions are computed modulo deck length.
   const [cur, setCur] = useState(Math.floor(deck.length / 2));
   const [startX, setStartX] = useState<number | null>(null);
+  const [drag, setDrag] = useState(0); // live drag offset in "cards"
+  const STEP = 70;
   const n = deck.length;
   const go = (d: number) => setCur((c) => c + d);
   const curMod = ((cur % n) + n) % n;
+  const dragging = startX !== null;
+  const pos = (o: number) => {
+    const a = Math.abs(o);
+    const x = a <= 1 ? o * STEP : Math.sign(o) * (STEP + (a - 1) * 28);
+    return x;
+  };
   return (
     <div className="mt-6 select-none">
       <div
         className="relative mx-auto h-[360px] w-full touch-pan-y overflow-hidden"
-        onTouchStart={(e) => setStartX(e.touches[0]!.clientX)}
-        onTouchEnd={(e) => {
+        onTouchStart={(e) => { setStartX(e.touches[0]!.clientX); setDrag(0); }}
+        onTouchMove={(e) => {
           if (startX === null) return;
-          const dx = e.changedTouches[0]!.clientX - startX;
-          if (Math.abs(dx) > 30) go(dx < 0 ? 1 : -1);
+          setDrag(Math.max(-2.5, Math.min(2.5, (e.touches[0]!.clientX - startX) / STEP)));
+        }}
+        onTouchEnd={() => {
+          if (startX === null) return;
+          const steps = Math.round(drag) || (Math.abs(drag) > 0.25 ? Math.sign(drag) : 0);
+          if (steps) go(-steps);
+          setDrag(0);
           setStartX(null);
         }}
       >
         {deck.map((card, i) => {
           let off = (((i - curMod) % n) + n) % n;
           if (off > n / 2) off -= n;
-          if (Math.abs(off) > 3) return null;
+          if (Math.abs(off) > 4) return null;
+          const o = off + drag;
+          const a = Math.abs(o);
           const idx = picked.indexOf(card);
           const center = off === 0;
-          const scale = center ? 1 : 1 - Math.min(Math.abs(off), 3) * 0.1;
-          const x = off === 0 ? 0 : Math.sign(off) * (70 + (Math.abs(off) - 1) * 28);
+          const scale = 1 - Math.min(a, 3) * 0.1;
+          const x = pos(o);
+          const edge = Math.abs(off) >= 4;
           return (
             <button
               key={card}
               aria-label={center ? (idx >= 0 ? "Carta já escolhida" : "Escolher esta carta") : "Ver esta carta"}
               onClick={() => (center ? idx < 0 && onPick(card) : go(off))}
-              style={{ transform: `translate(-50%, -50%) translateX(${x}px) scale(${scale})`, zIndex: 10 - Math.abs(off), opacity: Math.abs(off) === 3 ? 0.5 : 1, transition: Math.abs(off) === 3 ? "none" : undefined }}
-              className={`absolute left-1/2 top-1/2 w-52 rounded-2xl transition-all duration-300 ${center ? "shadow-2xl" : "brightness-75"}`}
+              style={{
+                transform: `translate3d(calc(-50% + ${x}px), -50%, 0) scale(${scale})`,
+                zIndex: 10 - Math.round(a),
+                opacity: a >= 3 ? Math.max(0, 1 - (a - 2.5)) : 1,
+                filter: `brightness(${1 - Math.min(a, 1) * 0.25})`,
+                transition: dragging || edge ? "none" : "transform 450ms cubic-bezier(0.22,1,0.36,1), opacity 300ms ease, filter 300ms ease",
+                willChange: "transform",
+              }}
+              className={`absolute left-1/2 top-1/2 w-52 rounded-2xl ${center ? "shadow-xl" : ""}`}
             >
               <div style={{ perspective: 1000 }}>
                 <div className="relative transition-transform duration-700 [transform-style:preserve-3d]" style={{ transform: idx >= 0 ? "rotateY(180deg)" : "none" }}>

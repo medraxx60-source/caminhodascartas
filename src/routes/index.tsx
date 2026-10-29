@@ -299,9 +299,16 @@ function CardCarousel({ deck, picked, onPick }: { deck: number[]; picked: number
               aria-label={center ? (idx >= 0 ? "Desfazer esta carta" : "Escolher esta carta") : "Ver esta carta"}
               onClick={() => (center ? onPick(card) : setCur(i))}
               style={{ transform: `translate(-50%, -50%) translateX(${x}px) scale(${scale})`, zIndex: 10 - Math.abs(off), opacity: Math.abs(off) === 3 ? 0.5 : 1 }}
-              className={`absolute left-1/2 top-1/2 w-52 rounded-2xl transition-all duration-300 ${center ? "ring-4 ring-foreground/90 shadow-2xl" : "brightness-75"}`}
+              className={`absolute left-1/2 top-1/2 w-52 rounded-2xl transition-all duration-300 ${center ? "shadow-2xl" : "brightness-75"}`}
             >
-              {idx >= 0 ? <CardReveal index={card} order={idx + 1} /> : <CardBack />}
+              <div style={{ perspective: 1000 }}>
+                <div className="relative transition-transform duration-700 [transform-style:preserve-3d]" style={{ transform: idx >= 0 ? "rotateY(180deg)" : "none" }}>
+                  <div className="[backface-visibility:hidden]"><CardBack /></div>
+                  <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]">
+                    {idx >= 0 && <CardReveal index={card} order={idx + 1} />}
+                  </div>
+                </div>
+              </div>
             </button>
           );
         })}

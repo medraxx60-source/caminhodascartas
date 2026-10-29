@@ -187,7 +187,7 @@ function Index() {
             {Array.from({ length: p.count }, (_, i) => {
               const filled = picked[i] !== undefined;
               return (
-                <button key={i} type="button" disabled={!filled} onClick={() => filled && toggle(picked[i]!)}
+                <button key={i} type="button" disabled
                   aria-label={filled ? `Desfazer carta ${i + 1}` : `Espaço ${i + 1}`}
                   className={`flex h-12 w-10 items-center justify-center rounded-md border font-display text-lg font-bold shadow-inner transition-all ${filled ? "border-gold bg-gold text-primary-foreground shadow-lg" : "border-gold/40 bg-secondary text-foreground/80"}`}>
                   {i + 1}

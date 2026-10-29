@@ -269,3 +269,53 @@ function StepHeader({ n, title, hint }: { n: number; title: string; hint: string
     </div>
   );
 }
+
+function CardCarousel({ deck, picked, onPick }: { deck: number[]; picked: number[]; onPick: (c: number) => void }) {
+  const [cur, setCur] = useState(Math.floor(deck.length / 2));
+  const [startX, setStartX] = useState<number | null>(null);
+  const go = (d: number) => setCur((c) => Math.max(0, Math.min(deck.length - 1, c + d)));
+  const dots = [-2, -1, 0, 1, 2];
+  return (
+    <div className="mt-6 select-none">
+      <div
+        className="relative mx-auto h-[360px] w-full touch-pan-y overflow-hidden"
+        onTouchStart={(e) => setStartX(e.touches[0]!.clientX)}
+        onTouchEnd={(e) => {
+          if (startX === null) return;
+          const dx = e.changedTouches[0]!.clientX - startX;
+          if (Math.abs(dx) > 30) go(dx < 0 ? 1 : -1);
+          setStartX(null);
+        }}
+      >
+        {deck.map((card, i) => {
+          const off = i - cur;
+          if (Math.abs(off) > 3) return null;
+          const idx = picked.indexOf(card);
+          const center = off === 0;
+          const scale = center ? 1 : 1 - Math.min(Math.abs(off), 3) * 0.1;
+          const x = off === 0 ? 0 : Math.sign(off) * (70 + (Math.abs(off) - 1) * 28);
+          return (
+            <button
+              key={card}
+              aria-label={center ? (idx >= 0 ? "Desfazer esta carta" : "Escolher esta carta") : "Ver esta carta"}
+              onClick={() => (center ? onPick(card) : setCur(i))}
+              style={{ transform: `translate(-50%, -50%) translateX(${x}px) scale(${scale})`, zIndex: 10 - Math.abs(off), opacity: Math.abs(off) === 3 ? 0.5 : 1 }}
+              className={`absolute left-1/2 top-1/2 w-52 rounded-2xl transition-all duration-300 ${center ? "ring-4 ring-foreground/90 shadow-2xl" : "brightness-75"}`}
+            >
+              <CardBack selected={idx >= 0} order={idx >= 0 ? idx + 1 : undefined} />
+            </button>
+          );
+        })}
+      </div>
+      <div className="mt-2 flex items-center justify-center gap-2" aria-hidden>
+        {dots.map((d) => (
+          <span key={d} className={`h-3 w-3 rounded-full border border-foreground/70 ${d === 0 ? "ring-2 ring-foreground/80" : d < 0 ? "bg-foreground/40" : "bg-foreground/15"}`} />
+        ))}
+      </div>
+      <div className="mt-3 mb-5 flex justify-center gap-6 text-sm text-gold">
+        <button onClick={() => go(-1)} aria-label="Carta anterior">‹ anterior</button>
+        <button onClick={() => go(1)} aria-label="Próxima carta">próxima ›</button>
+      </div>
+    </div>
+  );
+}

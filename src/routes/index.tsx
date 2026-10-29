@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { CardBack } from "@/components/TarotCard";
+import { CardBack, CardReveal } from "@/components/TarotCard";
 import { CARDS, PLANS, PIX_KEY, PIX_QR_SRC, formatBRL, type PlanId } from "@/lib/lenormand";
 import { createOrder } from "@/lib/orders.functions";
 import heroTarot from "@/assets/hero-tarot.jpg";

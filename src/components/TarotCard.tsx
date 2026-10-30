@@ -28,7 +28,7 @@ export function CardReveal({ index, order }: { index: number; order: number }) {
   );
 }
 
-const cardImage = (index: number) =>
+export const cardImage = (index: number) =>
   Object.entries(CARD_IMAGES).find(([p]) => p.endsWith(`/${index + 1}.jpg`))?.[1];
 
 export function CardFace({ index, position }: { index: number; position?: string | undefined }) {

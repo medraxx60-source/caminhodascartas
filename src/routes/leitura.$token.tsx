@@ -2,8 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { CardFace } from "@/components/TarotCard";
-import { PLANS, type PlanId } from "@/lib/lenormand";
+import { CardFace, cardImage } from "@/components/TarotCard";
+import { CARDS, PLANS, type PlanId } from "@/lib/lenormand";
+import { layoutReading } from "@/lib/reading-layout";
 import { getOrderByToken } from "@/lib/orders.functions";
 
 const orderQuery = (token: string) =>
@@ -90,14 +91,48 @@ function Leitura() {
       <h1 className="mt-3 text-center text-4xl font-bold text-primary">Sua leitura</h1>
       <div className="gold-rule mx-auto mt-5 w-40" />
       <blockquote className="mt-8 rounded-lg border border-border bg-card p-4 font-display text-xl italic">“{order.question}”</blockquote>
-      <div className="mt-8 flex flex-wrap justify-center gap-3">
-        {(order.cards as number[]).map((c, i) => <CardFace key={c} index={c} position={plan.positions[i]} />)}
-      </div>
+      {order.status !== "done" && (
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
+          {(order.cards as number[]).map((c, i) => <CardFace key={c} index={c} position={plan.positions[i]} />)}
+        </div>
+      )}
       {order.status === "done" && order.reading ? (() => {
         const [main, angels] = order.reading.split(/\n*\s*CONSELHO DOS ANJOS:?\s*/i);
+        const cards = order.cards as number[];
+        const lay = layoutReading((main ?? "").trim(), cards);
         return (
           <>
-            <article className="mt-10 space-y-4 whitespace-pre-line leading-relaxed">{(main ?? "").trim()}</article>
+            {lay.intro.length > 0 && (
+              <div className="mt-8 space-y-4 leading-relaxed">{lay.intro.map((p, k) => <p key={k}>{p}</p>)}</div>
+            )}
+            <div className="mt-8 space-y-6">
+              {cards.map((c, i) => (
+                <section key={c} className="rounded-xl border border-border bg-card p-4 shadow-sm">
+                  <div className="flex items-center gap-4">
+                    <div className="aspect-[5/8] w-20 shrink-0 overflow-hidden rounded-md shadow-md ring-1 ring-gold/50">
+                      {cardImage(c) && <img src={cardImage(c)} alt={CARDS[c]} width={640} height={1024} loading="lazy" className="h-full w-full object-cover" />}
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.2em] text-gold">{i + 1}ª · {plan.positions[i]}</p>
+                      <h2 className="mt-1 font-display text-2xl font-semibold text-primary">{CARDS[c]}</h2>
+                      <p className="text-xs text-muted-foreground">Carta {c + 1}</p>
+                    </div>
+                  </div>
+                  {lay.perCard[i]!.length > 0 && (
+                    <div className="mt-4 space-y-3 border-t border-border/60 pt-4 leading-relaxed">
+                      {lay.perCard[i]!.map((p, k) => <p key={k}>{p}</p>)}
+                    </div>
+                  )}
+                </section>
+              ))}
+            </div>
+            {lay.conclusion.length > 0 && (
+              <section className="mt-10">
+                <h2 className="text-center font-display text-2xl font-semibold text-primary">Conclusão da leitura</h2>
+                <div className="gold-rule mx-auto mt-3 w-24" />
+                <div className="mt-4 space-y-4 leading-relaxed">{lay.conclusion.map((p, k) => <p key={k}>{p}</p>)}</div>
+              </section>
+            )}
             {angels?.trim() && (
               <section className="mt-10 rounded-xl border-2 border-gold bg-card p-6 text-center shadow-sm">
                 <p className="text-2xl text-gold">✦</p>

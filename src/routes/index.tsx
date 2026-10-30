@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { CardBack, CardReveal } from "@/components/TarotCard";
-import { CARDS, PLANS, PIX_KEY, PIX_QR_SRC, formatBRL, type PlanId } from "@/lib/lenormand";
+import { CARDS, PLANS, PIX_KEY, PIX_QR_SRC, formatBRL, type PlanId , CATEGORIES, type Category } from "@/lib/lenormand";
 import { createOrder } from "@/lib/orders.functions";
 import heroTarot from "@/assets/hero-tarot.jpg";
 
@@ -30,12 +30,6 @@ const PLAN_HINT: Record<PlanId, string> = {
   completa: "para uma visão completa",
 };
 
-const THEMES = [
-  { label: "Amor", example: "Como está minha vida amorosa e o que posso esperar?" },
-  { label: "Dinheiro", example: "O que preciso saber sobre minha vida financeira?" },
-  { label: "Saúde", example: "O que as cartas mostram sobre meu bem-estar?" },
-  { label: "Espiritualidade", example: "Qual mensagem espiritual preciso ouvir agora?" },
-];
 
 function shuffle(n: number) {
   const a = Array.from({ length: n }, (_, i) => i);
@@ -50,6 +44,7 @@ function Index() {
   const [plan, setPlan] = useState<PlanId | null>(null);
   const [step, setStep] = useState(0);
   const [question, setQuestion] = useState("");
+  const [category, setCategory] = useState<Category | null>(null);
   const [picked, setPicked] = useState<number[]>([]);
   const [deck, setDeck] = useState(() => Array.from({ length: CARDS.length }, (_, i) => i));
   const [token, setToken] = useState<string | null>(null);
@@ -74,7 +69,7 @@ function Index() {
     if (!plan || !p) return;
     setLoading(true);
     try {
-      const r = await create({ data: { plan, question, cards: picked } });
+      const r = await create({ data: { plan, category: category ?? "Outros assuntos", question, cards: picked } });
       setOrderCode(r.orderCode);
       setToken(r.token);
     } catch (e) {
@@ -91,7 +86,7 @@ function Index() {
 
   const MIN_Q = 10;
   const qLen = question.trim().length;
-  const qOk = qLen >= MIN_Q;
+  const qOk = qLen >= MIN_Q && !!category;
   const missing: string[] = [];
   if (p && !qOk) missing.push(`Escrever sua pergunta (mínimo ${MIN_Q} caracteres)`);
   if (p && picked.length < p.count) missing.push(`Escolher mais ${p.count - picked.length} carta(s)`);
@@ -150,28 +145,31 @@ function Index() {
       {p && step === 1 && (
         <section className="mt-8">
           <div className="text-center">
-            <h2 className="font-display text-3xl font-semibold text-foreground">Escreva sua pergunta</h2>
-            <p className="mt-2 text-muted-foreground">Toque em um tema para ver um exemplo, ou escreva com suas palavras.</p>
+            <h2 className="font-display text-3xl font-semibold text-foreground">Sobre o que é sua consulta?</h2>
+            <p className="mt-2 text-muted-foreground">Escolha o assunto da sua consulta.</p>
           </div>
           <div className="mt-6 rounded-xl border border-border bg-card p-4 shadow-sm">
             <div className="flex flex-wrap gap-2">
-              {THEMES.map((t) => (
-                <button key={t.label} type="button" onClick={() => setQuestion(t.example)}
-                  className="rounded-full border border-gold/70 bg-background px-4 py-1.5 text-sm font-medium text-gold transition-colors hover:bg-gold hover:text-background">
-                  {t.label}
+              {CATEGORIES.map((c) => (
+                <button key={c} type="button" onClick={() => setCategory(c)} aria-pressed={category === c}
+                  className={`rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${category === c ? "border-gold bg-gold text-background shadow-lg" : "border-gold/70 bg-background text-gold hover:bg-gold hover:text-background"}`}>
+                  {c}
                 </button>
               ))}
             </div>
-            <Textarea id="pergunta" className={`mt-4 min-h-32 bg-background text-base ${qOk ? "" : "border-destructive"}`} maxLength={1000}
-              placeholder="Ex.: O que preciso saber sobre minha vida profissional nos próximos meses?"
-              value={question} onChange={(e) => setQuestion(e.target.value)} />
+            {category && (<>
+              <h3 className="mt-6 font-display text-2xl font-semibold text-foreground">Qual é a sua pergunta?</h3>
+              <p className="mt-1 text-sm text-muted-foreground">Conte o que você gostaria de saber. Escreva com suas próprias palavras e receba uma leitura direcionada à sua situação.</p>
+              <Textarea id="pergunta" className="mt-4 min-h-32 bg-background text-base" maxLength={1000}
+                value={question} onChange={(e) => setQuestion(e.target.value)} />
+            </>)}
             <p className={`mt-2 text-sm ${qOk ? "text-gold" : "text-destructive"}`}>
-              {qOk ? "Pergunta pronta ✓" : `Mínimo de ${MIN_Q} caracteres (${qLen}/${MIN_Q})`}
+              {!category ? "Escolha um assunto acima" : qOk ? "Pergunta pronta ✓" : `Mínimo de ${MIN_Q} caracteres (${qLen}/${MIN_Q})`}
             </p>
           </div>
           <Button size="lg" className="gold-button mt-8 h-14 w-full rounded-xl text-lg"
             onClick={() => (qOk ? goStep(2) : document.getElementById("pergunta")?.focus())}>
-            {qOk ? "Escolher minhas cartas" : "Escreva sua pergunta para continuar"}
+            {qOk ? "Escolher minhas cartas" : !category ? "Escolha um assunto para continuar" : "Escreva sua pergunta para continuar"}
           </Button>
         </section>
       )}

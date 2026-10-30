@@ -43,6 +43,7 @@ function shuffle(n: number) {
 function Index() {
   const [plan, setPlan] = useState<PlanId | null>(null);
   const [step, setStep] = useState(0);
+  const [ritualDone, setRitualDone] = useState(false);
   const [question, setQuestion] = useState("");
   const [category, setCategory] = useState<Category | null>(null);
   const [picked, setPicked] = useState<number[]>([]);
@@ -174,7 +175,29 @@ function Index() {
         </section>
       )}
 
-      {p && step === 2 && (
+      {p && step === 2 && !ritualDone && (
+        <section className="mt-10 animate-in fade-in duration-1000 text-center">
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border border-gold/50 text-4xl text-gold shadow-[0_0_40px_-10px] shadow-gold animate-pulse [animation-duration:4s]">☾</div>
+          <p className="mt-6 text-xs uppercase tracking-[0.3em] text-gold">✦ Momento de conexão ✦</p>
+          <h2 className="mt-3 font-display text-3xl font-semibold text-foreground">Antes de abrir suas cartas…</h2>
+          <div className="gold-rule mx-auto mt-4 w-32" />
+          <div className="mt-6 space-y-4 rounded-2xl border border-gold/30 bg-card/70 p-6 text-left text-base leading-relaxed text-foreground/90 shadow-sm">
+            <p className="font-display text-xl text-gold">Este é o seu momento.</p>
+            <p>Respire fundo, tranquilize seus pensamentos e mentalize a pergunta que trouxe você até aqui.</p>
+            <p>Enquanto escolhe suas cartas, mantenha sua intenção em mente. Faça isso com calma, fé e o coração aberto.</p>
+            <p>Para quem acredita na espiritualidade, cada consulta pode ser um momento de conexão, reflexão e busca por orientação.</p>
+            <p>Não tenha pressa. Mentalize sua pergunta e permita-se receber a mensagem que esta leitura tem a oferecer.</p>
+          </div>
+          {question.trim() && (
+            <p className="mt-5 text-sm italic text-muted-foreground">“{question.trim()}”</p>
+          )}
+          <Button size="lg" className="gold-button mt-8 h-14 w-full rounded-xl text-lg" onClick={() => { setRitualDone(true); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
+            Estou pronto(a), abrir minhas cartas
+          </Button>
+        </section>
+      )}
+
+      {p && step === 2 && ritualDone && (
         <section className="mt-6">
           <div className="text-center">
             <h2 className="font-display text-3xl font-semibold text-foreground">Escolha {p.count} cartas</h2>

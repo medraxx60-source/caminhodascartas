@@ -266,7 +266,7 @@ function Index() {
             <Button size="sm" variant="outline" onClick={() => copy(orderCode, "Número do pedido")}>Copiar</Button>
           </div>
           <div className="space-y-2 border-t border-border pt-3 text-center">
-            <p className="text-xs text-muted-foreground">Sua leitura ficará disponível após a confirmação do pagamento.</p>
+            <p className="flex items-center justify-center gap-2 text-xs text-muted-foreground"><span className="inline-block h-2 w-2 animate-pulse rounded-full bg-gold" />Aguardando confirmação do pagamento… você será levado(a) à sua leitura automaticamente.</p>
             <Button asChild className="w-full">
               <a href={link}>Acompanhar meu pedido</a>
             </Button>

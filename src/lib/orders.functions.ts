@@ -92,6 +92,17 @@ export const getOrderByToken = createServerFn({ method: "POST" })
     return row ? { ...row, status } : null;
   });
 
+export const getOrderStatus = createServerFn({ method: "POST" })
+  .inputValidator((input: { token: string }) => {
+    if (!/^[a-f0-9]{48}$/.test(input.token ?? "")) throw new Error("Link inválido");
+    return input;
+  })
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row } = await supabaseAdmin.from("orders").select("status").eq("access_token", data.token).maybeSingle();
+    return { status: (row?.status as string | undefined) ?? null };
+  });
+
 async function isAdmin(supabase: any, userId: string) {
   const { data } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
   return !!data;
@@ -129,7 +140,7 @@ export const adminListOrders = createServerFn({ method: "POST" })
     await assertAdmin(context.supabase, context.userId);
     const { data, error } = await context.supabase
       .from("orders")
-      .select("id, plan, question, cards, status, price_cents, created_at, paid_at, error_message, generation_started_at, reading, client_stage, stage_updated_at")
+      .select("id, plan, question, cards, status, price_cents, created_at, paid_at, error_message, generation_started_at, reading, client_stage, stage_updated_at, access_token")
       .order("created_at", { ascending: false })
       .limit(200);
     if (error) throw new Error("Não foi possível carregar os pedidos");

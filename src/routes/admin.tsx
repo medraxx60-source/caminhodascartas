@@ -209,6 +209,15 @@ function Orders() {
             <p className="mt-2 inline-block rounded-full border border-gold bg-gold/10 px-3 py-1 text-xs font-semibold text-primary">Etapa atual: {STAGE_LABEL[o.client_stage] ?? o.client_stage}{o.stage_updated_at ? ` · ${new Date(o.stage_updated_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}` : ""}</p>
             <p className="mt-2">{o.question}</p>
             <p className="mt-1 text-xs text-muted-foreground">{(o.cards as number[]).map((c) => CARDS[c]).join(" · ")}</p>
+            {o.access_token && (() => {
+              const url = `${typeof window !== "undefined" ? window.location.origin : ""}/leitura/${o.access_token}`;
+              return (
+                <div className="mt-2 flex items-center gap-2 rounded-md bg-muted px-2 py-1.5">
+                  <a href={url} target="_blank" rel="noopener noreferrer" className="min-w-0 flex-1 truncate text-xs underline">{url}</a>
+                  <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(url); toast.success("Link da leitura copiado"); }}>Copiar link</Button>
+                </div>
+              );
+            })()}
             {o.error_message && <p className="mt-2 rounded-md bg-destructive/10 p-2 text-sm text-destructive">{o.error_message}</p>}
             {o.status === "generating" && !stale(o) && <p className="mt-2 text-xs text-muted-foreground">Em geração. Se não concluir em 5 minutos, será possível tentar novamente.</p>}
             {unsaved[o.id] && (

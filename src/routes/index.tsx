@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { CardBack, CardReveal } from "@/components/TarotCard";
 import { CARDS, PLANS, PIX_KEY, PIX_QR_SRC, formatBRL, type PlanId , CATEGORIES, type Category } from "@/lib/lenormand";
-import { createOrder } from "@/lib/orders.functions";
+import { createOrder, getOrderStatus } from "@/lib/orders.functions";
 import heroTarot from "@/assets/hero-tarot.jpg";
 
 export const Route = createFileRoute("/")({
@@ -54,6 +54,19 @@ function Index() {
   const create = useServerFn(createOrder);
   const p = plan ? PLANS[plan] : null;
   const link = useMemo(() => (token && typeof window !== "undefined" ? `${window.location.origin}/leitura/${token}` : ""), [token]);
+  const checkStatus = useServerFn(getOrderStatus);
+  useEffect(() => {
+    if (!token) return;
+    let stop = false;
+    const tick = async () => {
+      try {
+        const r = await checkStatus({ data: { token } });
+        if (!stop && r.status && r.status !== "pending") { stop = true; window.location.href = `/leitura/${token}`; }
+      } catch { /* tenta de novo */ }
+    };
+    const id = setInterval(tick, 2500);
+    return () => { stop = true; clearInterval(id); };
+  }, [token, checkStatus]);
 
   const choosePlan = (id: PlanId) => {
     if (id !== plan) { setPicked([]); setDeck(shuffle(CARDS.length)); }

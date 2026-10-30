@@ -29,6 +29,13 @@
       "when": 1792421397145,
       "tag": "0003_order_client_stage",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793364230909,
+      "tag": "0004_add_order_category",
+      "breakpoints": true
     }
   ]
 }

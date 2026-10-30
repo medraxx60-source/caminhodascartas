@@ -29,3 +29,14 @@ export const formatBRL = (cents: number) =>
 // Public payment details displayed in the Pix dialog.
 export const PIX_KEY = "34cdba87-43b2-4e53-ac3a-113c86eeacca";
 export const PIX_QR_SRC = pixQrImage;
+
+export const CATEGORIES = [
+  "Amor e relacionamentos",
+  "Trabalho e carreira",
+  "Dinheiro e prosperidade",
+  "Família e vida pessoal",
+  "Espiritualidade e autoconhecimento",
+  "Saúde e bem-estar",
+  "Outros assuntos",
+] as const;
+export type Category = (typeof CATEGORIES)[number];

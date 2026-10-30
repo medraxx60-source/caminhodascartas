@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           access_token: string
           cards: Json
+          category: string | null
           client_ip_hash: string | null
           client_stage: string
           completed_at: string | null
@@ -36,6 +37,7 @@ export type Database = {
         Insert: {
           access_token?: string
           cards: Json
+          category?: string | null
           client_ip_hash?: string | null
           client_stage?: string
           completed_at?: string | null
@@ -54,6 +56,7 @@ export type Database = {
         Update: {
           access_token?: string
           cards?: Json
+          category?: string | null
           client_ip_hash?: string | null
           client_stage?: string
           completed_at?: string | null
@@ -99,6 +102,7 @@ export type Database = {
         Returns: {
           access_token: string
           cards: Json
+          category: string | null
           client_ip_hash: string | null
           client_stage: string
           completed_at: string | null

@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeader } from "@tanstack/react-start/server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { CARDS, PLANS, type PlanId } from "./lenormand";
+import { CARDS, CATEGORIES, PLANS, type PlanId } from "./lenormand";
 
 const IP_LIMIT = 20; // orders per IP per window
 const GLOBAL_LIMIT = 300; // orders per window across all clients
@@ -13,7 +13,7 @@ async function sha256(text: string) {
 }
 
 export const createOrder = createServerFn({ method: "POST" })
-  .inputValidator((input: { plan: PlanId; question: string; cards: number[] }) => {
+  .inputValidator((input: { plan: PlanId; category?: string; question: string; cards: number[] }) => {
     const plan = PLANS[input.plan];
     if (!plan) throw new Error("Plano inválido");
     const question = String(input.question ?? "").trim();
@@ -21,7 +21,8 @@ export const createOrder = createServerFn({ method: "POST" })
     const cards = Array.isArray(input.cards) ? input.cards.map(Number) : [];
     if (cards.length !== plan.count || new Set(cards).size !== cards.length || cards.some((c) => !Number.isInteger(c) || c < 0 || c >= CARDS.length))
       throw new Error("Seleção de cartas inválida");
-    return { plan: input.plan, question, cards };
+    const category = (CATEGORIES as readonly string[]).includes(String(input.category)) ? String(input.category) : null;
+    return { plan: input.plan, category, question, cards };
   })
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -38,7 +39,7 @@ export const createOrder = createServerFn({ method: "POST" })
 
     const { data: row, error } = await supabaseAdmin
       .from("orders")
-      .insert({ plan: data.plan, question: data.question, cards: data.cards, price_cents: PLANS[data.plan].priceCents, client_ip_hash: ipHash })
+      .insert({ plan: data.plan, category: data.category, question: data.question, cards: data.cards, price_cents: PLANS[data.plan].priceCents, client_ip_hash: ipHash })
       .select("id, access_token")
       .single();
     if (error || !row) {
@@ -153,6 +154,9 @@ export const adminConfirmAndGenerate = createServerFn({ method: "POST" })
     const plan = PLANS[claimed.plan as PlanId];
     const spread = (claimed.cards as number[]).map((c, i) => `${i + 1}. ${plan.positions[i]}: ${CARDS[c]}`).join("\n");
 
+    const { data: catRow } = await context.supabase.from("orders").select("category").eq("id", claimed.id).maybeSingle();
+    const catLine = catRow?.category ? `Categoria (apenas contexto; não substitua a pergunta por uma pergunta genérica deste tema): ${catRow.category}\n` : "";
+
     let reading: string;
     try {
       const res = await fetch(endpoint, {
@@ -179,15 +183,17 @@ export const adminConfirmAndGenerate = createServerFn({ method: "POST" })
                   "7. Não seja excessivamente cautelosa a ponto de deixar a interpretação vaga. Apresente tendências simbólicas com clareza, sem prometer acontecimentos.",
                   "Resposta à pergunta:",
                   "8. A pergunta do consulente é o centro da leitura. Responda diretamente ao tema: amor recebe uma interpretação sobre amor; trabalho aborda trabalho; uma consulta espiritual explora a mensagem simbólica da tiragem. Não entregue uma interpretação que poderia servir para qualquer pergunta nem mensagens genéricas de bem-estar. Em amor, trabalho, dinheiro e outros assuntos, não prometa resultados nem apresente possibilidades simbólicas como certezas.",
+                  "Posições: elas são a estrutura da tiragem, não a estrutura dos parágrafos. Use a função de cada posição (ex.: Situação atual = contexto; Desafio = obstáculos e influências a compreender; Tendência = caminhos e possibilidades) para orientar a história, sem anunciar cada posição mecanicamente nem usar \"A carta X representa…\" ou \"A mensagem principal é…\".",
                   "9. Em consultas sobre saúde, mantenha a interpretação no campo simbólico e reflexivo. Nunca diagnostique, indique medicamentos ou tratamentos, nem prometa recuperação. Quando houver sintomas ou preocupação concreta, oriente a procurar um profissional de saúde.",
                   "Tamanho conforme o plano (a diferença entre os planos está na profundidade da análise, não na complexidade das palavras; nos três planos a experiência deve parecer uma consulta de cartomante):",
                   "- Essencial (3 cartas): 2 a 3 parágrafos curtos, resposta direta e orientação prática.",
                   "- Profunda (5 cartas): 3 a 4 parágrafos curtos, com maior desenvolvimento da situação, dos desafios e das possibilidades.",
                   "- Completa (7 cartas): 2 a 4 parágrafos curtos, com leitura mais aprofundada que integre as relações entre as cartas e suas posições, sem tornar a leitura cansativa. Planos maiores devem trazer mais profundidade interpretativa, não textos desnecessariamente longos.",
+                  "Cuidados: em amor não presuma se a pessoa está solteira, namorando ou casada; em trabalho não garanta emprego ou promoção; em dinheiro não garanta ganhos; em espiritualidade mantenha tom simbólico sem afirmar certezas sobrenaturais.",
                   "Formato: escreva em parágrafos, sem títulos nem markdown. Ordem: interpretação principal, terminando com uma resposta clara sobre a mensagem central da combinação e uma orientação prática relacionada à tiragem, nunca uma frase motivacional genérica; depois, numa linha separada, escreva exatamente \"CONSELHO DOS ANJOS:\" seguido de uma mensagem breve (2 a 3 frases), de tom espiritual, acolhedor e personalizado. Esse conselho deve complementar a interpretação com uma reflexão diferente, sem repetir a conclusão ou a interpretação principal, sem frases genéricas e sem prometer acontecimentos.",
                 ].join("\n"),
             },
-            { role: "user", content: `Pergunta: ${claimed.question}\n\nTiragem (${plan.name}, ${plan.count} cartas):\n${spread}` },
+            { role: "user", content: `${catLine}Pergunta do consulente (referência principal da leitura, use exatamente esta pergunta): ${claimed.question}\n\nTiragem (${plan.name}, ${plan.count} cartas):\n${spread}` },
           ],
         }),
       });

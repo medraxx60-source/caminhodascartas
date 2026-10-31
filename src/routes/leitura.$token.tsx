@@ -92,6 +92,16 @@ function Leitura() {
     setTimeout(() => qc.invalidateQueries({ queryKey: ["order", token] }), 800);
   };
   useEffect(() => {
+    if (!order) return;
+    try {
+      const list: { token: string; at: string; plan: string }[] = JSON.parse(localStorage.getItem("entre_cartas_readings") || "[]");
+      if (!list.some((r) => r.token === token)) {
+        list.unshift({ token, at: order.created_at, plan: order.plan });
+        localStorage.setItem("entre_cartas_readings", JSON.stringify(list.slice(0, 20)));
+      }
+    } catch {}
+  }, [token, !!order]);
+  useEffect(() => {
     if (order?.is_free && order.status === "pending" && !started) startFree();
   }, [order?.is_free, order?.status]);
   if (!order) return <Missing />;

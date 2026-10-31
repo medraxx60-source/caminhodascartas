@@ -313,16 +313,12 @@ function Index() {
           <Button size="lg" className="gold-button mt-8 h-14 w-full rounded-xl text-lg" disabled={loading || picked.length < p.count} onClick={submit}>
             {loading ? "Criando pedido..." : picked.length < p.count ? `Escolha mais ${p.count - picked.length} carta(s)` : token ? `Continuar pagamento · Pedido ${orderCode}` : `Ver interpretação · ${plan ? priceLabel(plan) : ""}`}
           </Button>
-          {token && (
-            <button type="button" onClick={restart} className="mt-4 block w-full text-center text-sm text-muted-foreground underline">
-              Deseja escolher outro plano ou refazer a pergunta?
-            </button>
-          )}
         </section>
       )}
 
-      <Dialog open={!!token && pixOpen} onOpenChange={(o) => { if (!o) setPixOpen(false); }}>
-        <DialogContent className="mystic max-h-[90vh] overflow-y-auto pb-20 sm:pb-6" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
+      {/* Payment screen is locked: it only leaves when the admin approves and we redirect to the reading. */}
+      <Dialog open={!!token} onOpenChange={() => {}}>
+        <DialogContent className="mystic max-h-[90vh] overflow-y-auto pb-20 sm:pb-6 [&>button.absolute]:hidden" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle className="font-display text-3xl text-primary">Finalize seu pagamento</DialogTitle>
             <DialogDescription>Falta pouco para acessar sua leitura.</DialogDescription>

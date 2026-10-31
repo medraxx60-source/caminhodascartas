@@ -285,7 +285,7 @@ function Index() {
       )}
 
       <Dialog open={!!token} onOpenChange={(o) => !o && setToken(null)}>
-        <DialogContent className="mystic max-h-[90vh] overflow-y-auto pb-20 sm:pb-6">
+        <DialogContent className="mystic max-h-[90vh] overflow-y-auto pb-20 sm:pb-6" onInteractOutside={(e) => { if ((e.target as HTMLElement)?.closest?.("[data-a11y]")) e.preventDefault(); }}>
           <DialogHeader>
             <DialogTitle className="font-display text-3xl text-primary">Finalize seu pagamento</DialogTitle>
             <DialogDescription>Falta pouco para acessar sua leitura.</DialogDescription>

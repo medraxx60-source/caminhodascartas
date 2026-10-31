@@ -127,7 +127,7 @@ function Orders() {
   };
   const [orders, setOrders] = useState<Order[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
-  const [tab, setTab] = useState<"pending" | "paid">("pending");
+  const [tab, setTab] = useState<"pending" | "paid" | "free">("pending");
   const [unsaved, setUnsaved] = useState<Record<string, string>>({});
 
   const [refreshing, setRefreshing] = useState(false);
@@ -142,7 +142,7 @@ function Orders() {
 
   const code = (o: Order) => o.id.slice(0, 8).toUpperCase();
   const stale = (o: Order) => o.status === "generating" && !!o.generation_started_at && Date.now() - new Date(o.generation_started_at).getTime() > STALE_MS;
-  const canRun = (o: Order) => !o.hasReading && (o.status === "pending" || o.status === "error" || stale(o));
+  const canRun = (o: Order) => !o.is_free && !o.hasReading && (o.status === "pending" || o.status === "error" || stale(o));
 
   const run = async (o: Order) => {
     const msg = o.status === "pending"
@@ -179,8 +179,16 @@ function Orders() {
     }
   };
 
-  // Free (cortesia) orders never need payment approval, so they stay out of the "Pendentes" tab.
-  const shown = (orders ?? []).filter((o) => (tab === "pending" ? !o.is_free && (o.status === "pending" || o.status === "error") : o.is_free || o.status === "done" || o.status === "generating" || o.status === "rejected"));
+  // Free (cortesia) orders never need payment approval, so they stay out of "Pendentes" and are never counted as revenue.
+  const all = orders ?? [];
+  const shown = all.filter((o) =>
+    tab === "pending" ? !o.is_free && (o.status === "pending" || o.status === "error")
+    : tab === "free" ? o.is_free
+    : !o.is_free && (o.status === "done" || o.status === "generating" || o.status === "rejected"));
+  const paidDone = all.filter((o) => !o.is_free && (o.status === "done" || o.status === "generating"));
+  const revenue = paidDone.reduce((s, o) => s + o.price_cents, 0);
+  const freeDone = all.filter((o) => o.is_free && o.status === "done").length;
+  const freeTotal = all.filter((o) => o.is_free).length;
 
   return (
     <main className="mx-auto max-w-2xl px-5 py-10">
@@ -190,9 +198,15 @@ function Orders() {
         <Button variant="ghost" onClick={() => supabase.auth.signOut()}>Sair</Button>
       </div>
       <FreeToggle />
-      <div className="mt-6 flex gap-2">
+      <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+        <div className="rounded-lg border border-border bg-card p-3"><p className="text-xs text-muted-foreground">Consultas pagas</p><p className="text-2xl font-bold text-primary">{paidDone.length}</p></div>
+        <div className="rounded-lg border border-border bg-card p-3"><p className="text-xs text-muted-foreground">Receita recebida</p><p className="text-lg font-bold text-primary">{formatBRL(revenue)}</p></div>
+        <div className="rounded-lg border border-border bg-card p-3"><p className="text-xs text-muted-foreground">Tiragens grátis</p><p className="text-2xl font-bold text-primary">{freeDone}</p><p className="text-[10px] text-muted-foreground">{freeTotal} no total</p></div>
+      </div>
+      <div className="mt-6 flex flex-wrap gap-2">
         <Button variant={tab === "pending" ? "default" : "outline"} onClick={() => setTab("pending")}>Pendentes</Button>
         <Button variant={tab === "paid" ? "default" : "outline"} onClick={() => setTab("paid")}>Pagos</Button>
+        <Button variant={tab === "free" ? "default" : "outline"} onClick={() => setTab("free")}>Grátis</Button>
         <Button variant="ghost" onClick={refresh} disabled={refreshing}>
           <span className={refreshing ? "inline-block animate-spin" : "inline-block"}>↻</span>
           {refreshing ? "Atualizando..." : "Atualizar"}
@@ -203,11 +217,14 @@ function Orders() {
         {orders && shown.length === 0 && <p className="text-muted-foreground">Nenhum pedido.</p>}
         {shown.map((o) => (
           <div key={o.id} className="rounded-lg border border-border bg-card p-4">
-            <div className="flex items-baseline justify-between">
-              <span className="font-mono text-xl font-bold tracking-widest text-primary">{code(o)}</span>
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="flex items-center gap-2">
+                <span className="font-mono text-xl font-bold tracking-widest text-primary">{code(o)}</span>
+                {o.is_free && <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold tracking-wider text-primary-foreground">GRÁTIS</span>}
+              </span>
               <span className="text-xs text-muted-foreground">{new Date(o.created_at).toLocaleString("pt-BR")}</span>
             </div>
-            <p className="text-sm font-semibold">{PLANS[o.plan as PlanId].name} · {o.is_free ? "🎁 Cortesia (grátis)" : formatBRL(o.price_cents)} · {STATUS_LABEL[o.status] ?? o.status}</p>
+            <p className="text-sm font-semibold">{PLANS[o.plan as PlanId].name} · {(o.cards as number[]).length} cartas · {o.is_free ? "R$ 0 (cortesia)" : formatBRL(o.price_cents)} · {STATUS_LABEL[o.status] ?? o.status}</p>
             <p className="mt-2 inline-block rounded-full border border-gold bg-gold/10 px-3 py-1 text-xs font-semibold text-primary">Etapa atual: {STAGE_LABEL[o.client_stage] ?? o.client_stage}{o.stage_updated_at ? ` · ${new Date(o.stage_updated_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}` : ""}</p>
             <p className="mt-2">{o.question}</p>
             <p className="mt-1 text-xs text-muted-foreground">{(o.cards as number[]).map((c) => CARDS[c]).join(" · ")}</p>

@@ -319,11 +319,10 @@ function Index() {
             ) : slow ? (
               <p role="status" className="rounded-md border border-gold bg-gold/10 p-3 text-sm text-foreground">Ainda não identificamos a sua transferência. Abra o app do seu banco, cole a chave Pix e confirme o pagamento para suas cartas serem reveladas.</p>
             ) : null}
-            <p className="flex items-center justify-center gap-2 text-xs text-muted-foreground"><span className="inline-block h-2 w-2 animate-pulse rounded-full bg-gold" />Aguardando confirmação do pagamento… você será levado(a) à sua leitura automaticamente.</p>
-            <Button asChild className="w-full">
+            <p role="status" className="flex items-start justify-center gap-3 rounded-md border border-gold/60 bg-gold/10 p-4 text-left text-base font-semibold leading-relaxed text-foreground"><span className="mt-2 inline-block h-3 w-3 shrink-0 animate-pulse rounded-full bg-gold" />Aguardando confirmação do pagamento… você será levado(a) à sua leitura automaticamente.</p>
+            <Button asChild className="mt-4 w-full">
               <a href={link}>Acompanhar meu pedido</a>
             </Button>
-            <button className="text-xs text-muted-foreground underline" onClick={() => copy(link, "Link")}>Copiar link para guardar</button>
           </div>
         </DialogContent>
       </Dialog>

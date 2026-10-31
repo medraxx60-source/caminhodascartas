@@ -67,13 +67,22 @@ function Index() {
   }, [checkFree]);
   const isFreePlan = (id: PlanId) => id === "essencial" && !!free?.enabled && !!free?.eligible;
   const priceLabel = (id: PlanId) => (isFreePlan(id) ? "Grátis" : formatBRL(PLANS[id].priceCents));
+  const [nudged, setNudged] = useState(false);
+  const [slow, setSlow] = useState(false);
+  useEffect(() => {
+    if (!token) return;
+    setNudged(false); setSlow(false);
+    const t = setTimeout(() => setSlow(true), 3 * 60 * 1000);
+    return () => clearTimeout(t);
+  }, [token]);
   useEffect(() => {
     if (!token) return;
     let stop = false;
     const tick = async () => {
       try {
         const r = await checkStatus({ data: { token } });
-        if (!stop && r.status && r.status !== "pending") { stop = true; window.location.href = `/leitura/${token}`; }
+        if (!stop && r.status && r.status !== "pending") { stop = true; window.location.href = `/leitura/${token}`; return; }
+        if (!stop && r.nudgedAt) setNudged(true);
       } catch { /* tenta de novo */ }
     };
     const id = setInterval(tick, 2500);
@@ -287,6 +296,11 @@ function Index() {
             <Button size="sm" variant="outline" onClick={() => copy(orderCode, "Número do pedido")}>Copiar</Button>
           </div>
           <div className="space-y-2 border-t border-border pt-3 text-center">
+            {nudged ? (
+              <p role="alert" className="rounded-md border border-destructive bg-destructive/15 p-3 text-sm font-semibold text-foreground">Atenção: conferimos e o seu Pix ainda não foi identificado. Verifique no app do seu banco se a transferência foi concluída com o valor correto.</p>
+            ) : slow ? (
+              <p role="status" className="rounded-md border border-gold bg-gold/10 p-3 text-sm text-foreground">Ainda não identificamos a sua transferência. Abra o app do seu banco, cole a chave Pix e confirme o pagamento para suas cartas serem reveladas.</p>
+            ) : null}
             <p className="flex items-center justify-center gap-2 text-xs text-muted-foreground"><span className="inline-block h-2 w-2 animate-pulse rounded-full bg-gold" />Aguardando confirmação do pagamento… você será levado(a) à sua leitura automaticamente.</p>
             <Button asChild className="w-full">
               <a href={link}>Acompanhar meu pedido</a>

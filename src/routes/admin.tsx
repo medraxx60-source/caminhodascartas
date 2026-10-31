@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { CARDS, PLANS, formatBRL, type PlanId } from "@/lib/lenormand";
-import { adminGetFreeSetting, adminSetFreeSetting, adminConfirmAndGenerate, adminListOrders, adminRejectOrder, adminSaveReading, adminStatus, claimAdmin } from "@/lib/orders.functions";
+import { adminGetFreeSetting, adminSetFreeSetting, adminConfirmAndGenerate, adminListOrders, adminRejectOrder, adminNudgePayment, adminSaveReading, adminStatus, claimAdmin } from "@/lib/orders.functions";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -125,6 +125,13 @@ function Orders() {
     catch (e) { toast.error(e instanceof Error ? e.message : "Erro"); }
     finally { setBusy(null); load(); }
   };
+  const nudgeFn = useServerFn(adminNudgePayment);
+  const nudge = async (o: Order) => {
+    setBusy(o.id);
+    try { await nudgeFn({ data: { id: o.id } }); toast.success("Aviso enviado para a tela do cliente"); }
+    catch (e) { toast.error(e instanceof Error ? e.message : "Erro"); }
+    finally { setBusy(null); load(); }
+  };
   const [orders, setOrders] = useState<Order[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [tab, setTab] = useState<"pending" | "paid" | "free">("pending");
@@ -228,7 +235,13 @@ function Orders() {
             <p className="mt-2 inline-block rounded-full border border-gold bg-gold/10 px-3 py-1 text-xs font-semibold text-primary">Etapa atual: {STAGE_LABEL[o.client_stage] ?? o.client_stage}{o.stage_updated_at ? ` · ${new Date(o.stage_updated_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}` : ""}</p>
             <p className="mt-2">{o.question}</p>
             <p className="mt-1 text-xs text-muted-foreground">{(o.cards as number[]).map((c) => CARDS[c]).join(" · ")}</p>
-            {o.access_token && (() => {
+            {!o.is_free && o.status === "pending" && (
+              <div className="mt-2 space-y-1">
+                <Button size="sm" variant="outline" className="w-full" disabled={busy === o.id} onClick={() => nudge(o)}>Avisar Pix pendente</Button>
+                {(o as any).payment_nudged_at && <p className="text-xs text-muted-foreground">Avisado às {new Date((o as any).payment_nudged_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</p>}
+              </div>
+            )}
+            {o.access_token && (o.is_free || o.status === "done" || o.status === "generating") && (() => {
               const url = `${typeof window !== "undefined" ? window.location.origin : ""}/leitura/${o.access_token}`;
               return (
                 <div className="mt-2 flex items-center gap-2 rounded-md bg-muted px-2 py-1.5">

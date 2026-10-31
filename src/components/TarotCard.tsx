@@ -4,7 +4,7 @@ import { CARDS } from "@/lib/lenormand";
 export function CardBack({ selected, order }: { selected?: boolean | undefined; order?: number | undefined }) {
   return (
     <div className={`relative aspect-[5/8] overflow-hidden rounded-xl shadow-sm transition-all ${selected ? "-translate-y-2 shadow-lg ring-2 ring-gold ring-offset-2 ring-offset-card" : ""}`}>
-      <img src={cardBack} alt="Carta virada" width={640} height={1024} loading="lazy" className="h-full w-full object-cover" />
+      <img src={cardBack} alt="Carta virada" width={640} height={1024} loading="eager" decoding="async" fetchPriority="high" className="h-full w-full object-cover" />
       {order !== undefined && (
         <span className="absolute inset-0 flex items-center justify-center">
           <span className="flex h-7 w-7 items-center justify-center rounded-full border border-gold bg-card font-display text-base font-bold text-primary shadow">
@@ -49,4 +49,12 @@ export function CardFace({ index, position }: { index: number; position?: string
       {position && <span className="text-xs text-muted-foreground">{position}</span>}
     </div>
   );
+}
+
+let preloaded = false;
+export function preloadCardImages() {
+  if (preloaded || typeof window === "undefined") return;
+  preloaded = true;
+  const all = [cardBack, ...Object.values(CARD_IMAGES)];
+  all.forEach((src) => { const i = new Image(); i.decoding = "async"; i.src = src; i.decode?.().catch(() => {}); });
 }

@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { CardBack, CardReveal } from "@/components/TarotCard";
+import { CardBack, CardReveal, preloadCardImages } from "@/components/TarotCard";
 import { CARDS, PLANS, PIX_KEY, PIX_QR_SRC, formatBRL, type PlanId , CATEGORIES, type Category } from "@/lib/lenormand";
 import { createOrder, getOrderStatus, checkFreeReading, createFreeOrder } from "@/lib/orders.functions";
 import heroTarot from "@/assets/hero-tarot.jpg";
@@ -58,6 +58,7 @@ function Index() {
   const p = plan ? PLANS[plan] : null;
   const link = useMemo(() => (token && typeof window !== "undefined" ? `${window.location.origin}/leitura/${token}` : ""), [token]);
   const checkStatus = useServerFn(getOrderStatus);
+  useEffect(() => { if (plan) preloadCardImages(); }, [plan]);
   const checkFree = useServerFn(checkFreeReading);
   const createFree = useServerFn(createFreeOrder);
   const [deviceId, setDeviceId] = useState<string | null>(null);
@@ -455,7 +456,7 @@ function CardCarousel({ deck, picked, onPick }: { deck: number[]; picked: number
                 <div className="relative transition-transform duration-700 [transform-style:preserve-3d]" style={{ transform: idx >= 0 ? "rotateY(180deg)" : "none" }}>
                   <div className="[backface-visibility:hidden]"><CardBack /></div>
                   <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]">
-                    {idx >= 0 && <CardReveal index={card} order={idx + 1} />}
+                    {(idx >= 0 || Math.abs(off) <= 2) && <CardReveal index={card} order={Math.max(idx, 0) + 1} />}
                   </div>
                 </div>
               </div>

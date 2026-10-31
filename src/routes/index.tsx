@@ -309,7 +309,13 @@ function Index() {
               );
             })}
           </div>
-          {picked.length > 0 && <p className="mt-2 text-center text-xs text-muted-foreground">Toque num número para trocar a carta</p>}
+          {picked.length > 0 && !token && (
+            <button type="button" disabled={loading}
+              onClick={() => { setPicked([]); setDeck(shuffle(CARDS.length)); }}
+              className="mx-auto mt-3 block text-sm text-gold underline-offset-4 hover:underline">
+              ↻ Embaralhar e escolher novamente
+            </button>
+          )}
           <Button size="lg" className="gold-button mt-8 h-14 w-full rounded-xl text-lg" disabled={loading || picked.length < p.count} onClick={submit}>
             {loading ? "Criando pedido..." : picked.length < p.count ? `Escolha mais ${p.count - picked.length} carta(s)` : token ? `Continuar pagamento · Pedido ${orderCode}` : `Ver interpretação · ${plan ? priceLabel(plan) : ""}`}
           </Button>

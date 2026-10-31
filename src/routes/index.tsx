@@ -59,6 +59,10 @@ function Index() {
   const createFree = useServerFn(createFreeOrder);
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [free, setFree] = useState<{ enabled: boolean; eligible: boolean } | null>(null);
+  const [myReadings, setMyReadings] = useState<{ token: string; at: string; plan: string }[]>([]);
+  useEffect(() => {
+    try { setMyReadings(JSON.parse(localStorage.getItem("entre_cartas_readings") || "[]")); } catch {}
+  }, []);
   useEffect(() => {
     let id = localStorage.getItem("entre_cartas_device_id");
     if (!id || !/^[0-9a-f-]{36}$/i.test(id)) { id = crypto.randomUUID(); localStorage.setItem("entre_cartas_device_id", id); }
@@ -156,6 +160,20 @@ function Index() {
           <p className="mt-4 text-lg text-foreground/90">Faça sua pergunta objetiva: amor, dinheiro, saúde, espiritualidade.</p>
         </div>
       </header>
+
+      {myReadings.length > 0 && (
+        <section className="mb-10 rounded-2xl border border-gold/50 bg-card p-4">
+          <p className="font-display text-lg text-gold">Minhas leituras</p>
+          <div className="mt-3 space-y-2">
+            {myReadings.slice(0, 5).map((r) => (
+              <a key={r.token} href={`/leitura/${r.token}`} className="flex items-center justify-between rounded-xl border border-border px-3 py-2 text-sm text-foreground">
+                <span>{PLANS[r.plan as PlanId]?.name ?? "Leitura"} · {new Date(r.at).toLocaleDateString("pt-BR")}</span>
+                <span className="text-gold">Abrir ›</span>
+              </a>
+            ))}
+          </div>
+        </section>
+      )}
 
       <StepHeader n={1} title="Escolha sua consulta" hint="Toque em uma das opções abaixo." />
       <section className="space-y-3">

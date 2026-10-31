@@ -79,6 +79,7 @@ export type Database = {
           id: string
           is_free: boolean
           paid_at: string | null
+          payment_nudged_at: string | null
           plan: string
           price_cents: number
           question: string
@@ -99,6 +100,7 @@ export type Database = {
           id?: string
           is_free?: boolean
           paid_at?: string | null
+          payment_nudged_at?: string | null
           plan: string
           price_cents: number
           question: string
@@ -119,6 +121,7 @@ export type Database = {
           id?: string
           is_free?: boolean
           paid_at?: string | null
+          payment_nudged_at?: string | null
           plan?: string
           price_cents?: number
           question?: string
@@ -166,6 +169,7 @@ export type Database = {
           id: string
           is_free: boolean
           paid_at: string | null
+          payment_nudged_at: string | null
           plan: string
           price_cents: number
           question: string

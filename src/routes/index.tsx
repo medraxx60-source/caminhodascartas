@@ -9,6 +9,7 @@ import { CardBack, CardReveal, preloadCardImages } from "@/components/TarotCard"
 import { CARDS, PLANS, PIX_KEY, PIX_QR_SRC, formatBRL, type PlanId , CATEGORIES, type Category } from "@/lib/lenormand";
 import { createOrder, getOrderStatus, checkFreeReading, createFreeOrder } from "@/lib/orders.functions";
 import heroTarot from "@/assets/hero-tarot.jpg";
+import cardBackSrc from "@/assets/card-back.jpg";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -58,6 +59,7 @@ function Index() {
   const p = plan ? PLANS[plan] : null;
   const link = useMemo(() => (token && typeof window !== "undefined" ? `${window.location.origin}/leitura/${token}` : ""), [token]);
   const checkStatus = useServerFn(getOrderStatus);
+  useEffect(() => { const b = new Image(); b.src = cardBackSrc; }, []);
   useEffect(() => { if (plan) preloadCardImages(); }, [plan]);
   const checkFree = useServerFn(checkFreeReading);
   const createFree = useServerFn(createFreeOrder);

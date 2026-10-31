@@ -78,7 +78,7 @@ export const getOrderByToken = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row } = await supabaseAdmin
       .from("orders")
-      .select("plan, question, cards, status, reading, price_cents, created_at")
+      .select("plan, question, cards, status, reading, price_cents, created_at, is_free")
       .eq("access_token", data.token)
       .maybeSingle();
     if (row) {
@@ -87,8 +87,8 @@ export const getOrderByToken = createServerFn({ method: "POST" })
         .eq("access_token", data.token).neq("client_stage", "reading");
     }
     const s = row?.status;
-    const status: "done" | "rejected" | "generating" | "pending" =
-      s === "done" ? "done" : s === "rejected" ? "rejected" : s === "generating" ? "generating" : "pending";
+    const status: "done" | "rejected" | "generating" | "pending" | "error" =
+      s === "done" ? "done" : s === "rejected" ? "rejected" : s === "generating" ? "generating" : s === "error" && row?.is_free ? "error" : "pending";
     return row ? { ...row, status } : null;
   });
 
@@ -140,7 +140,7 @@ export const adminListOrders = createServerFn({ method: "POST" })
     await assertAdmin(context.supabase, context.userId);
     const { data, error } = await context.supabase
       .from("orders")
-      .select("id, plan, question, cards, status, price_cents, created_at, paid_at, error_message, generation_started_at, reading, client_stage, stage_updated_at, access_token")
+      .select("id, plan, question, cards, status, price_cents, created_at, paid_at, error_message, generation_started_at, reading, client_stage, stage_updated_at, access_token, is_free")
       .order("created_at", { ascending: false })
       .limit(200);
     if (error) throw new Error("Não foi possível carregar os pedidos");
@@ -218,4 +218,139 @@ export const adminRejectOrder = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error || !row) throw new Error("Não foi possível recusar (o pedido pode já estar em geração ou concluído).");
     return { ok: true };
+  });
+
+// ================= 1ª tiragem gratuita (isolada do fluxo pago: sem Pix, Telegram ou aprovação) =================
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const FREE_IP_LIMIT = 3; // tiragens grátis por rede (IP) em 30 dias — proteção complementar, não bloqueio permanente
+
+async function clientIpHash() {
+  const ip = getRequestHeader("cf-connecting-ip") || getRequestHeader("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  return sha256(`entre-cartas:${ip}`);
+}
+async function freeEnabled(admin: any) {
+  const { data } = await admin.from("app_settings").select("value").eq("key", "free_reading_enabled").maybeSingle();
+  return data ? data.value === true : true;
+}
+function validDevice(id: unknown) {
+  const s = String(id ?? "");
+  if (!UUID_RE.test(s)) throw new Error("Identificador inválido");
+  return s.toLowerCase();
+}
+
+export const checkFreeReading = createServerFn({ method: "POST" })
+  .inputValidator((input: { deviceId: string }) => ({ deviceId: validDevice(input.deviceId) }))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    if (!(await freeEnabled(supabaseAdmin))) return { enabled: false, eligible: false };
+    const ipHash = await clientIpHash();
+    const since = new Date(Date.now() - 30 * 86400000).toISOString();
+    const [{ count: dev }, { count: ip }] = await Promise.all([
+      supabaseAdmin.from("free_reading_claims").select("id", { count: "exact", head: true }).eq("device_id", data.deviceId).eq("status", "consumed"),
+      supabaseAdmin.from("free_reading_claims").select("id", { count: "exact", head: true }).eq("ip_hash", ipHash).in("status", ["reserved", "consumed"]).gte("created_at", since),
+    ]);
+    return { enabled: true, eligible: (dev ?? 0) === 0 && (ip ?? 0) < FREE_IP_LIMIT };
+  });
+
+const FREE_ERR: Record<string, string> = {
+  already_used: "Você já aproveitou sua 1ª leitura de cortesia.",
+  in_progress: "Sua leitura gratuita já está sendo preparada em outra aba.",
+  ip_limit: "O limite de leituras de cortesia desta rede foi atingido.",
+};
+function freeError(msg?: string) {
+  const k = Object.keys(FREE_ERR).find((key) => msg?.includes(key));
+  return new Error(k ? FREE_ERR[k] : "Não foi possível iniciar a leitura gratuita");
+}
+
+export const createFreeOrder = createServerFn({ method: "POST" })
+  .inputValidator((input: { deviceId: string; category?: string; question: string; cards: number[] }) => {
+    const plan = PLANS.essencial;
+    const question = String(input.question ?? "").trim();
+    if (question.length < 5 || question.length > 1000) throw new Error("Pergunta deve ter entre 5 e 1000 caracteres");
+    const cards = Array.isArray(input.cards) ? input.cards.map(Number) : [];
+    if (cards.length !== plan.count || new Set(cards).size !== cards.length || cards.some((c) => !Number.isInteger(c) || c < 0 || c >= CARDS.length))
+      throw new Error("Seleção de cartas inválida");
+    const category = (CATEGORIES as readonly string[]).includes(String(input.category)) ? String(input.category) : null;
+    return { deviceId: validDevice(input.deviceId), category, question, cards };
+  })
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    if (!(await freeEnabled(supabaseAdmin))) throw new Error("A leitura de cortesia não está disponível no momento.");
+    const ipHash = await clientIpHash();
+    const { data: claimId, error: rErr } = await supabaseAdmin.rpc("reserve_free_reading", { _device: data.deviceId, _ip: ipHash, _ip_limit: FREE_IP_LIMIT });
+    if (rErr || !claimId) throw freeError(rErr?.message);
+    const { data: row, error } = await supabaseAdmin
+      .from("orders")
+      .insert({ plan: "essencial", category: data.category, question: data.question, cards: data.cards, price_cents: 0, is_free: true, client_ip_hash: ipHash, client_stage: "waiting" })
+      .select("id, access_token")
+      .single();
+    if (error || !row) {
+      await supabaseAdmin.from("free_reading_claims").update({ status: "released" }).eq("id", claimId);
+      throw new Error("Não foi possível criar a leitura");
+    }
+    await supabaseAdmin.from("free_reading_claims").update({ order_id: row.id }).eq("id", claimId);
+    return { token: row.access_token };
+  });
+
+// Gera a leitura gratuita. Só consome a gratuidade após a IA responder e o texto ser salvo.
+export const runFreeGeneration = createServerFn({ method: "POST" })
+  .inputValidator((input: { token: string }) => {
+    if (!/^[a-f0-9]{48}$/.test(input.token ?? "")) throw new Error("Link inválido");
+    return input;
+  })
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: order } = await supabaseAdmin.from("orders").select("id, is_free, status, reading").eq("access_token", data.token).maybeSingle();
+    if (!order || !order.is_free) throw new Error("Pedido inválido");
+    if (order.reading) return { ok: true };
+    const { data: claim } = await supabaseAdmin.from("free_reading_claims").select("id, device_id, ip_hash, status").eq("order_id", order.id).order("created_at", { ascending: false }).limit(1).maybeSingle();
+    if (!claim) throw new Error("Pedido inválido");
+    if (claim.status !== "reserved") {
+      // Reserva anterior foi liberada (falha da IA): reserva de novo para esta mesma leitura.
+      const { error } = await supabaseAdmin.rpc("reserve_free_reading", { _device: claim.device_id, _ip: claim.ip_hash, _order: order.id, _ip_limit: FREE_IP_LIMIT + 1 });
+      if (error) throw freeError(error.message);
+    } else {
+      await supabaseAdmin.from("free_reading_claims").update({ expires_at: new Date(Date.now() + 10 * 60000).toISOString() }).eq("id", claim.id);
+    }
+    // Trava atômica da geração: apenas uma requisição passa.
+    const staleBefore = new Date(Date.now() - 5 * 60000).toISOString();
+    const { data: locked } = await supabaseAdmin.from("orders")
+      .update({ status: "generating", generation_started_at: new Date().toISOString(), error_message: null })
+      .eq("id", order.id).is("reading", null)
+      .or(`status.in.(pending,error),and(status.eq.generating,generation_started_at.lt.${staleBefore})`)
+      .select("id, plan, cards, question, category").maybeSingle();
+    if (!locked) return { ok: true }; // outra aba já está gerando
+    const release = () => supabaseAdmin.from("free_reading_claims").update({ status: "released" }).eq("order_id", order.id).eq("status", "reserved");
+    try {
+      const { generateReadingText } = await import("./reading-ai.server");
+      const reading = await generateReadingText({ id: locked.id, plan: locked.plan, cards: locked.cards as number[], question: locked.question, category: locked.category });
+      const { error } = await supabaseAdmin.from("orders").update({ status: "done", reading, completed_at: new Date().toISOString() }).eq("id", locked.id);
+      if (error) throw new Error("Falha ao salvar a leitura");
+      await supabaseAdmin.from("free_reading_claims").update({ status: "consumed", consumed_at: new Date().toISOString() }).eq("order_id", order.id).eq("status", "reserved");
+      return { ok: true };
+    } catch (e) {
+      console.error(`[free] generation failed order=${locked.id}`, e instanceof Error ? e.message : e);
+      await supabaseAdmin.from("orders").update({ status: "error", error_message: e instanceof Error ? e.message : "falha" }).eq("id", locked.id).is("reading", null);
+      await release();
+      return { ok: false };
+    }
+  });
+
+export const adminGetFreeSetting = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    return { enabled: await freeEnabled(supabaseAdmin) };
+  });
+
+export const adminSetFreeSetting = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { enabled: boolean }) => ({ enabled: input.enabled === true }))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("app_settings").upsert({ key: "free_reading_enabled", value: data.enabled, updated_at: new Date().toISOString() });
+    if (error) throw new Error("Não foi possível salvar");
+    return { enabled: data.enabled };
   });

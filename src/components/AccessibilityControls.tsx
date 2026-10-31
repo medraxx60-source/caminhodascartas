@@ -27,7 +27,7 @@ export function AccessibilityControls() {
   }, [size, contrast, loaded]);
 
   return (
-    <div className="fixed bottom-3 left-3 z-[70]">
+    <div data-a11y className="pointer-events-auto fixed bottom-3 left-3 z-[70]">
       {open && (
         <div role="dialog" aria-label="Acessibilidade" className="mb-2 w-64 rounded-xl border-2 border-gold bg-card p-4 text-foreground shadow-xl">
           <p className="font-display text-xl font-semibold text-gold">Acessibilidade</p>

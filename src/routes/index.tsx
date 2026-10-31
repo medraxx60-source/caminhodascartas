@@ -51,6 +51,7 @@ function Index() {
   const [picked, setPicked] = useState<number[]>([]);
   const [deck, setDeck] = useState(() => Array.from({ length: CARDS.length }, (_, i) => i));
   const [token, setToken] = useState<string | null>(null);
+  const [pixOpen, setPixOpen] = useState(false);
   const [orderCode, setOrderCode] = useState("");
   const [loading, setLoading] = useState(false);
   const create = useServerFn(createOrder);
@@ -71,8 +72,12 @@ function Index() {
       const s = JSON.parse(localStorage.getItem(PENDING_KEY) || "null");
       if (s?.token && Date.now() - (s.at ?? 0) < 24 * 60 * 60 * 1000) {
         if (s.plan && s.plan in PLANS) setPlan(s.plan);
+        if (s.category) setCategory(s.category);
+        if (s.question) setQuestion(s.question);
+        if (Array.isArray(s.cards) && s.cards.length) { setPicked(s.cards); setRitualDone(true); setStep(2); }
         setOrderCode(s.orderCode ?? "");
         setToken(s.token);
+        setPixOpen(true);
       } else if (s) localStorage.removeItem(PENDING_KEY);
     } catch {}
   }, []);
@@ -107,7 +112,10 @@ function Index() {
   }, [token, checkStatus]);
 
   const choosePlan = (id: PlanId) => {
-    if (id !== plan) { setPicked([]); setDeck(shuffle(CARDS.length)); }
+    if (id !== plan) {
+      setPicked([]); setDeck(shuffle(CARDS.length));
+      if (token) { setToken(null); setOrderCode(""); try { localStorage.removeItem(PENDING_KEY); } catch {} }
+    }
     setPlan(id);
   };
 
@@ -117,8 +125,17 @@ function Index() {
     setPicked((cur) => (cur.includes(card) || cur.length >= p.count ? cur : [...cur, card]));
   };
 
+  const restart = () => {
+    setToken(null); setOrderCode(""); setPixOpen(false);
+    try { localStorage.removeItem(PENDING_KEY); } catch {}
+    setPicked([]); setDeck(shuffle(CARDS.length)); setQuestion(""); setCategory(null); setRitualDone(false);
+    goStep(0);
+  };
+
   const submit = async () => {
     if (!plan || !p) return;
+    // Reuse the existing unpaid order instead of creating a duplicate.
+    if (token) { setPixOpen(true); return; }
     setLoading(true);
     try {
       if (isFreePlan(plan) && deviceId) {
@@ -129,7 +146,8 @@ function Index() {
       const r = await create({ data: { plan, category: category ?? "Outros assuntos", question, cards: picked } });
       setOrderCode(r.orderCode);
       setToken(r.token);
-      try { localStorage.setItem(PENDING_KEY, JSON.stringify({ token: r.token, orderCode: r.orderCode, plan, at: Date.now() })); } catch {}
+      setPixOpen(true);
+      try { localStorage.setItem(PENDING_KEY, JSON.stringify({ token: r.token, orderCode: r.orderCode, plan, category, question, cards: picked, at: Date.now() })); } catch {}
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao criar pedido");
     } finally {
@@ -293,12 +311,17 @@ function Index() {
           </div>
           {picked.length > 0 && <p className="mt-2 text-center text-xs text-muted-foreground">Toque num número para trocar a carta</p>}
           <Button size="lg" className="gold-button mt-8 h-14 w-full rounded-xl text-lg" disabled={loading || picked.length < p.count} onClick={submit}>
-            {loading ? "Criando pedido..." : picked.length < p.count ? `Escolha mais ${p.count - picked.length} carta(s)` : `Ver interpretação · ${plan ? priceLabel(plan) : ""}`}
+            {loading ? "Criando pedido..." : picked.length < p.count ? `Escolha mais ${p.count - picked.length} carta(s)` : token ? `Continuar pagamento · Pedido ${orderCode}` : `Ver interpretação · ${plan ? priceLabel(plan) : ""}`}
           </Button>
+          {token && (
+            <button type="button" onClick={restart} className="mt-4 block w-full text-center text-sm text-muted-foreground underline">
+              Deseja escolher outro plano ou refazer a pergunta?
+            </button>
+          )}
         </section>
       )}
 
-      <Dialog open={!!token} onOpenChange={(o) => { if (!o) { setToken(null); try { localStorage.removeItem(PENDING_KEY); } catch {} } }}>
+      <Dialog open={!!token && pixOpen} onOpenChange={(o) => { if (!o) setPixOpen(false); }}>
         <DialogContent className="mystic max-h-[90vh] overflow-y-auto pb-20 sm:pb-6" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle className="font-display text-3xl text-primary">Finalize seu pagamento</DialogTitle>

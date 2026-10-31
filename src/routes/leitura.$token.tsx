@@ -8,6 +8,7 @@ import { layoutReading } from "@/lib/reading-layout";
 import { getOrderByToken, runFreeGeneration } from "@/lib/orders.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 const orderQuery = (token: string) =>
   queryOptions({
@@ -162,6 +163,9 @@ function Leitura() {
                 <h2 className="mt-1 font-display text-3xl font-semibold text-primary">Conselho dos Anjos</h2>
                 <div className="gold-rule mx-auto mt-3 w-24" />
                 <p className="mt-4 whitespace-pre-line font-display text-xl italic leading-relaxed">{angels.trim()}</p>
+                <Button variant="outline" className="mt-5" onClick={() => { navigator.clipboard.writeText(`✦ Conselho dos Anjos ✦\n\n${angels.trim()}\n\n— EntreCarta.tarô ${window.location.origin}`); toast.success("Conselho copiado"); }}>
+                  Copiar conselho
+                </Button>
               </section>
             )}
           </>
@@ -187,11 +191,14 @@ function Leitura() {
           <p className="mt-2 text-sm text-muted-foreground">Assim que seu Pix for confirmado, sua leitura aparecerá aqui automaticamente. Deixe esta página aberta.</p>
         </div>
       )}
-      <div className="mt-12 border-t border-border/60 pt-6 text-center">
-        <Button asChild size="lg" className="w-full">
-          <Link to="/">Voltar ao início</Link>
+      <div className="mt-12 rounded-xl border border-gold/50 bg-card/70 p-5 text-center">
+        {order.status === "done" && plan.count < 7 && (
+          <p className="mb-3 text-base text-foreground">Quer aprofundar essa resposta? Uma tiragem de {plan.count < 5 ? "5 ou 7" : "7"} cartas mostra mais detalhes da sua situação.</p>
+        )}
+        <Button asChild size="lg" className="gold-button h-14 w-full rounded-xl text-lg">
+          <Link to="/">Fazer nova consulta</Link>
         </Button>
-        <p className="mt-3 text-xs text-muted-foreground">Quer saber mais? Faça uma nova pergunta.</p>
+        <p className="mt-3 text-xs text-muted-foreground">Esta leitura fica salva em “Minhas leituras”, no menu ☰ da tela inicial.</p>
       </div>
     </main>
   );

@@ -33,6 +33,16 @@ const PLAN_HINT: Record<PlanId, string> = {
   completa: "para uma visão completa",
 };
 
+const QUESTION_SUGGESTIONS: Record<string, string[]> = {
+  "Amor e relacionamentos": ["Como estão as energias entre mim e essa pessoa?", "O que esperar da minha vida amorosa nos próximos meses?"],
+  "Trabalho e carreira": ["O que esperar do meu trabalho nos próximos meses?", "Devo mudar de emprego agora?"],
+  "Dinheiro e prosperidade": ["Como vai ficar minha vida financeira nos próximos meses?", "O que está travando minha prosperidade?"],
+  "Família e vida pessoal": ["Como melhorar a relação com minha família?", "O que preciso entender sobre este momento da minha vida?"],
+  "Espiritualidade e autoconhecimento": ["Qual mensagem espiritual preciso receber agora?", "O que preciso desenvolver em mim neste momento?"],
+  "Saúde e bem-estar": ["Como cuidar melhor da minha energia e bem-estar?", "O que está pesando no meu emocional?"],
+  "Outros assuntos": ["O que preciso saber sobre a situação que estou vivendo?", "Qual caminho devo seguir agora?"],
+};
+
 
 function shuffle(n: number) {
   const a = Array.from({ length: n }, (_, i) => i);
@@ -188,13 +198,13 @@ function Index() {
 
       {step === 0 && (<>
       <header className="relative -mx-5 mb-10 overflow-hidden">
-        <img src={heroTarot} alt="Cartas de tarô sobre veludo verde com vela e estrelas douradas" width={1280} height={960} className="h-[460px] w-full object-cover" />
+        <img src={heroTarot} alt="Cartas de tarô sobre veludo verde com vela e estrelas douradas" width={1280} height={960} className="h-[340px] w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 px-6 pb-8 text-center">
+        <div className="absolute inset-x-0 bottom-0 px-6 pb-4 text-center">
           <p className="text-xs uppercase tracking-[0.3em] text-gold">Tarô Cigano · Baralho Cigano</p>
-          <h1 className="mt-2 text-5xl font-bold text-foreground">Cartas de Tarô</h1>
-          <div className="gold-rule mx-auto mt-4 w-40" />
-          <p className="mt-4 text-lg text-foreground/90">Faça sua pergunta objetiva: amor, dinheiro, saúde, espiritualidade.</p>
+          <h1 className="mt-2 text-4xl font-bold text-foreground">Cartas de Tarô</h1>
+          <div className="gold-rule mx-auto mt-3 w-40" />
+          <p className="mt-3 text-base text-foreground/90">Faça sua pergunta e receba sua leitura: amor, dinheiro, saúde, espiritualidade.</p>
         </div>
       </header>
 
@@ -238,6 +248,7 @@ function Index() {
             >
               <div className="min-w-0">
                 {isFreePlan(id) && <span className="mb-1 inline-block rounded-full bg-gold px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-background">1ª Tiragem Gratuita</span>}
+                {id === "profunda" && <span className="mb-1 inline-block rounded-full border border-gold px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-gold">✦ Mais escolhida</span>}
                 <h3 className="font-display text-2xl font-semibold leading-tight">{pl.name}</h3>
                 <p className="mt-1 text-sm text-muted-foreground">{pl.count} cartas · {PLAN_HINT[id]}</p>
               </div>
@@ -246,11 +257,14 @@ function Index() {
           );
         })}
       </section>
+      <div className="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+        <span>🔒 Consulta privada</span><span>⚡ Resposta na hora</span><span>✦ Baralho Cigano tradicional</span>
+      </div>
       {free?.enabled && !free.eligible && (
         <p className="mt-4 rounded-xl border border-gold/40 bg-card/70 p-4 text-center text-sm text-muted-foreground">Você já aproveitou sua 1ª leitura de cortesia ✦ As tiragens de 5 e 7 cartas trazem uma visão ainda mais completa da sua situação.</p>
       )}
       <Button size="lg" className="gold-button mt-8 h-14 w-full rounded-xl text-lg" disabled={!p} onClick={() => goStep(1)}>
-        {p ? "Continuar" : "Escolha uma consulta acima"}
+        {p ? `Continuar com ${p.name}` : "Escolha uma consulta acima"}
       </Button>
       </>)}
 
@@ -273,10 +287,21 @@ function Index() {
               <h3 className="mt-6 font-display text-2xl font-semibold text-foreground">Qual é a sua pergunta?</h3>
               <p className="mt-1 text-sm text-muted-foreground">Conte o que você gostaria de saber. Escreva com suas próprias palavras e receba uma leitura direcionada à sua situação.</p>
               <Textarea id="pergunta" className="mt-4 min-h-32 bg-background text-base" maxLength={1000}
-                value={question} onChange={(e) => setQuestion(e.target.value)} />
+                value={question} onChange={(e) => setQuestion(e.target.value)}
+                onFocus={(e) => { const el = e.currentTarget; setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "center" }), 300); }} />
+              {!question.trim() && (
+                <div className="mt-3">
+                  <p className="text-xs text-muted-foreground">Sem ideias? Toque em uma sugestão:</p>
+                  <div className="mt-2 flex flex-col gap-2">
+                    {(QUESTION_SUGGESTIONS[category] ?? QUESTION_SUGGESTIONS["Outros assuntos"]!).map((s) => (
+                      <button key={s} type="button" onClick={() => setQuestion(s)} className="rounded-lg border border-border bg-background/60 px-3 py-2 text-left text-sm text-muted-foreground hover:border-gold hover:text-foreground">“{s}”</button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </>)}
-            <p className={`mt-2 text-sm ${qOk ? "text-gold" : "text-destructive"}`}>
-              {!category ? "Escolha um assunto acima" : qOk ? "Pergunta pronta ✓" : `Mínimo de ${MIN_Q} caracteres (${qLen}/${MIN_Q})`}
+            <p className={`mt-2 text-sm ${qOk ? "text-gold" : category && qLen > 0 ? "text-destructive" : "text-muted-foreground"}`}>
+              {!category ? "Escolha um assunto acima" : qOk ? "Sua pergunta está pronta ✓ Vamos às cartas." : `Mínimo de ${MIN_Q} caracteres (${qLen}/${MIN_Q})`}
             </p>
           </div>
           <Button size="lg" className="gold-button mt-8 h-14 w-full rounded-xl text-lg"
@@ -292,16 +317,17 @@ function Index() {
           <p className="mt-6 text-xs uppercase tracking-[0.3em] text-gold">✦ Momento de conexão ✦</p>
           <h2 className="mt-3 font-display text-3xl font-semibold text-foreground">Antes de abrir suas cartas…</h2>
           <div className="gold-rule mx-auto mt-4 w-32" />
-          <div className="mt-6 space-y-4 rounded-2xl border border-gold/30 bg-card/70 p-6 text-left text-base leading-relaxed text-foreground/90 shadow-sm">
-            <p className="font-display text-xl text-gold">Este é o seu momento.</p>
-            <p>Respire fundo, tranquilize seus pensamentos e mentalize a pergunta que trouxe você até aqui.</p>
-            <p>Enquanto escolhe suas cartas, mantenha sua intenção em mente. Faça isso com calma, fé e o coração aberto.</p>
-            <p>Para quem acredita na espiritualidade, cada consulta pode ser um momento de conexão, reflexão e busca por orientação.</p>
-            <p>Não tenha pressa. Mentalize sua pergunta e permita-se receber a mensagem que esta leitura tem a oferecer.</p>
+          <div className="mt-6 space-y-3 text-lg leading-relaxed text-foreground/90">
+            <p>Respire fundo e acalme seus pensamentos.</p>
+            <p>Mentalize com fé a pergunta que trouxe você até aqui.</p>
           </div>
           {question.trim() && (
-            <p className="mt-5 text-sm italic text-muted-foreground">“{question.trim()}”</p>
+            <div className="mt-6 rounded-2xl border border-gold/50 bg-card/70 p-6 shadow-[0_0_40px_-15px] shadow-gold">
+              <p className="text-xs uppercase tracking-[0.25em] text-gold">Sua pergunta</p>
+              <p className="mt-2 font-display text-2xl italic text-foreground">“{question.trim()}”</p>
+            </div>
           )}
+          <p className="mt-5 text-sm text-muted-foreground">Não tenha pressa. Quando sentir, abra suas cartas.</p>
           <Button size="lg" className="gold-button mt-8 h-14 w-full rounded-xl text-lg" onClick={() => { setRitualDone(true); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
             Estou pronto(a), abrir minhas cartas
           </Button>
@@ -312,15 +338,18 @@ function Index() {
         <section className="mt-6">
           <div className="text-center">
             <h2 className="font-display text-3xl font-semibold text-foreground">Escolha {p.count} cartas</h2>
-            <p className="mx-auto mt-2 max-w-xs text-muted-foreground">Pense na sua pergunta, deslize o baralho e toque na carta que sentir.</p>
+            <p className="mx-auto mt-2 max-w-xs text-muted-foreground">Deslize o dedo para os lados e toque na carta do centro que sentir.</p>
           </div>
           <CardCarousel deck={deck} picked={picked} onPick={toggle} />
+          <p className="mb-3 text-center text-sm font-semibold text-gold" aria-live="polite">
+            {picked.length < p.count ? `Cartas escolhidas: ${picked.length} de ${p.count}` : "✦ Sua tiragem está completa ✦"}
+          </p>
           <div className="flex justify-center gap-2">
             {Array.from({ length: p.count }, (_, i) => {
               const filled = picked[i] !== undefined;
               return (
                 <button key={i} type="button" disabled
-                  aria-label={filled ? `Desfazer carta ${i + 1}` : `Espaço ${i + 1}`}
+                  aria-label={filled ? `Carta ${i + 1} escolhida` : `Espaço ${i + 1}`}
                   className={`flex h-12 w-10 items-center justify-center rounded-md border font-display text-lg font-bold shadow-inner transition-all ${filled ? "border-gold bg-gold text-background shadow-lg" : "border-gold/40 bg-secondary text-foreground/80"}`}>
                   {i + 1}
                 </button>
@@ -334,8 +363,8 @@ function Index() {
               ↻ Embaralhar e escolher novamente
             </button>
           )}
-          <Button size="lg" className="gold-button mt-8 h-14 w-full rounded-xl text-lg" disabled={loading || picked.length < p.count} onClick={submit}>
-            {loading ? "Criando pedido..." : picked.length < p.count ? `Escolha mais ${p.count - picked.length} carta(s)` : token ? `Continuar pagamento · Pedido ${orderCode}` : `Ver interpretação · ${plan ? priceLabel(plan) : ""}`}
+          <Button size="lg" className={`gold-button mt-8 h-14 w-full rounded-xl text-lg ${picked.length === p.count && !loading ? "animate-pulse [animation-duration:2.5s]" : ""}`} disabled={loading || picked.length < p.count} onClick={submit}>
+            {loading ? "Preparando sua leitura..." : picked.length < p.count ? `Escolha mais ${p.count - picked.length} carta(s)` : token ? `Continuar pagamento · Pedido ${orderCode}` : `Ver interpretação · ${plan ? priceLabel(plan) : ""}`}
           </Button>
         </section>
       )}
@@ -352,20 +381,21 @@ function Index() {
             <p className="font-display text-5xl font-bold text-primary">{p && formatBRL(p.priceCents)}</p>
             <p className="mt-1 text-xs text-destructive">Pague exatamente este valor para sua leitura ser liberada.</p>
           </div>
-          <img src={PIX_QR_SRC} alt="QR Code Pix" className="mx-auto aspect-square w-56 rounded-md border border-gold bg-card p-1 object-contain" />
-          <div>
-            <p className="mb-1 text-xs text-muted-foreground">Chave Pix</p>
-            <div className="flex items-center gap-2">
-              <code className="min-w-0 flex-1 break-all rounded-md bg-muted px-3 py-2 text-xs">{PIX_KEY}</code>
-              <Button size="sm" variant="outline" onClick={() => copy(PIX_KEY, "Chave Pix")}>Copiar</Button>
-            </div>
+          <div className="grid grid-cols-3 gap-2 text-center text-xs text-foreground">
+            {["Copie a chave Pix", "Pague no app do banco", "Volte aqui para sua leitura"].map((t, i) => (
+              <div key={t} className="rounded-lg border border-gold/40 bg-card p-2">
+                <span className="mx-auto mb-1 flex h-7 w-7 items-center justify-center rounded-full bg-gold font-bold text-background">{i + 1}</span>
+                {t}
+              </div>
+            ))}
           </div>
-          <ol className="list-decimal space-y-1 pl-5 text-sm text-muted-foreground">
-            <li>Abra o aplicativo do seu banco.</li>
-            <li>Escaneie o QR Code ou cole a chave Pix.</li>
-            <li>Digite o valor <strong className="text-foreground">{p && formatBRL(p.priceCents)}</strong> e confirme.</li>
-            <li>Volte para esta página para acompanhar sua leitura.</li>
-          </ol>
+          <Button size="lg" className="gold-button h-14 w-full rounded-xl text-lg" onClick={() => { copy(PIX_KEY, "Chave Pix"); try { navigator.vibrate?.(60); } catch {} }}>
+            Copiar chave Pix
+          </Button>
+          <code className="block break-all rounded-md bg-muted px-3 py-2 text-center text-xs">{PIX_KEY}</code>
+          <img src={PIX_QR_SRC} alt="QR Code Pix" className="mx-auto aspect-square w-48 rounded-md border border-gold bg-card p-1 object-contain" />
+          <p className="text-center text-sm text-muted-foreground">Digite o valor <strong className="text-foreground">{p && formatBRL(p.priceCents)}</strong> no app do banco e confirme.</p>
+          <p className="rounded-md border border-border bg-card/70 p-3 text-center text-sm text-muted-foreground">🔒 Pode sair para o app do banco tranquilo(a): seu pedido e suas cartas ficam guardados e esta tela volta igual.</p>
           <div className="flex items-center justify-between gap-2 rounded-md bg-muted px-3 py-2">
             <p className="text-sm">Na descrição do Pix, informe: <span className="font-mono font-bold tracking-widest text-primary">{orderCode}</span></p>
             <Button size="sm" variant="outline" onClick={() => copy(orderCode, "Número do pedido")}>Copiar</Button>

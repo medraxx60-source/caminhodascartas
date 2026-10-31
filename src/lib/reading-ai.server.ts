@@ -68,6 +68,8 @@ export async function generateReadingText(order: { id: string; plan: string; car
       reading = json?.choices?.[0]?.message?.content?.trim();
       if (!reading) throw new Error("A MandAPI respondeu sem texto.");
     } catch (e) {
+      const msg = e instanceof Error ? e.message : "Falha de conexão com a MandAPI.";
+      if (!(e instanceof Error)) console.error(`[mandapi] order=${claimed.id} network error`);
       throw new Error(msg);
     }
     return reading;

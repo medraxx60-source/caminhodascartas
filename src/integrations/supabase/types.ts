@@ -14,6 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
+      }
+      free_reading_claims: {
+        Row: {
+          consumed_at: string | null
+          created_at: string
+          device_id: string
+          expires_at: string
+          id: string
+          ip_hash: string
+          order_id: string | null
+          status: string
+        }
+        Insert: {
+          consumed_at?: string | null
+          created_at?: string
+          device_id: string
+          expires_at?: string
+          id?: string
+          ip_hash: string
+          order_id?: string | null
+          status?: string
+        }
+        Update: {
+          consumed_at?: string | null
+          created_at?: string
+          device_id?: string
+          expires_at?: string
+          id?: string
+          ip_hash?: string
+          order_id?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           access_token: string
@@ -26,6 +77,7 @@ export type Database = {
           error_message: string | null
           generation_started_at: string | null
           id: string
+          is_free: boolean
           paid_at: string | null
           plan: string
           price_cents: number
@@ -45,6 +97,7 @@ export type Database = {
           error_message?: string | null
           generation_started_at?: string | null
           id?: string
+          is_free?: boolean
           paid_at?: string | null
           plan: string
           price_cents: number
@@ -64,6 +117,7 @@ export type Database = {
           error_message?: string | null
           generation_started_at?: string | null
           id?: string
+          is_free?: boolean
           paid_at?: string | null
           plan?: string
           price_cents?: number
@@ -110,6 +164,7 @@ export type Database = {
           error_message: string | null
           generation_started_at: string | null
           id: string
+          is_free: boolean
           paid_at: string | null
           plan: string
           price_cents: number
@@ -131,6 +186,15 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      reserve_free_reading: {
+        Args: {
+          _device: string
+          _ip: string
+          _ip_limit?: number
+          _order?: string
+        }
+        Returns: string
       }
     }
     Enums: {

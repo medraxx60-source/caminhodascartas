@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button";
 import { CardFace, cardImage } from "@/components/TarotCard";
 import { CARDS, PLANS, type PlanId } from "@/lib/lenormand";
 import { layoutReading } from "@/lib/reading-layout";
-import { getOrderByToken } from "@/lib/orders.functions";
+import { getOrderByToken, runFreeGeneration } from "@/lib/orders.functions";
+import { useServerFn } from "@tanstack/react-start";
+import { useQueryClient } from "@tanstack/react-query";
 
 const orderQuery = (token: string) =>
   queryOptions({
@@ -81,6 +83,17 @@ function Missing() {
 function Leitura() {
   const { token } = Route.useParams();
   const { data: order } = useSuspenseQuery(orderQuery(token));
+  const runFree = useServerFn(runFreeGeneration);
+  const qc = useQueryClient();
+  const [started, setStarted] = useState(false);
+  const startFree = () => {
+    setStarted(true);
+    runFree({ data: { token } }).catch(() => {}).finally(() => qc.invalidateQueries({ queryKey: ["order", token] }));
+    setTimeout(() => qc.invalidateQueries({ queryKey: ["order", token] }), 800);
+  };
+  useEffect(() => {
+    if (order?.is_free && order.status === "pending" && !started) startFree();
+  }, [order?.is_free, order?.status]);
   if (!order) return <Missing />;
   const plan = PLANS[order.plan as PlanId];
 
@@ -147,6 +160,14 @@ function Leitura() {
         <div className="mt-10 rounded-lg border border-destructive bg-card p-6 text-center">
           <p className="font-display text-2xl text-destructive">Pedido não aprovado</p>
           <p className="mt-2 text-sm text-muted-foreground">Não conseguimos confirmar o pagamento deste pedido. Se você pagou, entre em contato informando o número do pedido.</p>
+        </div>
+      ) : order.is_free && order.status === "pending" ? (
+        <GeneratingProgress />
+      ) : order.status === "error" ? (
+        <div className="mt-10 rounded-lg border border-gold bg-card p-6 text-center">
+          <p className="font-display text-2xl text-primary">Não conseguimos concluir sua leitura agora</p>
+          <p className="mt-2 text-sm text-muted-foreground">Sua leitura de cortesia não foi consumida. Toque abaixo para tentar novamente.</p>
+          <Button className="mt-4" onClick={startFree}>Tentar novamente</Button>
         </div>
       ) : order.status === "generating" ? (
         <GeneratingProgress />

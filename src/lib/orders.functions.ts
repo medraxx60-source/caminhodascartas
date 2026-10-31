@@ -99,8 +99,8 @@ export const getOrderStatus = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: row } = await supabaseAdmin.from("orders").select("status").eq("access_token", data.token).maybeSingle();
-    return { status: (row?.status as string | undefined) ?? null };
+    const { data: row } = await supabaseAdmin.from("orders").select("status, payment_nudged_at").eq("access_token", data.token).maybeSingle();
+    return { status: (row?.status as string | undefined) ?? null, nudgedAt: (row?.payment_nudged_at as string | null | undefined) ?? null };
   });
 
 async function isAdmin(supabase: any, userId: string) {
@@ -140,7 +140,7 @@ export const adminListOrders = createServerFn({ method: "POST" })
     await assertAdmin(context.supabase, context.userId);
     const { data, error } = await context.supabase
       .from("orders")
-      .select("id, plan, question, cards, status, price_cents, created_at, paid_at, error_message, generation_started_at, reading, client_stage, stage_updated_at, access_token, is_free")
+      .select("id, plan, question, cards, status, price_cents, created_at, paid_at, error_message, generation_started_at, reading, client_stage, stage_updated_at, access_token, is_free, payment_nudged_at")
       .order("created_at", { ascending: false })
       .limit(200);
     if (error) throw new Error("Não foi possível carregar os pedidos");
@@ -217,6 +217,24 @@ export const adminRejectOrder = createServerFn({ method: "POST" })
       .select("id")
       .maybeSingle();
     if (error || !row) throw new Error("Não foi possível recusar (o pedido pode já estar em geração ou concluído).");
+    return { ok: true };
+  });
+
+// Admin tells a waiting client their Pix has not arrived yet (shown live on the Pix screen).
+export const adminNudgePayment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { id: string }) => ({ id: String(input.id ?? "") }))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const { data: row, error } = await context.supabase
+      .from("orders")
+      .update({ payment_nudged_at: new Date().toISOString() } as any)
+      .eq("id", data.id)
+      .eq("status", "pending")
+      .eq("is_free", false)
+      .select("id")
+      .maybeSingle();
+    if (error || !row) throw new Error("Não foi possível avisar (o pedido pode não estar mais pendente).");
     return { ok: true };
   });
 

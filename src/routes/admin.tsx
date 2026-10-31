@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { CARDS, PLANS, formatBRL, type PlanId } from "@/lib/lenormand";
-import { adminConfirmAndGenerate, adminListOrders, adminRejectOrder, adminSaveReading, adminStatus, claimAdmin } from "@/lib/orders.functions";
+import { adminGetFreeSetting, adminSetFreeSetting, adminConfirmAndGenerate, adminListOrders, adminRejectOrder, adminSaveReading, adminStatus, claimAdmin } from "@/lib/orders.functions";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -179,7 +179,8 @@ function Orders() {
     }
   };
 
-  const shown = (orders ?? []).filter((o) => (tab === "pending" ? o.status === "pending" || o.status === "error" : o.status === "done" || o.status === "generating" || o.status === "rejected"));
+  // Free (cortesia) orders never need payment approval, so they stay out of the "Pendentes" tab.
+  const shown = (orders ?? []).filter((o) => (tab === "pending" ? !o.is_free && (o.status === "pending" || o.status === "error") : o.is_free || o.status === "done" || o.status === "generating" || o.status === "rejected"));
 
   return (
     <main className="mx-auto max-w-2xl px-5 py-10">
@@ -188,6 +189,7 @@ function Orders() {
         <h1 className="text-4xl font-bold text-primary">Pedidos</h1>
         <Button variant="ghost" onClick={() => supabase.auth.signOut()}>Sair</Button>
       </div>
+      <FreeToggle />
       <div className="mt-6 flex gap-2">
         <Button variant={tab === "pending" ? "default" : "outline"} onClick={() => setTab("pending")}>Pendentes</Button>
         <Button variant={tab === "paid" ? "default" : "outline"} onClick={() => setTab("paid")}>Pagos</Button>
@@ -205,7 +207,7 @@ function Orders() {
               <span className="font-mono text-xl font-bold tracking-widest text-primary">{code(o)}</span>
               <span className="text-xs text-muted-foreground">{new Date(o.created_at).toLocaleString("pt-BR")}</span>
             </div>
-            <p className="text-sm font-semibold">{PLANS[o.plan as PlanId].name} · {formatBRL(o.price_cents)} · {STATUS_LABEL[o.status] ?? o.status}</p>
+            <p className="text-sm font-semibold">{PLANS[o.plan as PlanId].name} · {o.is_free ? "🎁 Cortesia (grátis)" : formatBRL(o.price_cents)} · {STATUS_LABEL[o.status] ?? o.status}</p>
             <p className="mt-2 inline-block rounded-full border border-gold bg-gold/10 px-3 py-1 text-xs font-semibold text-primary">Etapa atual: {STAGE_LABEL[o.client_stage] ?? o.client_stage}{o.stage_updated_at ? ` · ${new Date(o.stage_updated_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}` : ""}</p>
             <p className="mt-2">{o.question}</p>
             <p className="mt-1 text-xs text-muted-foreground">{(o.cards as number[]).map((c) => CARDS[c]).join(" · ")}</p>
@@ -240,5 +242,26 @@ function Orders() {
         ))}
       </div>
     </main>
+  );
+}
+
+function FreeToggle() {
+  const get = useServerFn(adminGetFreeSetting);
+  const set = useServerFn(adminSetFreeSetting);
+  const [on, setOn] = useState<boolean | null>(null);
+  useEffect(() => { get().then((r) => setOn(r.enabled)).catch(() => setOn(null)); }, []);
+  const flip = async () => {
+    if (on === null) return;
+    try { const r = await set({ data: { enabled: !on } }); setOn(r.enabled); toast.success(r.enabled ? "Promoção ativada" : "Promoção desativada"); }
+    catch (e) { toast.error(e instanceof Error ? e.message : "Erro"); }
+  };
+  return (
+    <div className="mt-6 flex items-center justify-between rounded-lg border border-border bg-card p-4">
+      <div>
+        <p className="font-semibold">Promoção 1ª Tiragem Gratuita</p>
+        <p className="text-xs text-muted-foreground">3 cartas grátis para quem ainda não usou.</p>
+      </div>
+      <Button variant={on ? "default" : "outline"} disabled={on === null} onClick={flip}>{on === null ? "..." : on ? "Ativada" : "Desativada"}</Button>
+    </div>
   );
 }

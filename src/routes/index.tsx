@@ -40,6 +40,8 @@ function shuffle(n: number) {
   return a;
 }
 
+const PENDING_KEY = "entre_cartas_pending_order";
+
 function Index() {
   const [plan, setPlan] = useState<PlanId | null>(null);
   const [step, setStep] = useState(0);
@@ -63,6 +65,17 @@ function Index() {
   useEffect(() => {
     try { setMyReadings(JSON.parse(localStorage.getItem("entre_cartas_readings") || "[]")); } catch {}
   }, []);
+  // Restore an unpaid Pix order if the phone reloaded the page while the user was in the bank app.
+  useEffect(() => {
+    try {
+      const s = JSON.parse(localStorage.getItem(PENDING_KEY) || "null");
+      if (s?.token && Date.now() - (s.at ?? 0) < 24 * 60 * 60 * 1000) {
+        if (s.plan && s.plan in PLANS) setPlan(s.plan);
+        setOrderCode(s.orderCode ?? "");
+        setToken(s.token);
+      } else if (s) localStorage.removeItem(PENDING_KEY);
+    } catch {}
+  }, []);
   useEffect(() => {
     let id = localStorage.getItem("entre_cartas_device_id");
     if (!id || !/^[0-9a-f-]{36}$/i.test(id)) { id = crypto.randomUUID(); localStorage.setItem("entre_cartas_device_id", id); }
@@ -85,7 +98,7 @@ function Index() {
     const tick = async () => {
       try {
         const r = await checkStatus({ data: { token } });
-        if (!stop && r.status && r.status !== "pending") { stop = true; window.location.href = `/leitura/${token}`; return; }
+        if (!stop && r.status && r.status !== "pending") { stop = true; try { localStorage.removeItem(PENDING_KEY); } catch {} window.location.href = `/leitura/${token}`; return; }
         if (!stop && r.nudgedAt) setNudged(true);
       } catch { /* tenta de novo */ }
     };
@@ -116,6 +129,7 @@ function Index() {
       const r = await create({ data: { plan, category: category ?? "Outros assuntos", question, cards: picked } });
       setOrderCode(r.orderCode);
       setToken(r.token);
+      try { localStorage.setItem(PENDING_KEY, JSON.stringify({ token: r.token, orderCode: r.orderCode, plan, at: Date.now() })); } catch {}
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao criar pedido");
     } finally {
@@ -284,8 +298,8 @@ function Index() {
         </section>
       )}
 
-      <Dialog open={!!token} onOpenChange={(o) => !o && setToken(null)}>
-        <DialogContent className="mystic max-h-[90vh] overflow-y-auto pb-20 sm:pb-6">
+      <Dialog open={!!token} onOpenChange={(o) => { if (!o) { setToken(null); try { localStorage.removeItem(PENDING_KEY); } catch {} } }}>
+        <DialogContent className="mystic max-h-[90vh] overflow-y-auto pb-20 sm:pb-6" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle className="font-display text-3xl text-primary">Finalize seu pagamento</DialogTitle>
             <DialogDescription>Falta pouco para acessar sua leitura.</DialogDescription>
@@ -317,12 +331,9 @@ function Index() {
             {nudged ? (
               <p role="alert" className="rounded-md border border-destructive bg-destructive/15 p-3 text-sm font-semibold text-foreground">Atenção: conferimos e o seu Pix ainda não foi identificado. Verifique no app do seu banco se a transferência foi concluída com o valor correto.</p>
             ) : slow ? (
-              <p role="status" className="rounded-md border border-gold bg-gold/10 p-3 text-sm text-foreground">Ainda não identificamos a sua transferência. Abra o app do seu banco, cole a chave Pix e confirme o pagamento para suas cartas serem reveladas.</p>
+              <p role="status" className="rounded-md border border-gold bg-gold/10 p-3 text-sm text-foreground">Ainda não identificamos a sua transferência. Abra o app do seu banco, cole a chave Pix e confirme o pagamento para iniciar a sua interpretação completa.</p>
             ) : null}
             <p role="status" className="flex items-start justify-center gap-3 rounded-md border border-gold/60 bg-gold/10 p-4 text-left text-base font-semibold leading-relaxed text-foreground"><span className="mt-2 inline-block h-3 w-3 shrink-0 animate-pulse rounded-full bg-gold" />Aguardando confirmação do pagamento… você será levado(a) à sua leitura automaticamente.</p>
-            <Button asChild className="mt-4 w-full">
-              <a href={link}>Acompanhar meu pedido</a>
-            </Button>
           </div>
         </DialogContent>
       </Dialog>

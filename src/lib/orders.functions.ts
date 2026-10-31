@@ -99,7 +99,7 @@ export const getOrderStatus = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: row } = await supabaseAdmin.from("orders").select("status, payment_nudged_at").eq("access_token", data.token).maybeSingle();
+    const { data: row } = await (supabaseAdmin.from("orders") as any).select("status, payment_nudged_at").eq("access_token", data.token).maybeSingle();
     return { status: (row?.status as string | undefined) ?? null, nudgedAt: (row?.payment_nudged_at as string | null | undefined) ?? null };
   });
 
@@ -138,13 +138,13 @@ export const adminListOrders = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertAdmin(context.supabase, context.userId);
-    const { data, error } = await context.supabase
+    const { data, error } = await (context.supabase as any)
       .from("orders")
       .select("id, plan, question, cards, status, price_cents, created_at, paid_at, error_message, generation_started_at, reading, client_stage, stage_updated_at, access_token, is_free, payment_nudged_at")
       .order("created_at", { ascending: false })
       .limit(200);
     if (error) throw new Error("Não foi possível carregar os pedidos");
-    return data.map(({ reading, ...o }) => ({ ...o, hasReading: !!reading }));
+    return (data as any[]).map(({ reading, ...o }: any) => ({ ...o, hasReading: !!reading }));
   });
 
 export const adminConfirmAndGenerate = createServerFn({ method: "POST" })

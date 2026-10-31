@@ -142,7 +142,7 @@ function Orders() {
 
   const code = (o: Order) => o.id.slice(0, 8).toUpperCase();
   const stale = (o: Order) => o.status === "generating" && !!o.generation_started_at && Date.now() - new Date(o.generation_started_at).getTime() > STALE_MS;
-  const canRun = (o: Order) => !o.hasReading && (o.status === "pending" || o.status === "error" || stale(o));
+  const canRun = (o: Order) => !o.is_free && !o.hasReading && (o.status === "pending" || o.status === "error" || stale(o));
 
   const run = async (o: Order) => {
     const msg = o.status === "pending"

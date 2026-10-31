@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Menu } from "lucide-react";
 import { CardBack, CardReveal, preloadCardImages } from "@/components/TarotCard";
 import { CARDS, PLANS, PIX_KEY, PIX_QR_SRC, formatBRL, type PlanId , CATEGORIES, type Category } from "@/lib/lenormand";
 import { createOrder, getOrderStatus, checkFreeReading, createFreeOrder } from "@/lib/orders.functions";
@@ -196,19 +198,32 @@ function Index() {
         </div>
       </header>
 
-      {myReadings.length > 0 && (
-        <section className="mb-10 rounded-2xl border border-gold/50 bg-card p-4">
+      <Sheet>
+        <SheetTrigger asChild>
+          <button aria-label="Abrir menu" className="fixed right-4 top-4 z-40 flex h-11 w-11 items-center justify-center rounded-full border border-gold/50 bg-card/90 text-gold backdrop-blur">
+            <Menu className="h-5 w-5" />
+            {myReadings.length > 0 && <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-gold" />}
+          </button>
+        </SheetTrigger>
+        <SheetContent side="right" className="mystic w-[85vw] max-w-sm border-gold/40 bg-background">
+          <SheetHeader>
+            <SheetTitle className="font-display text-2xl text-gold">EntreCarta.tarô</SheetTitle>
+          </SheetHeader>
+          <div className="gold-rule my-4" />
           <p className="font-display text-lg text-gold">Minhas leituras</p>
           <div className="mt-3 space-y-2">
-            {myReadings.slice(0, 5).map((r) => (
-              <a key={r.token} href={`/leitura/${r.token}`} className="flex items-center justify-between rounded-xl border border-border px-3 py-2 text-sm text-foreground">
+            {myReadings.length === 0 && <p className="text-sm text-muted-foreground">Suas consultas anteriores aparecerão aqui.</p>}
+            {myReadings.map((r) => (
+              <a key={r.token} href={`/leitura/${r.token}`} className="flex items-center justify-between rounded-xl border border-border bg-card px-3 py-3 text-sm text-foreground">
                 <span>{PLANS[r.plan as PlanId]?.name ?? "Leitura"} · {new Date(r.at).toLocaleDateString("pt-BR")}</span>
                 <span className="text-gold">Abrir ›</span>
               </a>
             ))}
           </div>
-        </section>
-      )}
+          <div className="gold-rule my-6" />
+          <a href="https://wa.me/5563991167896?text=Ol%C3%A1!%20Preciso%20de%20ajuda%20no%20Cartas%20de%20Tar%C3%B4." target="_blank" rel="noreferrer" className="block rounded-xl border border-border bg-card px-3 py-3 text-sm text-foreground">Ajuda pelo WhatsApp <span className="float-right text-gold">›</span></a>
+        </SheetContent>
+      </Sheet>
 
       <StepHeader n={1} title="Escolha sua consulta" hint="Toque em uma das opções abaixo." />
       <section className="space-y-3">

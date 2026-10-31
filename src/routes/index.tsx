@@ -112,7 +112,10 @@ function Index() {
   }, [token, checkStatus]);
 
   const choosePlan = (id: PlanId) => {
-    if (id !== plan) { setPicked([]); setDeck(shuffle(CARDS.length)); }
+    if (id !== plan) {
+      setPicked([]); setDeck(shuffle(CARDS.length));
+      if (token) { setToken(null); setOrderCode(""); try { localStorage.removeItem(PENDING_KEY); } catch {} }
+    }
     setPlan(id);
   };
 

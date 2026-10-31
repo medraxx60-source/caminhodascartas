@@ -467,7 +467,7 @@ function CardCarousel({ deck, picked, onPick }: { deck: number[]; picked: number
         }}
         onTouchEnd={() => {
           if (startX === null) return;
-          const steps = Math.round(drag) || (Math.abs(drag) > 0.25 ? Math.sign(drag) : 0);
+          const steps = Math.round(drag) || (Math.abs(drag) > 0.4 ? Math.sign(drag) : 0);
           if (steps) go(-steps);
           setDrag(0);
           setStartX(null);
@@ -490,11 +490,11 @@ function CardCarousel({ deck, picked, onPick }: { deck: number[]; picked: number
               aria-label={center ? (idx >= 0 ? "Carta já escolhida" : "Escolher esta carta") : "Ver esta carta"}
               onClick={() => (center ? idx < 0 && onPick(card) : go(off))}
               style={{
-                transform: `translate3d(calc(-50% + ${x}px), -50%, 0) scale(${scale})`,
+                transform: `translate3d(calc(-50% + ${x}px), calc(-50% + ${Math.min(a, 3) * 6}px), 0) rotate(${Math.max(-3, Math.min(3, o)) * 2.5}deg) scale(${scale})`,
                 zIndex: 10 - Math.round(a),
                 opacity: a >= 3 ? Math.max(0, 1 - (a - 2.5)) : 1,
                 filter: `brightness(${1 - Math.min(a, 1) * 0.25})`,
-                transition: dragging || edge ? "none" : "transform 450ms cubic-bezier(0.22,1,0.36,1), opacity 300ms ease, filter 300ms ease",
+                transition: dragging || edge ? "none" : "transform 650ms cubic-bezier(0.16,1,0.3,1), opacity 650ms cubic-bezier(0.16,1,0.3,1), filter 650ms cubic-bezier(0.16,1,0.3,1)",
                 willChange: "transform",
               }}
               className={`absolute left-1/2 top-1/2 w-52 rounded-2xl ${center ? "shadow-xl" : ""}`}

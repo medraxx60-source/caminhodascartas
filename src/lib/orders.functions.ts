@@ -78,7 +78,7 @@ export const getOrderByToken = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row } = await supabaseAdmin
       .from("orders")
-      .select("plan, question, cards, status, reading, price_cents, created_at")
+      .select("plan, question, cards, status, reading, price_cents, created_at, is_free")
       .eq("access_token", data.token)
       .maybeSingle();
     if (row) {
@@ -87,8 +87,8 @@ export const getOrderByToken = createServerFn({ method: "POST" })
         .eq("access_token", data.token).neq("client_stage", "reading");
     }
     const s = row?.status;
-    const status: "done" | "rejected" | "generating" | "pending" =
-      s === "done" ? "done" : s === "rejected" ? "rejected" : s === "generating" ? "generating" : "pending";
+    const status: "done" | "rejected" | "generating" | "pending" | "error" =
+      s === "done" ? "done" : s === "rejected" ? "rejected" : s === "generating" ? "generating" : s === "error" && row?.is_free ? "error" : "pending";
     return row ? { ...row, status } : null;
   });
 
@@ -140,7 +140,7 @@ export const adminListOrders = createServerFn({ method: "POST" })
     await assertAdmin(context.supabase, context.userId);
     const { data, error } = await context.supabase
       .from("orders")
-      .select("id, plan, question, cards, status, price_cents, created_at, paid_at, error_message, generation_started_at, reading, client_stage, stage_updated_at, access_token")
+      .select("id, plan, question, cards, status, price_cents, created_at, paid_at, error_message, generation_started_at, reading, client_stage, stage_updated_at, access_token, is_free")
       .order("created_at", { ascending: false })
       .limit(200);
     if (error) throw new Error("Não foi possível carregar os pedidos");
@@ -152,81 +152,18 @@ export const adminConfirmAndGenerate = createServerFn({ method: "POST" })
   .inputValidator((input: { id: string }) => input)
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
-    const apiKey = process.env["MANDAPI_API_KEY"];
-    const rawBase = process.env["MANDAPI_BASE_URL"];
-    if (!apiKey || !rawBase) throw new Error("Configuração da MandAPI ausente");
-    const endpoint = `${rawBase.trim().replace(/\/+$/, "").replace(/\/chat\/completions$/, "")}/chat/completions`;
-
     // Atomic claim in the database: admin-only, blocked when a reading exists or another generation is running.
     const { data: rows, error: claimErr } = await context.supabase.rpc("claim_order_for_generation", { _id: data.id });
     const claimed = Array.isArray(rows) ? rows[0] : null;
     if (claimErr || !claimed) throw new Error("Pedido já tem leitura, está sendo gerado agora ou não existe. Atualize a lista.");
 
-    const plan = PLANS[claimed.plan as PlanId];
-    const spread = (claimed.cards as number[]).map((c, i) => `${i + 1}. ${plan.positions[i]}: ${CARDS[c]}`).join("\n");
-
     const { data: catRow } = await context.supabase.from("orders").select("category").eq("id", claimed.id).maybeSingle();
-    const catLine = catRow?.category ? `Categoria (apenas contexto; não substitua a pergunta por uma pergunta genérica deste tema): ${catRow.category}\n` : "";
-
     let reading: string;
     try {
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-        body: JSON.stringify({
-          model: "gpt-5.6-sol",
-          stream: false,
-          messages: [
-            {
-              role: "system",
-              content:
-                [
-                  "Você é uma cartomante experiente em Baralho Cigano (Lenormand), realizando uma consulta particular e paga. Fale diretamente com o consulente como \"você\", como se estivesse com as cartas abertas sobre a mesa, conversando com ele.",
-                  "Sua comunicação transmite: conhecimento profundo das combinações do Baralho Cigano; sensibilidade para compreender a pergunta do consulente; naturalidade ao explicar o que aparece na tiragem; segurança na interpretação simbólica, sem afirmar que o futuro é garantido; acolhimento, proximidade e respeito. A leitura deve parecer uma conversa com uma profissional diante da mesa, não uma análise automatizada, uma aula sobre significados, uma conversa com psicólogo ou coach, nem uma mensagem motivacional. O consulente quer uma interpretação da própria pergunta, não aprender a ler cartas.",
-                  "Como interpretar:",
-                  "1. Esta é a regra mais importante: não explique cada carta separadamente; interprete a combinação como uma mensagem única. Observe o que surge quando as cartas aparecem juntas e explique como uma complementa, modifica ou intensifica a outra. Considere a ordem e as posições da tiragem, identifique a mensagem central da sequência e relacione-a diretamente à pergunta. Vá além dos significados básicos, explorando a relação entre os símbolos, sempre respeitando o contexto informado. A leitura não deve parecer definições de cartas reunidas em parágrafos.",
-                  "2. A interpretação deve ter começo, desenvolvimento e conclusão, como uma consulta falada.",
-                  "3. Estilo de escrita — evite: \"A Montanha representa obstáculos. O Buquê representa alegria e a Casa representa estabilidade. As cartas aconselham você a cuidar de si.\" Prefira: \"Quando olho para essa combinação, percebo uma fase em que as coisas podem estar caminhando mais devagar do que você gostaria. A Montanha abre a tiragem mostrando essa dificuldade, mas o Buquê suaviza essa energia e traz uma possibilidade de alívio. Com a Casa fechando a sequência, a leitura aponta para a importância de recuperar a estabilidade e cuidar melhor da sua rotina.\" Este exemplo demonstra apenas o estilo; nunca o repita. Produza interpretações originais conforme as cartas e a pergunta.",
-                  "Fale sobre a vida da pessoa, não sobre o significado das cartas. Evite: \"O Chicote indica esforço e os Pássaros representam ansiedade.\" Prefira algo como: \"Tenho a impressão de que você está colocando muita energia em várias coisas ao mesmo tempo. E talvez seja justamente essa preocupação em fazer tudo acontecer que esteja deixando seu caminho um pouco mais confuso.\" (exemplo só de tom; nunca repita). Conecte os símbolos à realidade da pergunta, como alguém que observa as cartas e compartilha o que percebe, sem inventar acontecimentos nem afirmar conhecer detalhes que a pessoa não contou.",
-                  "Deixe a leitura fluir com transições naturais, sem roteiro rígido; perceba como uma carta conversa com a outra. Não force conclusões positivas: respeite o que a combinação realmente sugere. Não repita a pergunta só para preencher espaço. Evite linguagem corporativa e conselhos genéricos de produtividade. A conclusão deve soar natural, nunca como um resumo automático. O objetivo é que a pessoa sinta que recebeu uma conversa atenciosa e pessoal de uma cartomante experiente, não uma explicação de significados feita por máquina.",
-                  "Linguagem:",
-                  "4. Use português brasileiro simples, natural, acolhedor, intuitivo e fácil de compreender, como uma cartomante conversando com seu consulente. Evite linguagem robótica, acadêmica, psicológica, técnica ou excessivamente formal, palavras difíceis e expressões abstratas que não expliquem concretamente a tiragem. Expressões como \"Quando olho para essa combinação…\", \"O que me chama atenção nessa tiragem…\", \"Essa sequência mostra…\" e \"A carta que fecha essa leitura aponta…\" são exemplos opcionais de voz, não aberturas obrigatórias nem fórmulas para todas as leituras.",
-                  "5. Não use frases prontas de autoajuda nem repita expressões como \"as cartas convidam você\", \"busque seu equilíbrio\" ou \"respeite seu tempo\". Evite repetir conselhos sobre paciência, equilíbrio, limites e autocuidado; cada parágrafo deve acrescentar informação útil e específica à pergunta e à combinação.",
-                  "6. Não invente acontecimentos, sentimentos, intenções ou situações que o consulente não informou: não afirme que ele está solteiro, em um relacionamento, sofrendo por alguém ou com medo da solidão, a menos que isso esteja na pergunta. Quando o contexto não estiver claro, use linguagem que contemple possibilidades sem afirmar que alguma delas é verdadeira.",
-                  "7. Não seja excessivamente cautelosa a ponto de deixar a interpretação vaga. Apresente tendências simbólicas com clareza, sem prometer acontecimentos.",
-                  "Resposta à pergunta:",
-                  "8. A pergunta do consulente é o centro da leitura. Responda diretamente ao tema: amor recebe uma interpretação sobre amor; trabalho aborda trabalho; uma consulta espiritual explora a mensagem simbólica da tiragem. Não entregue uma interpretação que poderia servir para qualquer pergunta nem mensagens genéricas de bem-estar. Em amor, trabalho, dinheiro e outros assuntos, não prometa resultados nem apresente possibilidades simbólicas como certezas.",
-                  "Posições: elas são a estrutura da tiragem, não a estrutura dos parágrafos. Use a função de cada posição (ex.: Situação atual = contexto; Desafio = obstáculos e influências a compreender; Tendência = caminhos e possibilidades) para orientar a história, sem anunciar cada posição mecanicamente nem usar \"A carta X representa…\" ou \"A mensagem principal é…\".",
-                  "9. Em consultas sobre saúde, mantenha a interpretação no campo simbólico e reflexivo. Nunca diagnostique, indique medicamentos ou tratamentos, nem prometa recuperação. Quando houver sintomas ou preocupação concreta, oriente a procurar um profissional de saúde.",
-                  "Tamanho conforme o plano (a diferença entre os planos está na profundidade da análise, não na complexidade das palavras; nos três planos a experiência deve parecer uma consulta de cartomante):",
-                  "- Essencial (3 cartas): 2 a 3 parágrafos curtos, resposta direta e orientação prática.",
-                  "- Profunda (5 cartas): 3 a 4 parágrafos curtos, com maior desenvolvimento da situação, dos desafios e das possibilidades.",
-                  "- Completa (7 cartas): 2 a 4 parágrafos curtos, com leitura mais aprofundada que integre as relações entre as cartas e suas posições, sem tornar a leitura cansativa. Planos maiores devem trazer mais profundidade interpretativa, não textos desnecessariamente longos.",
-                  "Cuidados: em amor não presuma se a pessoa está solteira, namorando ou casada; em trabalho não garanta emprego ou promoção; em dinheiro não garanta ganhos; em espiritualidade mantenha tom simbólico sem afirmar certezas sobrenaturais.",
-                  "Formato: escreva em parágrafos, sem títulos nem markdown. Ordem: interpretação principal, terminando com uma resposta clara sobre a mensagem central da combinação e uma orientação prática relacionada à tiragem, nunca uma frase motivacional genérica; depois, numa linha separada, escreva exatamente \"CONSELHO DOS ANJOS:\" seguido de uma mensagem breve (2 a 3 frases), de tom espiritual, acolhedor e personalizado. Esse conselho deve complementar a interpretação com uma reflexão diferente, sem repetir a conclusão ou a interpretação principal, sem frases genéricas e sem prometer acontecimentos.",
-                ].join("\n"),
-            },
-            { role: "user", content: `${catLine}Pergunta do consulente (referência principal da leitura, use exatamente esta pergunta): ${claimed.question}\n\nTiragem (${plan.name}, ${plan.count} cartas):\n${spread}` },
-          ],
-        }),
-      });
-      if (!res.ok) {
-        const body = (await res.text()).slice(0, 300).replace(apiKey, "[redacted]");
-        console.error(`[mandapi] order=${claimed.id} status=${res.status} body=${body}`);
-        const friendly =
-          res.status === 401 || res.status === 403 ? "MandAPI recusou a chave (verifique MANDAPI_API_KEY)."
-          : res.status === 404 ? "Endpoint ou modelo não encontrado na MandAPI (verifique a Base URL e o modelo)."
-          : res.status === 402 ? "Saldo insuficiente na MandAPI."
-          : res.status === 429 ? "Limite de uso da MandAPI atingido. Tente novamente em instantes."
-          : `MandAPI retornou erro ${res.status}.`;
-        throw new Error(friendly);
-      }
-      const json: any = await res.json();
-      reading = json?.choices?.[0]?.message?.content?.trim();
-      if (!reading) throw new Error("A MandAPI respondeu sem texto.");
+      const { generateReadingText } = await import("./reading-ai.server");
+      reading = await generateReadingText({ id: claimed.id, plan: claimed.plan, cards: claimed.cards as number[], question: claimed.question, category: catRow?.category ?? null });
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Falha de conexão com a MandAPI.";
-      if (!(e instanceof Error)) console.error(`[mandapi] order=${claimed.id} network error`);
       await context.supabase.from("orders").update({ status: "error", error_message: msg }).eq("id", claimed.id).is("reading", null);
       throw new Error(msg);
     }
@@ -281,4 +218,139 @@ export const adminRejectOrder = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error || !row) throw new Error("Não foi possível recusar (o pedido pode já estar em geração ou concluído).");
     return { ok: true };
+  });
+
+// ================= 1ª tiragem gratuita (isolada do fluxo pago: sem Pix, Telegram ou aprovação) =================
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const FREE_IP_LIMIT = 3; // tiragens grátis por rede (IP) em 30 dias — proteção complementar, não bloqueio permanente
+
+async function clientIpHash() {
+  const ip = getRequestHeader("cf-connecting-ip") || getRequestHeader("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  return sha256(`entre-cartas:${ip}`);
+}
+async function freeEnabled(admin: any) {
+  const { data } = await admin.from("app_settings").select("value").eq("key", "free_reading_enabled").maybeSingle();
+  return data ? data.value === true : true;
+}
+function validDevice(id: unknown) {
+  const s = String(id ?? "");
+  if (!UUID_RE.test(s)) throw new Error("Identificador inválido");
+  return s.toLowerCase();
+}
+
+export const checkFreeReading = createServerFn({ method: "POST" })
+  .inputValidator((input: { deviceId: string }) => ({ deviceId: validDevice(input.deviceId) }))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    if (!(await freeEnabled(supabaseAdmin))) return { enabled: false, eligible: false };
+    const ipHash = await clientIpHash();
+    const since = new Date(Date.now() - 30 * 86400000).toISOString();
+    const [{ count: dev }, { count: ip }] = await Promise.all([
+      supabaseAdmin.from("free_reading_claims").select("id", { count: "exact", head: true }).eq("device_id", data.deviceId).eq("status", "consumed"),
+      supabaseAdmin.from("free_reading_claims").select("id", { count: "exact", head: true }).eq("ip_hash", ipHash).in("status", ["reserved", "consumed"]).gte("created_at", since),
+    ]);
+    return { enabled: true, eligible: (dev ?? 0) === 0 && (ip ?? 0) < FREE_IP_LIMIT };
+  });
+
+const FREE_ERR: Record<string, string> = {
+  already_used: "Você já aproveitou sua 1ª leitura de cortesia.",
+  in_progress: "Sua leitura gratuita já está sendo preparada em outra aba.",
+  ip_limit: "O limite de leituras de cortesia desta rede foi atingido.",
+};
+function freeError(msg?: string) {
+  const k = Object.keys(FREE_ERR).find((key) => msg?.includes(key));
+  return new Error(k ? FREE_ERR[k] : "Não foi possível iniciar a leitura gratuita");
+}
+
+export const createFreeOrder = createServerFn({ method: "POST" })
+  .inputValidator((input: { deviceId: string; category?: string; question: string; cards: number[] }) => {
+    const plan = PLANS.essencial;
+    const question = String(input.question ?? "").trim();
+    if (question.length < 5 || question.length > 1000) throw new Error("Pergunta deve ter entre 5 e 1000 caracteres");
+    const cards = Array.isArray(input.cards) ? input.cards.map(Number) : [];
+    if (cards.length !== plan.count || new Set(cards).size !== cards.length || cards.some((c) => !Number.isInteger(c) || c < 0 || c >= CARDS.length))
+      throw new Error("Seleção de cartas inválida");
+    const category = (CATEGORIES as readonly string[]).includes(String(input.category)) ? String(input.category) : null;
+    return { deviceId: validDevice(input.deviceId), category, question, cards };
+  })
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    if (!(await freeEnabled(supabaseAdmin))) throw new Error("A leitura de cortesia não está disponível no momento.");
+    const ipHash = await clientIpHash();
+    const { data: claimId, error: rErr } = await supabaseAdmin.rpc("reserve_free_reading", { _device: data.deviceId, _ip: ipHash, _ip_limit: FREE_IP_LIMIT });
+    if (rErr || !claimId) throw freeError(rErr?.message);
+    const { data: row, error } = await supabaseAdmin
+      .from("orders")
+      .insert({ plan: "essencial", category: data.category, question: data.question, cards: data.cards, price_cents: 0, is_free: true, client_ip_hash: ipHash, client_stage: "waiting" })
+      .select("id, access_token")
+      .single();
+    if (error || !row) {
+      await supabaseAdmin.from("free_reading_claims").update({ status: "released" }).eq("id", claimId);
+      throw new Error("Não foi possível criar a leitura");
+    }
+    await supabaseAdmin.from("free_reading_claims").update({ order_id: row.id }).eq("id", claimId);
+    return { token: row.access_token };
+  });
+
+// Gera a leitura gratuita. Só consome a gratuidade após a IA responder e o texto ser salvo.
+export const runFreeGeneration = createServerFn({ method: "POST" })
+  .inputValidator((input: { token: string }) => {
+    if (!/^[a-f0-9]{48}$/.test(input.token ?? "")) throw new Error("Link inválido");
+    return input;
+  })
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: order } = await supabaseAdmin.from("orders").select("id, is_free, status, reading").eq("access_token", data.token).maybeSingle();
+    if (!order || !order.is_free) throw new Error("Pedido inválido");
+    if (order.reading) return { ok: true };
+    const { data: claim } = await supabaseAdmin.from("free_reading_claims").select("id, device_id, ip_hash, status").eq("order_id", order.id).order("created_at", { ascending: false }).limit(1).maybeSingle();
+    if (!claim) throw new Error("Pedido inválido");
+    if (claim.status !== "reserved") {
+      // Reserva anterior foi liberada (falha da IA): reserva de novo para esta mesma leitura.
+      const { error } = await supabaseAdmin.rpc("reserve_free_reading", { _device: claim.device_id, _ip: claim.ip_hash, _order: order.id, _ip_limit: FREE_IP_LIMIT + 1 });
+      if (error) throw freeError(error.message);
+    } else {
+      await supabaseAdmin.from("free_reading_claims").update({ expires_at: new Date(Date.now() + 10 * 60000).toISOString() }).eq("id", claim.id);
+    }
+    // Trava atômica da geração: apenas uma requisição passa.
+    const staleBefore = new Date(Date.now() - 5 * 60000).toISOString();
+    const { data: locked } = await supabaseAdmin.from("orders")
+      .update({ status: "generating", generation_started_at: new Date().toISOString(), error_message: null })
+      .eq("id", order.id).is("reading", null)
+      .or(`status.in.(pending,error),and(status.eq.generating,generation_started_at.lt.${staleBefore})`)
+      .select("id, plan, cards, question, category").maybeSingle();
+    if (!locked) return { ok: true }; // outra aba já está gerando
+    const release = () => supabaseAdmin.from("free_reading_claims").update({ status: "released" }).eq("order_id", order.id).eq("status", "reserved");
+    try {
+      const { generateReadingText } = await import("./reading-ai.server");
+      const reading = await generateReadingText({ id: locked.id, plan: locked.plan, cards: locked.cards as number[], question: locked.question, category: locked.category });
+      const { error } = await supabaseAdmin.from("orders").update({ status: "done", reading, completed_at: new Date().toISOString() }).eq("id", locked.id);
+      if (error) throw new Error("Falha ao salvar a leitura");
+      await supabaseAdmin.from("free_reading_claims").update({ status: "consumed", consumed_at: new Date().toISOString() }).eq("order_id", order.id).eq("status", "reserved");
+      return { ok: true };
+    } catch (e) {
+      console.error(`[free] generation failed order=${locked.id}`, e instanceof Error ? e.message : e);
+      await supabaseAdmin.from("orders").update({ status: "error", error_message: e instanceof Error ? e.message : "falha" }).eq("id", locked.id).is("reading", null);
+      await release();
+      return { ok: false };
+    }
+  });
+
+export const adminGetFreeSetting = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    return { enabled: await freeEnabled(supabaseAdmin) };
+  });
+
+export const adminSetFreeSetting = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { enabled: boolean }) => ({ enabled: input.enabled === true }))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("app_settings").upsert({ key: "free_reading_enabled", value: data.enabled, updated_at: new Date().toISOString() });
+    if (error) throw new Error("Não foi possível salvar");
+    return { enabled: data.enabled };
   });

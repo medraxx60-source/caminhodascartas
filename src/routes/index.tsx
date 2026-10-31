@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { CardBack, CardReveal } from "@/components/TarotCard";
 import { CARDS, PLANS, PIX_KEY, PIX_QR_SRC, formatBRL, type PlanId , CATEGORIES, type Category } from "@/lib/lenormand";
-import { createOrder, getOrderStatus } from "@/lib/orders.functions";
+import { createOrder, getOrderStatus, checkFreeReading, createFreeOrder } from "@/lib/orders.functions";
 import heroTarot from "@/assets/hero-tarot.jpg";
 
 export const Route = createFileRoute("/")({
@@ -55,6 +55,18 @@ function Index() {
   const p = plan ? PLANS[plan] : null;
   const link = useMemo(() => (token && typeof window !== "undefined" ? `${window.location.origin}/leitura/${token}` : ""), [token]);
   const checkStatus = useServerFn(getOrderStatus);
+  const checkFree = useServerFn(checkFreeReading);
+  const createFree = useServerFn(createFreeOrder);
+  const [deviceId, setDeviceId] = useState<string | null>(null);
+  const [free, setFree] = useState<{ enabled: boolean; eligible: boolean } | null>(null);
+  useEffect(() => {
+    let id = localStorage.getItem("entre_cartas_device_id");
+    if (!id || !/^[0-9a-f-]{36}$/i.test(id)) { id = crypto.randomUUID(); localStorage.setItem("entre_cartas_device_id", id); }
+    setDeviceId(id);
+    checkFree({ data: { deviceId: id } }).then(setFree).catch(() => setFree(null));
+  }, [checkFree]);
+  const isFreePlan = (id: PlanId) => id === "essencial" && !!free?.enabled && !!free?.eligible;
+  const priceLabel = (id: PlanId) => (isFreePlan(id) ? "Grátis" : formatBRL(PLANS[id].priceCents));
   useEffect(() => {
     if (!token) return;
     let stop = false;
@@ -83,6 +95,11 @@ function Index() {
     if (!plan || !p) return;
     setLoading(true);
     try {
+      if (isFreePlan(plan) && deviceId) {
+        const r = await createFree({ data: { deviceId, category: category ?? "Outros assuntos", question, cards: picked } });
+        window.location.href = `/leitura/${r.token}`;
+        return;
+      }
       const r = await create({ data: { plan, category: category ?? "Outros assuntos", question, cards: picked } });
       setOrderCode(r.orderCode);
       setToken(r.token);
@@ -143,14 +160,18 @@ function Index() {
               className={`flex w-full items-center justify-between gap-4 rounded-xl border-2 p-5 text-left shadow-sm transition-all ${active ? "border-gold bg-secondary shadow-[0_0_30px_-8px] shadow-gold" : "border-border bg-card hover:border-gold"}`}
             >
               <div className="min-w-0">
+                {isFreePlan(id) && <span className="mb-1 inline-block rounded-full bg-gold px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-background">1ª Tiragem Gratuita</span>}
                 <h3 className="font-display text-2xl font-semibold leading-tight">{pl.name}</h3>
                 <p className="mt-1 text-sm text-muted-foreground">{pl.count} cartas · {PLAN_HINT[id]}</p>
               </div>
-              <span className="shrink-0 font-display text-2xl font-bold text-gold">{formatBRL(pl.priceCents)}</span>
+              <span className="shrink-0 font-display text-2xl font-bold text-gold">{priceLabel(id)}</span>
             </button>
           );
         })}
       </section>
+      {free?.enabled && !free.eligible && (
+        <p className="mt-4 rounded-xl border border-gold/40 bg-card/70 p-4 text-center text-sm text-muted-foreground">Você já aproveitou sua 1ª leitura de cortesia ✦ As tiragens de 5 e 7 cartas trazem uma visão ainda mais completa da sua situação.</p>
+      )}
       <Button size="lg" className="gold-button mt-8 h-14 w-full rounded-xl text-lg" disabled={!p} onClick={() => goStep(1)}>
         {p ? "Continuar" : "Escolha uma consulta acima"}
       </Button>
@@ -231,7 +252,7 @@ function Index() {
           </div>
           {picked.length > 0 && <p className="mt-2 text-center text-xs text-muted-foreground">Toque num número para trocar a carta</p>}
           <Button size="lg" className="gold-button mt-8 h-14 w-full rounded-xl text-lg" disabled={loading || picked.length < p.count} onClick={submit}>
-            {loading ? "Criando pedido..." : picked.length < p.count ? `Escolha mais ${p.count - picked.length} carta(s)` : `Ver interpretação · ${formatBRL(p.priceCents)}`}
+            {loading ? "Criando pedido..." : picked.length < p.count ? `Escolha mais ${p.count - picked.length} carta(s)` : `Ver interpretação · ${plan ? priceLabel(plan) : ""}`}
           </Button>
         </section>
       )}

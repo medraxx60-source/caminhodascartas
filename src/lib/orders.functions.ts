@@ -47,6 +47,15 @@ export const createOrder = createServerFn({ method: "POST" })
       throw new Error("Não foi possível criar o pedido");
     }
     const orderCode = row.id.slice(0, 8).toUpperCase();
+    let pix: { payload: string; image: string | null } | null = null;
+    try {
+      const { createAsaasPix } = await import("./asaas.server");
+      const q = await createAsaasPix({ orderId: row.id, orderCode, valueCents: PLANS[data.plan].priceCents });
+      if (q) {
+        pix = { payload: q.payload, image: q.image };
+        await (supabaseAdmin.from("orders") as any).update({ asaas_qr_id: q.id, pix_payload: q.payload, pix_qr_image: q.image }).eq("id", row.id);
+      }
+    } catch (e) { console.error("[asaas] create", e); }
     try {
       const lk = process.env["LOVABLE_API_KEY"];
       const tk = process.env["TELEGRAM_API_KEY"];
@@ -76,6 +85,8 @@ export const getOrderByToken = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // Recover a paid Asaas order whose generation stalled or failed.
+    await syncAsaasPayment(data.token).catch((e) => console.error("[asaas] sync", e));
     const { data: row } = await supabaseAdmin
       .from("orders")
       .select("plan, question, cards, status, reading, price_cents, created_at, is_free")

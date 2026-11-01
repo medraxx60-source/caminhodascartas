@@ -16,9 +16,9 @@ import cardBackSrc from "@/assets/card-back.jpg";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "EntreCarta.tarô — Baralho Cigano online" },
+      { title: "Caminho das Cartas — Baralho Cigano online" },
       { name: "description", content: "Faça sua pergunta objetiva sobre amor, dinheiro, saúde ou espiritualidade e receba sua leitura de Baralho Cigano." },
-      { property: "og:title", content: "EntreCarta.tarô — Baralho Cigano online" },
+      { property: "og:title", content: "Caminho das Cartas — Baralho Cigano online" },
       { property: "og:description", content: "Leituras de Baralho Cigano personalizadas, a partir de R$ 4,90." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -196,7 +196,7 @@ function Index() {
       {step > 0 && (
         <div className="flex items-center gap-3 pt-5">
           <button onClick={() => goStep(step - 1)} aria-label="Voltar" className="flex h-11 w-11 items-center justify-center rounded-full border border-gold/50 bg-card text-gold text-xl">‹</button>
-          <p className="flex-1 text-center font-display text-xl text-foreground">EntreCarta.tarô</p>
+          <p className="flex-1 text-center font-display text-xl text-foreground">Caminho das Cartas</p>
           <span className="w-11 text-right text-xs text-muted-foreground">{step + 1}/3</span>
         </div>
       )}
@@ -207,7 +207,7 @@ function Index() {
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
         <div className="absolute inset-x-0 bottom-0 px-6 pb-4 text-center">
           <p className="text-xs uppercase tracking-[0.3em] text-gold">Baralho Cigano · Leitura online</p>
-          <h1 className="mt-2 text-4xl font-bold text-foreground">EntreCarta.tarô</h1>
+          <h1 className="mt-2 text-4xl font-bold text-foreground">Caminho das Cartas</h1>
           <div className="gold-rule mx-auto mt-3 w-40" />
           <p className="mt-3 text-base text-foreground/90">Faça sua pergunta e receba sua leitura: amor, dinheiro, saúde, espiritualidade.</p>
         </div>
@@ -222,7 +222,7 @@ function Index() {
         </SheetTrigger>
         <SheetContent side="right" className="mystic w-[85vw] max-w-sm border-gold/40 bg-background">
           <SheetHeader>
-            <SheetTitle className="font-display text-2xl text-gold">EntreCarta.tarô</SheetTitle>
+            <SheetTitle className="font-display text-2xl text-gold">Caminho das Cartas</SheetTitle>
           </SheetHeader>
           <div className="gold-rule my-4" />
           <p className="font-display text-lg text-gold">Minhas leituras</p>
@@ -437,11 +437,11 @@ function Index() {
       </Dialog>
       <footer className="mt-24 space-y-2 border-t border-border/60 pt-6 text-center text-xs text-muted-foreground">
         <p>Tiragens para reflexão e autoconhecimento. Não substituem orientação médica, jurídica ou financeira.</p>
-        <p>© {new Date().getFullYear()} EntreCarta.tarô · Todos os direitos reservados.</p>
+        <p>© {new Date().getFullYear()} Caminho das Cartas · Todos os direitos reservados.</p>
         <a href="/admin" className="inline-block text-muted-foreground/60 hover:underline">Acesso administrativo</a>
       </footer>
       <a
-        href={`https://wa.me/5563991167896?text=${encodeURIComponent(orderCode ? `Olá! Preciso de ajuda com o pedido ${orderCode} no EntreCarta.tarô.` : "Olá! Preciso de ajuda no EntreCarta.tarô.")}`}
+        href={`https://wa.me/5563991167896?text=${encodeURIComponent(orderCode ? `Olá! Preciso de ajuda com o pedido ${orderCode} no Caminho das Cartas.` : "Olá! Preciso de ajuda no Caminho das Cartas.")}`}
         target="_blank" rel="noopener noreferrer" aria-label="Precisa de ajuda? Falar no WhatsApp"
         style={{ bottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
         className="fixed right-3 z-[60] flex items-center gap-1.5 rounded-full border border-gold bg-primary px-2.5 py-2 text-xs font-semibold text-primary-foreground shadow-md"

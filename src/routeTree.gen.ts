@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AdminConteudoRouteImport } from './routes/admin_.conteudo'
 import { Route as LeituraTokenRouteImport } from './routes/leitura.$token'
 
 const IndexRoute = IndexRouteImport.update({
@@ -23,6 +24,11 @@ const AdminRoute = AdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminConteudoRoute = AdminConteudoRouteImport.update({
+  id: '/admin_/conteudo',
+  path: '/admin/conteudo',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LeituraTokenRoute = LeituraTokenRouteImport.update({
   id: '/leitura/$token',
   path: '/leitura/$token',
@@ -32,30 +38,34 @@ const LeituraTokenRoute = LeituraTokenRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/admin/conteudo': typeof AdminConteudoRoute
   '/leitura/$token': typeof LeituraTokenRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/admin/conteudo': typeof AdminConteudoRoute
   '/leitura/$token': typeof LeituraTokenRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/admin_/conteudo': typeof AdminConteudoRoute
   '/leitura/$token': typeof LeituraTokenRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/admin' | '/leitura/$token'
+  fullPaths: '/' | '/admin' | '/admin/conteudo' | '/leitura/$token'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/leitura/$token'
-  id: '__root__' | '/' | '/admin' | '/leitura/$token'
+  to: '/' | '/admin' | '/admin/conteudo' | '/leitura/$token'
+  id: '__root__' | '/' | '/admin' | '/admin_/conteudo' | '/leitura/$token'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
+  AdminConteudoRoute: typeof AdminConteudoRoute
   LeituraTokenRoute: typeof LeituraTokenRoute
 }
 
@@ -75,6 +85,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin_/conteudo': {
+      id: '/admin_/conteudo'
+      path: '/admin/conteudo'
+      fullPath: '/admin/conteudo'
+      preLoaderRoute: typeof AdminConteudoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/leitura/$token': {
       id: '/leitura/$token'
       path: '/leitura/$token'
@@ -88,6 +105,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
+  AdminConteudoRoute: AdminConteudoRoute,
   LeituraTokenRoute: LeituraTokenRoute,
 }
 export const routeTree = rootRouteImport

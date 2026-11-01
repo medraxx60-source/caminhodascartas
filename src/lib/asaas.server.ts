@@ -3,7 +3,7 @@ function cfg() {
   const key = process.env["ASAAS_API_KEY"];
   if (!key) return null;
   const base = key.includes("hmlg") ? "https://api-sandbox.asaas.com/v3" : "https://api.asaas.com/v3";
-  return { base, headers: { access_token: key, "Content-Type": "application/json", "User-Agent": "EntreCarta" } };
+  return { base, headers: { access_token: key, "Content-Type": "application/json", "User-Agent": "CaminhoDasCartas" } };
 }
 
 export async function createAsaasPix(opts: { orderId: string; orderCode: string; valueCents: number }) {
@@ -13,7 +13,7 @@ export async function createAsaasPix(opts: { orderId: string; orderCode: string;
     method: "POST",
     headers: c.headers,
     body: JSON.stringify({
-      description: `EntreCarta.tarô ${opts.orderCode}`,
+      description: `Caminho das Cartas ${opts.orderCode}`,
       value: opts.valueCents / 100,
       format: "ALL",
       expirationSeconds: 24 * 60 * 60,

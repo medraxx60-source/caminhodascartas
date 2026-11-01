@@ -187,7 +187,8 @@ function Index() {
   if (p && picked.length < p.count) missing.push(`Escolher mais ${p.count - picked.length} carta(s)`);
   const ready = !!p && missing.length === 0;
 
-  const goStep = (s: number) => { setStep(s); window.scrollTo({ top: 0, behavior: "smooth" }); };
+  const goStep = (s: number) => { setStep(s); };
+  useEffect(() => { window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior }); }, [step, ritualDone]);
 
   return (
     <div className="mystic min-h-screen">

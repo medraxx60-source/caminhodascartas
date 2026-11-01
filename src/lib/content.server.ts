@@ -38,7 +38,7 @@ export async function generateContentScript(card: number, theme: string): Promis
 
 export function parseScript(text: string): ContentScript {
   const out: Record<string, string> = {};
-  const re = new RegExp(`^\\s*\\**(${LABELS.join("|")}|TÍTULO)\\**\\s*:\\s*`, "gim");
+  const re = new RegExp(`^\\s*\\**(${LABELS.join("|")}|TÍTULO)\\**\\s*:\\s*\\**\\s*`, "gim");
   const marks = [...text.matchAll(re)];
   marks.forEach((m, i) => {
     const key = m[1]!.toUpperCase().replace("Í", "I");

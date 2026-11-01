@@ -60,10 +60,10 @@ function GeneratingProgress() {
 export const Route = createFileRoute("/leitura/$token")({
   head: () => ({
     meta: [
-      { title: "Sua leitura — EntreCarta.tarô" },
+      { title: "Sua leitura — Caminho das Cartas" },
       { name: "description", content: "Sua leitura privada de Baralho Cigano." },
       { name: "robots", content: "noindex, nofollow" },
-      { property: "og:title", content: "Sua leitura — EntreCarta.tarô" },
+      { property: "og:title", content: "Sua leitura — Caminho das Cartas" },
       { property: "og:description", content: "Leitura privada de Baralho Cigano." },
     ],
   }),
@@ -112,7 +112,7 @@ function Leitura() {
   return (
     <main className="mx-auto min-h-screen max-w-xl px-5 py-12">
       <Link to="/" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-gold">← Voltar ao início</Link>
-      <p className="mt-4 text-center text-xs uppercase tracking-[0.3em] text-gold">EntreCarta.tarô · {plan.name}</p>
+      <p className="mt-4 text-center text-xs uppercase tracking-[0.3em] text-gold">Caminho das Cartas · {plan.name}</p>
       <h1 className="mt-3 text-center text-4xl font-bold text-primary">Sua leitura</h1>
       <div className="gold-rule mx-auto mt-5 w-40" />
       <blockquote className="mt-8 rounded-lg border border-border bg-card p-4 font-display text-xl italic">“{order.question}”</blockquote>
@@ -164,11 +164,11 @@ function Leitura() {
                 <h2 className="mt-1 font-display text-3xl font-semibold text-primary">Conselho dos Anjos</h2>
                 <div className="gold-rule mx-auto mt-3 w-24" />
                 <p className="mt-4 whitespace-pre-line font-display text-xl italic leading-relaxed">{angels.trim()}</p>
-                <Button variant="outline" className="mt-5" onClick={() => { navigator.clipboard.writeText(`✦ Conselho dos Anjos ✦\n\n${angels.trim()}\n\n— EntreCarta.tarô ${window.location.origin}`); toast.success("Conselho copiado"); }}>
+                <Button variant="outline" className="mt-5" onClick={() => { navigator.clipboard.writeText(`✦ Conselho dos Anjos ✦\n\n${angels.trim()}\n\n— Caminho das Cartas ${window.location.origin}`); toast.success("Conselho copiado"); }}>
                   Copiar conselho
                 </Button>
                 <Button asChild className="gold-button mt-3 w-full">
-                  <a href={`https://wa.me/?text=${encodeURIComponent(`Tirei o Baralho Cigano no EntreCarta.tarô e o Conselho dos Anjos foi:\n\n“${angels.trim()}”\n\n${typeof window !== "undefined" ? window.location.origin : ""}`)}`} target="_blank" rel="noreferrer">Compartilhar no WhatsApp</a>
+                  <a href={`https://wa.me/?text=${encodeURIComponent(`Tirei o Baralho Cigano no Caminho das Cartas e o Conselho dos Anjos foi:\n\n“${angels.trim()}”\n\n${typeof window !== "undefined" ? window.location.origin : ""}`)}`} target="_blank" rel="noreferrer">Compartilhar no WhatsApp</a>
                 </Button>
                 <Button variant="ghost" className="mt-2 w-full text-muted-foreground" onClick={() => window.print()}>Salvar leitura em PDF</Button>
               </section>

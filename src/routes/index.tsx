@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
-import { CardBack, CardReveal, preloadCardImages } from "@/components/TarotCard";
+import { CardBack, CardReveal, preloadCardImages, cardImage } from "@/components/TarotCard";
 import { CARDS, PLANS, PIX_KEY, PIX_QR_SRC, formatBRL, type PlanId , CATEGORIES, type Category } from "@/lib/lenormand";
 import { createOrder, getOrderStatus, checkFreeReading, createFreeOrder } from "@/lib/orders.functions";
 import heroTarot from "@/assets/hero-tarot.jpg";
@@ -355,7 +355,7 @@ function Index() {
                 <button key={i} type="button" disabled
                   aria-label={filled ? `Carta ${i + 1} escolhida` : `Espaço ${i + 1}`}
                   className={`flex h-14 w-10 overflow-hidden items-center justify-center rounded-md border font-display text-lg font-bold shadow-inner transition-all ${filled ? "border-gold bg-gold text-background shadow-lg" : "border-gold/40 bg-secondary text-foreground/80"}`}>
-                  {filled ? <CardReveal index={picked[i]!} className="h-full w-full rounded-md" /> : i + 1}
+                  {filled ? <img src={cardImage(picked[i]!)} alt={CARDS[picked[i]!]} className="h-full w-full object-cover" /> : i + 1}
                 </button>
               );
             })}

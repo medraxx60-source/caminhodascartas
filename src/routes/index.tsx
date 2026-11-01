@@ -378,31 +378,29 @@ function Index() {
       <Dialog open={!!token} onOpenChange={() => {}}>
         <DialogContent className="mystic max-h-[90vh] overflow-y-auto pb-20 sm:pb-6 [&>button.absolute]:hidden" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
           <DialogHeader>
-            <DialogTitle className="font-display text-3xl text-primary">Finalize seu pagamento</DialogTitle>
-            <DialogDescription>Falta pouco para acessar sua leitura.</DialogDescription>
+            <DialogTitle className="font-display text-3xl text-primary">Pague com Pix</DialogTitle>
+            <DialogDescription>Total: <strong className="text-lg text-foreground">{p && formatBRL(p.priceCents)}</strong></DialogDescription>
           </DialogHeader>
-          <div className="rounded-xl border border-gold bg-card p-4 text-center">
-            <p className="text-sm text-muted-foreground">{p && `${p.name} · ${p.count} cartas`}</p>
-            <p className="font-display text-5xl font-bold text-primary">{p && formatBRL(p.priceCents)}</p>
-            <p className="mt-1 text-xs text-destructive">Pague exatamente este valor para sua leitura ser liberada.</p>
-          </div>
           {pixCode ? (
             <>
-              <div className="grid grid-cols-3 gap-2 text-center text-xs text-foreground">
-                {["Copie o código Pix", "Pague no app do banco (Pix Copia e Cola)", "Volte aqui: sua leitura abre sozinha"].map((t, i) => (
-                  <div key={t} className="rounded-lg border border-gold/40 bg-card p-2">
-                    <span className="mx-auto mb-1 flex h-7 w-7 items-center justify-center rounded-full bg-gold font-bold text-background">{i + 1}</span>
-                    {t}
-                  </div>
-                ))}
-              </div>
-              <Button size="lg" className="gold-button h-14 w-full rounded-xl text-lg" onClick={() => { copy(pixCode.payload, "Código Pix"); setCopied(true); try { navigator.vibrate?.(60); } catch {} }}>
-                {copied ? "✓ Código copiado! Abra o app do seu banco" : "Copiar código Pix"}
+              <Button size="lg" className="gold-button h-16 w-full rounded-xl text-lg" onClick={() => { copy(pixCode.payload, "Código Pix"); setCopied(true); try { navigator.vibrate?.(60); } catch {} }}>
+                {copied ? "✓ Código copiado! Cole no app do seu banco" : "Copiar código Pix"}
               </Button>
-              <details className="text-center text-xs text-muted-foreground"><summary className="cursor-pointer">Ver código completo</summary><code className="mt-2 block max-h-20 overflow-y-auto break-all rounded-md bg-muted px-3 py-2 text-[11px]">{pixCode.payload}</code></details>
-              {pixCode.image && <img src={`data:image/png;base64,${pixCode.image}`} alt="QR Code Pix" className="mx-auto aspect-square w-48 rounded-md border border-gold bg-white p-1 object-contain" />}
-              <p className="text-center text-sm text-muted-foreground">O valor de <strong className="text-foreground">{p && formatBRL(p.priceCents)}</strong> já vem preenchido. É só confirmar no banco.</p>
-              <p className="rounded-md border border-border bg-card/70 p-3 text-center text-sm text-muted-foreground">🔒 Pode sair para o app do banco tranquilo(a): seu pedido e suas cartas ficam guardados e esta tela volta igual.</p>
+              <ol className="space-y-2 text-base text-foreground">
+                {["Copie o código Pix acima", "Abra o app do seu banco e escolha Pix Copia e Cola", "Volte aqui: sua leitura abre sozinha"].map((t, i) => (
+                  <li key={t} className="flex items-center gap-3 rounded-lg border border-gold/40 bg-card p-3">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gold font-bold text-background">{i + 1}</span>
+                    {t}
+                  </li>
+                ))}
+              </ol>
+              {pixCode.image && (
+                <details className="text-center text-sm text-muted-foreground">
+                  <summary className="cursor-pointer">Prefere escanear? Ver QR Code</summary>
+                  <img src={`data:image/png;base64,${pixCode.image}`} alt="QR Code Pix" className="mx-auto mt-3 aspect-square w-48 rounded-md border border-gold bg-white p-1 object-contain" />
+                </details>
+              )}
+              <p className="text-center text-sm text-muted-foreground">🔒 Pode ir ao app do banco tranquilo(a): seu pedido fica guardado.</p>
             </>
           ) : (
             <>

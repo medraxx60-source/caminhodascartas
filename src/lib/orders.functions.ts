@@ -92,6 +92,37 @@ export const getOrderByToken = createServerFn({ method: "POST" })
     return row ? { ...row, status } : null;
   });
 
+// Checks Asaas for a received Pix and, if paid, marks the order and generates the reading (no admin needed).
+async function syncAsaasPayment(token: string) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const db = supabaseAdmin.from("orders") as any;
+  const { data: o } = await db.select("id, plan, cards, question, category, status, price_cents, asaas_qr_id, asaas_payment_id, generation_started_at, is_free").eq("access_token", token).maybeSingle();
+  if (!o || o.is_free || !o.asaas_qr_id) return;
+  const staleBefore = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+  if (o.status === "pending") {
+    const { findAsaasPayment } = await import("./asaas.server");
+    const payId = await findAsaasPayment(o.asaas_qr_id, o.price_cents);
+    if (!payId) return;
+  } else if (!(o.asaas_payment_id && (o.status === "error" || (o.status === "generating" && o.generation_started_at < staleBefore)))) return;
+  const { findAsaasPayment } = await import("./asaas.server");
+  const payId = o.asaas_payment_id ?? (await findAsaasPayment(o.asaas_qr_id, o.price_cents));
+  if (!payId) return;
+  const now = new Date().toISOString();
+  const { data: locked } = await (supabaseAdmin.from("orders") as any)
+    .update({ status: "generating", paid_at: now, asaas_payment_id: payId, generation_started_at: now, error_message: null })
+    .eq("id", o.id).is("reading", null)
+    .or(`status.in.(pending,error),and(status.eq.generating,generation_started_at.lt.${staleBefore})`)
+    .select("id").maybeSingle();
+  if (!locked) return;
+  try {
+    const { generateReadingText } = await import("./reading-ai.server");
+    const reading = await generateReadingText({ id: o.id, plan: o.plan, cards: o.cards as number[], question: o.question, category: o.category ?? null });
+    await supabaseAdmin.from("orders").update({ status: "done", reading, completed_at: new Date().toISOString(), error_message: null }).eq("id", o.id);
+  } catch (e) {
+    await supabaseAdmin.from("orders").update({ status: "error", error_message: e instanceof Error ? e.message : "falha" }).eq("id", o.id).is("reading", null);
+  }
+}
+
 export const getOrderStatus = createServerFn({ method: "POST" })
   .inputValidator((input: { token: string }) => {
     if (!/^[a-f0-9]{48}$/.test(input.token ?? "")) throw new Error("Link inválido");
@@ -99,8 +130,18 @@ export const getOrderStatus = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: row } = await (supabaseAdmin.from("orders") as any).select("status, payment_nudged_at").eq("access_token", data.token).maybeSingle();
-    return { status: (row?.status as string | undefined) ?? null, nudgedAt: (row?.payment_nudged_at as string | null | undefined) ?? null };
+    const read = () => (supabaseAdmin.from("orders") as any).select("status, payment_nudged_at, pix_payload, pix_qr_image").eq("access_token", data.token).maybeSingle();
+    let { data: row } = await read();
+    if (row?.status === "pending" && row?.pix_payload) {
+      await syncAsaasPayment(data.token).catch((e) => console.error("[asaas] sync", e));
+      ({ data: row } = await read());
+    }
+    return {
+      status: (row?.status as string | undefined) ?? null,
+      nudgedAt: (row?.payment_nudged_at as string | null | undefined) ?? null,
+      pixPayload: (row?.pix_payload as string | null | undefined) ?? null,
+      pixImage: (row?.pix_qr_image as string | null | undefined) ?? null,
+    };
   });
 
 async function isAdmin(supabase: any, userId: string) {

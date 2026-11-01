@@ -68,6 +68,8 @@ export type Database = {
       orders: {
         Row: {
           access_token: string
+          asaas_payment_id: string | null
+          asaas_qr_id: string | null
           cards: Json
           category: string | null
           client_ip_hash: string | null
@@ -80,6 +82,8 @@ export type Database = {
           is_free: boolean
           paid_at: string | null
           payment_nudged_at: string | null
+          pix_payload: string | null
+          pix_qr_image: string | null
           plan: string
           price_cents: number
           question: string
@@ -89,6 +93,8 @@ export type Database = {
         }
         Insert: {
           access_token?: string
+          asaas_payment_id?: string | null
+          asaas_qr_id?: string | null
           cards: Json
           category?: string | null
           client_ip_hash?: string | null
@@ -101,6 +107,8 @@ export type Database = {
           is_free?: boolean
           paid_at?: string | null
           payment_nudged_at?: string | null
+          pix_payload?: string | null
+          pix_qr_image?: string | null
           plan: string
           price_cents: number
           question: string
@@ -110,6 +118,8 @@ export type Database = {
         }
         Update: {
           access_token?: string
+          asaas_payment_id?: string | null
+          asaas_qr_id?: string | null
           cards?: Json
           category?: string | null
           client_ip_hash?: string | null
@@ -122,6 +132,8 @@ export type Database = {
           is_free?: boolean
           paid_at?: string | null
           payment_nudged_at?: string | null
+          pix_payload?: string | null
+          pix_qr_image?: string | null
           plan?: string
           price_cents?: number
           question?: string
@@ -158,6 +170,8 @@ export type Database = {
         Args: { _id: string }
         Returns: {
           access_token: string
+          asaas_payment_id: string | null
+          asaas_qr_id: string | null
           cards: Json
           category: string | null
           client_ip_hash: string | null
@@ -170,6 +184,8 @@ export type Database = {
           is_free: boolean
           paid_at: string | null
           payment_nudged_at: string | null
+          pix_payload: string | null
+          pix_qr_image: string | null
           plan: string
           price_cents: number
           question: string

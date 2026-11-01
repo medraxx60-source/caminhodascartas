@@ -1,0 +1,1 @@
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS asaas_qr_id text, ADD COLUMN IF NOT EXISTS pix_payload text, ADD COLUMN IF NOT EXISTS pix_qr_image text, ADD COLUMN IF NOT EXISTS asaas_payment_id text;

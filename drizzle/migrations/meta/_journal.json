@@ -57,6 +57,13 @@
       "when": 1793482893973,
       "tag": "0007_add_payment_nudged_at",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793509999742,
+      "tag": "0008_asaas_pix",
+      "breakpoints": true
     }
   ]
 }

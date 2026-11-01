@@ -63,7 +63,7 @@ export const createOrder = createServerFn({ method: "POST" })
       if (lk && tk && chats.length) {
         const p = PLANS[data.plan];
         const price = (p.priceCents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-        const text = `🔔 Novo pedido aguardando aprovação\n\nCódigo: ${orderCode}\nPlano: ${p.name} (${price})\n\nConfira o Pix no banco e aprove no painel:\nhttps://entre-cartas.lovable.app/admin`;
+        const text = `🔔 Novo pedido aguardando aprovação\n\nCódigo: ${orderCode}\nPlano: ${p.name} (${price})\n\nO Pix é confirmado automaticamente pelo Asaas. Painel:\nhttps://entre-cartas.lovable.app/admin`;
         await Promise.all(chats.map((chat_id) =>
           fetch("https://connector-gateway.lovable.dev/telegram/sendMessage", {
             method: "POST",
@@ -75,7 +75,7 @@ export const createOrder = createServerFn({ method: "POST" })
     } catch (e) {
       console.error("[telegram] notify failed", e);
     }
-    return { token: row.access_token, orderCode };
+    return { token: row.access_token, orderCode, pixPayload: pix?.payload ?? null, pixImage: pix?.image ?? null };
   });
 
 export const getOrderByToken = createServerFn({ method: "POST" })

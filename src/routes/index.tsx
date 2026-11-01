@@ -429,9 +429,9 @@ function Index() {
             {nudged ? (
               <p role="alert" className="rounded-md border border-destructive bg-destructive/15 p-3 text-sm font-semibold text-foreground">Atenção: conferimos e o seu Pix ainda não foi identificado. Verifique no app do seu banco se a transferência foi concluída com o valor correto.</p>
             ) : slow ? (
-              <p role="status" className="rounded-md border border-gold bg-gold/10 p-3 text-sm text-foreground">Ainda não identificamos a sua transferência. Abra o app do seu banco, cole a chave Pix e confirme o pagamento para iniciar a sua interpretação.</p>
+              <p role="status" className="rounded-md border border-gold bg-gold/10 p-3 text-sm text-foreground">Ainda não identificamos a sua transferência. Abra o app do seu banco, cole o código Pix e confirme o pagamento para iniciar a sua interpretação.</p>
             ) : null}
-            <p role="status" className="flex items-start justify-center gap-3 rounded-md border border-gold/60 bg-gold/10 p-4 text-left text-base font-semibold leading-relaxed text-foreground"><span className="mt-2 inline-block h-3 w-3 shrink-0 animate-pulse rounded-full bg-gold" />Aguardando o banco confirmar… assim que confirmar, sua leitura abre sozinha nesta tela.</p>
+            <p role="status" className="flex items-start justify-center gap-3 rounded-md border border-gold/60 bg-gold/10 p-4 text-left text-base font-semibold leading-relaxed text-foreground"><span className="mt-2 inline-block h-3 w-3 shrink-0 animate-pulse rounded-full bg-gold" />Aguardando confirmação do banco… assim que confirmado, sua leitura abre sozinha nesta tela.</p>
           </div>
         </DialogContent>
       </Dialog>

@@ -112,7 +112,7 @@ function Leitura() {
   return (
     <main className="mx-auto min-h-screen max-w-xl px-5 py-12">
       <Link to="/" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-gold">← Voltar ao início</Link>
-      <p className="mt-4 text-center text-xs uppercase tracking-[0.3em] text-gold">Entre Cartas · {plan.name}</p>
+      <p className="mt-4 text-center text-xs uppercase tracking-[0.3em] text-gold">EntreCarta.tarô · {plan.name}</p>
       <h1 className="mt-3 text-center text-4xl font-bold text-primary">Sua leitura</h1>
       <div className="gold-rule mx-auto mt-5 w-40" />
       <blockquote className="mt-8 rounded-lg border border-border bg-card p-4 font-display text-xl italic">“{order.question}”</blockquote>

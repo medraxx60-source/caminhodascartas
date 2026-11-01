@@ -105,6 +105,7 @@ function Leitura() {
   useEffect(() => {
     if (order?.is_free && order.status === "pending" && !started) startFree();
   }, [order?.is_free, order?.status]);
+  useEffect(() => { window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior }); }, [token, order?.status]);
   if (!order) return <Missing />;
   const plan = PLANS[order.plan as PlanId];
 

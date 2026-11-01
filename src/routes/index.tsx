@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
-import { CardBack, CardReveal, preloadCardImages } from "@/components/TarotCard";
+import { CardBack, CardReveal, preloadCardImages, cardImage } from "@/components/TarotCard";
 import { CARDS, PLANS, PIX_KEY, PIX_QR_SRC, formatBRL, type PlanId , CATEGORIES, type Category } from "@/lib/lenormand";
 import { createOrder, getOrderStatus, checkFreeReading, createFreeOrder } from "@/lib/orders.functions";
 import heroTarot from "@/assets/hero-tarot.jpg";
@@ -68,6 +68,7 @@ function Index() {
   const [orderCode, setOrderCode] = useState("");
   const [pixCode, setPixCode] = useState<{ payload: string; image: string | null } | null>(null);
   const [loading, setLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
   const create = useServerFn(createOrder);
   const p = plan ? PLANS[plan] : null;
   const link = useMemo(() => (token && typeof window !== "undefined" ? `${window.location.origin}/leitura/${token}` : ""), [token]);
@@ -200,8 +201,8 @@ function Index() {
       )}
 
       {step === 0 && (<>
-      <header className="relative -mx-5 mb-10 overflow-hidden">
-        <img src={heroTarot} alt="Cartas de tarô sobre veludo verde com vela e estrelas douradas" width={1280} height={960} className="h-[340px] w-full object-cover" />
+      <header className="relative -mx-5 mb-6 overflow-hidden">
+        <img src={heroTarot} alt="Cartas de tarô sobre veludo verde com vela e estrelas douradas" width={1280} height={960} className="h-[260px] w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
         <div className="absolute inset-x-0 bottom-0 px-6 pb-4 text-center">
           <p className="text-xs uppercase tracking-[0.3em] text-gold">Tarô Cigano · Baralho Cigano</p>
@@ -246,7 +247,7 @@ function Index() {
           return (
             <button
               key={id}
-              onClick={() => choosePlan(id)}
+              onClick={() => { choosePlan(id); try { navigator.vibrate?.(30); } catch {} }}
               className={`flex w-full items-center justify-between gap-4 rounded-xl border-2 p-5 text-left shadow-sm transition-all ${active ? "border-gold bg-secondary shadow-[0_0_30px_-8px] shadow-gold" : "border-border bg-card hover:border-gold"}`}
             >
               <div className="min-w-0">
@@ -261,7 +262,7 @@ function Index() {
         })}
       </section>
       <div className="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-        <span>🔒 Consulta privada</span><span>⚡ Resposta na hora</span><span>✦ Baralho Cigano tradicional</span>
+        <span>🔒 Consulta anônima e sigilosa</span><span>⚡ Sem cadastro</span><span>✦ Baralho Cigano tradicional</span>
       </div>
       {free?.enabled && !free.eligible && (
         <p className="mt-4 rounded-xl border border-gold/40 bg-card/70 p-4 text-center text-sm text-muted-foreground">Você já aproveitou sua 1ª leitura de cortesia ✦ As tiragens de 5 e 7 cartas trazem uma visão ainda mais completa da sua situação.</p>
@@ -297,14 +298,14 @@ function Index() {
                   <p className="text-xs text-muted-foreground">Sem ideias? Toque em uma sugestão:</p>
                   <div className="mt-2 flex flex-col gap-2">
                     {(QUESTION_SUGGESTIONS[category] ?? QUESTION_SUGGESTIONS["Outros assuntos"]!).map((s) => (
-                      <button key={s} type="button" onClick={() => setQuestion(s)} className="rounded-lg border border-border bg-background/60 px-3 py-2 text-left text-sm text-muted-foreground hover:border-gold hover:text-foreground">“{s}”</button>
+                      <button key={s} type="button" onClick={() => setQuestion(s)} className="rounded-full border border-gold/50 bg-background/60 px-4 py-2.5 text-left text-sm text-foreground active:bg-gold active:text-background">“{s}”</button>
                     ))}
                   </div>
                 </div>
               )}
             </>)}
             <p className={`mt-2 text-sm ${qOk ? "text-gold" : category && qLen > 0 ? "text-destructive" : "text-muted-foreground"}`}>
-              {!category ? "Escolha um assunto acima" : qOk ? "Sua pergunta está pronta ✓ Vamos às cartas." : `Mínimo de ${MIN_Q} caracteres (${qLen}/${MIN_Q})`}
+              {!category ? "Escolha um assunto acima" : qOk ? "Sua pergunta está pronta ✓ Vamos às cartas." : "Conte um pouco mais sobre sua dúvida (ao menos uma frase)"}
             </p>
           </div>
           <Button size="lg" className="gold-button mt-8 h-14 w-full rounded-xl text-lg"
@@ -341,7 +342,7 @@ function Index() {
         <section className="mt-6">
           <div className="text-center">
             <h2 className="font-display text-3xl font-semibold text-foreground">Escolha {p.count} cartas</h2>
-            <p className="mx-auto mt-2 max-w-xs text-muted-foreground">Deslize o dedo para os lados e toque na carta do centro que sentir.</p>
+            <p className="mx-auto mt-2 max-w-xs text-muted-foreground">Deslize para os lados e toque na carta do centro ✦</p>
           </div>
           <CardCarousel deck={deck} picked={picked} onPick={toggle} />
           <p className="mb-3 text-center text-sm font-semibold text-gold" aria-live="polite">
@@ -353,8 +354,8 @@ function Index() {
               return (
                 <button key={i} type="button" disabled
                   aria-label={filled ? `Carta ${i + 1} escolhida` : `Espaço ${i + 1}`}
-                  className={`flex h-12 w-10 items-center justify-center rounded-md border font-display text-lg font-bold shadow-inner transition-all ${filled ? "border-gold bg-gold text-background shadow-lg" : "border-gold/40 bg-secondary text-foreground/80"}`}>
-                  {i + 1}
+                  className={`flex h-14 w-10 overflow-hidden items-center justify-center rounded-md border font-display text-lg font-bold shadow-inner transition-all ${filled ? "border-gold bg-gold text-background shadow-lg" : "border-gold/40 bg-secondary text-foreground/80"}`}>
+                  {filled ? <img src={cardImage(picked[i]!)} alt={CARDS[picked[i]!]} className="h-full w-full object-cover" /> : i + 1}
                 </button>
               );
             })}
@@ -394,10 +395,10 @@ function Index() {
                   </div>
                 ))}
               </div>
-              <Button size="lg" className="gold-button h-14 w-full rounded-xl text-lg" onClick={() => { copy(pixCode.payload, "Código Pix"); try { navigator.vibrate?.(60); } catch {} }}>
-                Copiar código Pix
+              <Button size="lg" className="gold-button h-14 w-full rounded-xl text-lg" onClick={() => { copy(pixCode.payload, "Código Pix"); setCopied(true); try { navigator.vibrate?.(60); } catch {} }}>
+                {copied ? "✓ Código copiado! Abra o app do seu banco" : "Copiar código Pix"}
               </Button>
-              <code className="block max-h-20 overflow-y-auto break-all rounded-md bg-muted px-3 py-2 text-center text-[11px]">{pixCode.payload}</code>
+              <details className="text-center text-xs text-muted-foreground"><summary className="cursor-pointer">Ver código completo</summary><code className="mt-2 block max-h-20 overflow-y-auto break-all rounded-md bg-muted px-3 py-2 text-[11px]">{pixCode.payload}</code></details>
               {pixCode.image && <img src={`data:image/png;base64,${pixCode.image}`} alt="QR Code Pix" className="mx-auto aspect-square w-48 rounded-md border border-gold bg-white p-1 object-contain" />}
               <p className="text-center text-sm text-muted-foreground">O valor de <strong className="text-foreground">{p && formatBRL(p.priceCents)}</strong> já vem preenchido. É só confirmar no banco.</p>
               <p className="rounded-md border border-border bg-card/70 p-3 text-center text-sm text-muted-foreground">🔒 Pode sair para o app do banco tranquilo(a): seu pedido e suas cartas ficam guardados e esta tela volta igual.</p>
@@ -431,7 +432,7 @@ function Index() {
             ) : slow ? (
               <p role="status" className="rounded-md border border-gold bg-gold/10 p-3 text-sm text-foreground">Ainda não identificamos a sua transferência. Abra o app do seu banco, cole a chave Pix e confirme o pagamento para iniciar a sua interpretação.</p>
             ) : null}
-            <p role="status" className="flex items-start justify-center gap-3 rounded-md border border-gold/60 bg-gold/10 p-4 text-left text-base font-semibold leading-relaxed text-foreground"><span className="mt-2 inline-block h-3 w-3 shrink-0 animate-pulse rounded-full bg-gold" />Aguardando confirmação do pagamento… você será levado(a) à sua leitura automaticamente.</p>
+            <p role="status" className="flex items-start justify-center gap-3 rounded-md border border-gold/60 bg-gold/10 p-4 text-left text-base font-semibold leading-relaxed text-foreground"><span className="mt-2 inline-block h-3 w-3 shrink-0 animate-pulse rounded-full bg-gold" />Aguardando o banco confirmar… assim que confirmar, sua leitura abre sozinha nesta tela.</p>
           </div>
         </DialogContent>
       </Dialog>

@@ -166,6 +166,10 @@ function Leitura() {
                 <Button variant="outline" className="mt-5" onClick={() => { navigator.clipboard.writeText(`✦ Conselho dos Anjos ✦\n\n${angels.trim()}\n\n— EntreCarta.tarô ${window.location.origin}`); toast.success("Conselho copiado"); }}>
                   Copiar conselho
                 </Button>
+                <Button asChild className="gold-button mt-3 w-full">
+                  <a href={`https://wa.me/?text=${encodeURIComponent(`Tirei o Baralho Cigano no EntreCarta.tarô e o Conselho dos Anjos foi:\n\n“${angels.trim()}”\n\n${typeof window !== "undefined" ? window.location.origin : ""}`)}`} target="_blank" rel="noreferrer">Compartilhar no WhatsApp</a>
+                </Button>
+                <Button variant="ghost" className="mt-2 w-full text-muted-foreground" onClick={() => window.print()}>Salvar leitura em PDF</Button>
               </section>
             )}
           </>

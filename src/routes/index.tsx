@@ -66,6 +66,7 @@ function Index() {
   const [token, setToken] = useState<string | null>(null);
   const [pixOpen, setPixOpen] = useState(false);
   const [orderCode, setOrderCode] = useState("");
+  const [pixCode, setPixCode] = useState<{ payload: string; image: string | null } | null>(null);
   const [loading, setLoading] = useState(false);
   const create = useServerFn(createOrder);
   const p = plan ? PLANS[plan] : null;
@@ -120,6 +121,7 @@ function Index() {
         const r = await checkStatus({ data: { token } });
         if (!stop && r.status && r.status !== "pending") { stop = true; try { localStorage.removeItem(PENDING_KEY); } catch {} window.location.href = `/leitura/${token}`; return; }
         if (!stop && r.nudgedAt) setNudged(true);
+        if (!stop && r.pixPayload) setPixCode((c) => c ?? { payload: r.pixPayload!, image: r.pixImage });
       } catch { /* tenta de novo */ }
     };
     const id = setInterval(tick, 2500);
@@ -160,6 +162,7 @@ function Index() {
       }
       const r = await create({ data: { plan, category: category ?? "Outros assuntos", question, cards: picked } });
       setOrderCode(r.orderCode);
+      setPixCode(r.pixPayload ? { payload: r.pixPayload, image: r.pixImage } : null);
       setToken(r.token);
       setPixOpen(true);
       try { localStorage.setItem(PENDING_KEY, JSON.stringify({ token: r.token, orderCode: r.orderCode, plan, category, question, cards: picked, at: Date.now() })); } catch {}
@@ -381,25 +384,47 @@ function Index() {
             <p className="font-display text-5xl font-bold text-primary">{p && formatBRL(p.priceCents)}</p>
             <p className="mt-1 text-xs text-destructive">Pague exatamente este valor para sua leitura ser liberada.</p>
           </div>
-          <div className="grid grid-cols-3 gap-2 text-center text-xs text-foreground">
-            {["Copie a chave Pix", "Pague no app do banco", "Volte aqui para sua leitura"].map((t, i) => (
-              <div key={t} className="rounded-lg border border-gold/40 bg-card p-2">
-                <span className="mx-auto mb-1 flex h-7 w-7 items-center justify-center rounded-full bg-gold font-bold text-background">{i + 1}</span>
-                {t}
+          {pixCode ? (
+            <>
+              <div className="grid grid-cols-3 gap-2 text-center text-xs text-foreground">
+                {["Copie o código Pix", "Pague no app do banco (Pix Copia e Cola)", "Volte aqui: sua leitura abre sozinha"].map((t, i) => (
+                  <div key={t} className="rounded-lg border border-gold/40 bg-card p-2">
+                    <span className="mx-auto mb-1 flex h-7 w-7 items-center justify-center rounded-full bg-gold font-bold text-background">{i + 1}</span>
+                    {t}
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          <Button size="lg" className="gold-button h-14 w-full rounded-xl text-lg" onClick={() => { copy(PIX_KEY, "Chave Pix"); try { navigator.vibrate?.(60); } catch {} }}>
-            Copiar chave Pix
-          </Button>
-          <code className="block break-all rounded-md bg-muted px-3 py-2 text-center text-xs">{PIX_KEY}</code>
-          <img src={PIX_QR_SRC} alt="QR Code Pix" className="mx-auto aspect-square w-48 rounded-md border border-gold bg-card p-1 object-contain" />
-          <p className="text-center text-sm text-muted-foreground">Digite o valor <strong className="text-foreground">{p && formatBRL(p.priceCents)}</strong> no app do banco e confirme.</p>
-          <p className="rounded-md border border-border bg-card/70 p-3 text-center text-sm text-muted-foreground">🔒 Pode sair para o app do banco tranquilo(a): seu pedido e suas cartas ficam guardados e esta tela volta igual.</p>
-          <div className="flex items-center justify-between gap-2 rounded-md bg-muted px-3 py-2">
-            <p className="text-sm">Na descrição do Pix, informe: <span className="font-mono font-bold tracking-widest text-primary">{orderCode}</span></p>
-            <Button size="sm" variant="outline" onClick={() => copy(orderCode, "Número do pedido")}>Copiar</Button>
-          </div>
+              <Button size="lg" className="gold-button h-14 w-full rounded-xl text-lg" onClick={() => { copy(pixCode.payload, "Código Pix"); try { navigator.vibrate?.(60); } catch {} }}>
+                Copiar código Pix
+              </Button>
+              <code className="block max-h-20 overflow-y-auto break-all rounded-md bg-muted px-3 py-2 text-center text-[11px]">{pixCode.payload}</code>
+              {pixCode.image && <img src={`data:image/png;base64,${pixCode.image}`} alt="QR Code Pix" className="mx-auto aspect-square w-48 rounded-md border border-gold bg-white p-1 object-contain" />}
+              <p className="text-center text-sm text-muted-foreground">O valor de <strong className="text-foreground">{p && formatBRL(p.priceCents)}</strong> já vem preenchido. É só confirmar no banco.</p>
+              <p className="rounded-md border border-border bg-card/70 p-3 text-center text-sm text-muted-foreground">🔒 Pode sair para o app do banco tranquilo(a): seu pedido e suas cartas ficam guardados e esta tela volta igual.</p>
+            </>
+          ) : (
+            <>
+          <div className="grid grid-cols-3 gap-2 text-center text-xs text-foreground">
+              {["Copie a chave Pix", "Pague no app do banco", "Volte aqui para sua leitura"].map((t, i) => (
+                <div key={t} className="rounded-lg border border-gold/40 bg-card p-2">
+                  <span className="mx-auto mb-1 flex h-7 w-7 items-center justify-center rounded-full bg-gold font-bold text-background">{i + 1}</span>
+                  {t}
+                </div>
+              ))}
+            </div>
+            <Button size="lg" className="gold-button h-14 w-full rounded-xl text-lg" onClick={() => { copy(PIX_KEY, "Chave Pix"); try { navigator.vibrate?.(60); } catch {} }}>
+              Copiar chave Pix
+            </Button>
+            <code className="block break-all rounded-md bg-muted px-3 py-2 text-center text-xs">{PIX_KEY}</code>
+            <img src={PIX_QR_SRC} alt="QR Code Pix" className="mx-auto aspect-square w-48 rounded-md border border-gold bg-card p-1 object-contain" />
+            <p className="text-center text-sm text-muted-foreground">Digite o valor <strong className="text-foreground">{p && formatBRL(p.priceCents)}</strong> no app do banco e confirme.</p>
+            <p className="rounded-md border border-border bg-card/70 p-3 text-center text-sm text-muted-foreground">🔒 Pode sair para o app do banco tranquilo(a): seu pedido e suas cartas ficam guardados e esta tela volta igual.</p>
+            <div className="flex items-center justify-between gap-2 rounded-md bg-muted px-3 py-2">
+              <p className="text-sm">Na descrição do Pix, informe: <span className="font-mono font-bold tracking-widest text-primary">{orderCode}</span></p>
+              <Button size="sm" variant="outline" onClick={() => copy(orderCode, "Número do pedido")}>Copiar</Button>
+            </div>
+            </>
+          )}
           <div className="space-y-2 border-t border-border pt-3 text-center">
             {nudged ? (
               <p role="alert" className="rounded-md border border-destructive bg-destructive/15 p-3 text-sm font-semibold text-foreground">Atenção: conferimos e o seu Pix ainda não foi identificado. Verifique no app do seu banco se a transferência foi concluída com o valor correto.</p>

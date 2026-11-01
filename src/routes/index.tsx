@@ -484,7 +484,7 @@ function CardCarousel({ deck, picked, onPick }: { deck: number[]; picked: number
   return (
     <div className="mt-6 select-none">
       <div
-        className="relative mx-auto h-[360px] w-full touch-pan-y overflow-hidden"
+        className="relative mx-auto h-[400px] w-full touch-none overscroll-contain overflow-hidden"
         onTouchStart={(e) => { setStartX(e.touches[0]!.clientX); setDrag(0); }}
         onTouchMove={(e) => {
           if (startX === null) return;

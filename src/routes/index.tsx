@@ -22,6 +22,8 @@ export const Route = createFileRoute("/")({
       { property: "og:description", content: "Leituras de Baralho Cigano personalizadas, a partir de R$ 4,90." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { property: "og:image", content: "https://caminhodascartas.lovable.app/__l5e/assets-v1/39fb7baf-f6f2-48a0-bdab-cecf2c704f4e/caminho-das-cartas-share.jpg" },
+      { name: "twitter:image", content: "https://caminhodascartas.lovable.app/__l5e/assets-v1/39fb7baf-f6f2-48a0-bdab-cecf2c704f4e/caminho-das-cartas-share.jpg" },
     ],
   }),
   component: Index,

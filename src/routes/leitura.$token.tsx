@@ -167,7 +167,6 @@ function Leitura() {
                 <div className="gold-rule mx-auto mt-3 w-24" />
                 <p className="mt-4 whitespace-pre-line font-display text-xl italic leading-relaxed">{angels.trim()}</p>
                 <StoryImageButton cardSrc={cardImage(cards[cards.length - 1]!)} cardName={CARDS[cards[cards.length - 1]!]!} advice={angels.trim()} />
-                <Button variant="ghost" className="mt-2 w-full text-muted-foreground" onClick={() => window.print()}>Salvar leitura em PDF</Button>
               </section>
             )}
             <ReviewBox token={token} />

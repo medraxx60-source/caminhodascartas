@@ -17,7 +17,7 @@ function loadImg(src: string) {
 }
 
 // Builds a 1080x1920 image (Status/Stories) with the card and the angels' advice.
-export function StoryImageButton({ cardSrc, cardName, advice }: { cardSrc?: string; cardName: string; advice: string }) {
+export function StoryImageButton({ cardSrc, cardName, advice }: { cardSrc?: string | undefined; cardName: string; advice: string }) {
   const [busy, setBusy] = useState(false);
   const make = async () => {
     setBusy(true);

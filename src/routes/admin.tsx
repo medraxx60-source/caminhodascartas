@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { adminListReviews, adminSetReview } from "@/lib/reviews.functions";
 import { toast } from "sonner";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -205,6 +206,7 @@ function Orders() {
         <Button variant="ghost" onClick={() => supabase.auth.signOut()}>Sair</Button>
       </div>
       <FreeToggle />
+      <ReviewsAdmin />
       <Button variant="outline" className="mt-3 w-full" asChild><Link to="/admin/conteudo">✦ Gerador de Carta do Dia (vídeos)</Link></Button>
       <div className="mt-4 grid grid-cols-3 gap-2 text-center">
         <div className="rounded-lg border border-border bg-card p-3"><p className="text-xs text-muted-foreground">Consultas pagas</p><p className="text-2xl font-bold text-primary">{paidDone.length}</p></div>
@@ -294,5 +296,37 @@ function FreeToggle() {
       </div>
       <Button variant={on ? "default" : "outline"} disabled={on === null} onClick={flip}>{on === null ? "..." : on ? "Ativada" : "Desativada"}</Button>
     </div>
+  );
+}
+
+function ReviewsAdmin() {
+  const list = useServerFn(adminListReviews);
+  const setR = useServerFn(adminSetReview);
+  const [rows, setRows] = useState<Awaited<ReturnType<typeof adminListReviews>>>([]);
+  const load = () => list().then(setRows).catch(() => {});
+  useEffect(() => { load(); }, []);
+  const act = async (id: string, d: { approved?: boolean; remove?: boolean }) => {
+    try { await setR({ data: { id, ...d } }); load(); } catch (e) { toast.error(e instanceof Error ? e.message : "Erro"); }
+  };
+  const avg = rows.length ? (rows.reduce((s, r) => s + r.rating, 0) / rows.length).toFixed(1) : "-";
+  return (
+    <details className="mt-4 rounded-lg border border-border bg-card p-4">
+      <summary className="cursor-pointer font-semibold">Avaliações ({rows.length}) · média {avg} ★ · {rows.filter((r) => !r.approved).length} aguardando</summary>
+      <p className="mt-2 text-xs text-muted-foreground">Só as avaliações aprovadas aparecem na página inicial.</p>
+      <div className="mt-3 space-y-2">
+        {rows.length === 0 && <p className="text-sm text-muted-foreground">Nenhuma avaliação ainda.</p>}
+        {rows.map((r) => (
+          <div key={r.id} className="rounded-md border border-border p-3 text-sm">
+            <p className="text-gold">{"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)} <span className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleString("pt-BR")}</span></p>
+            {r.comment && <p className="mt-1 italic">“{r.comment}”</p>}
+            <p className="text-xs text-muted-foreground">— {r.display_name || "anônimo"}</p>
+            <div className="mt-2 flex gap-2">
+              <Button size="sm" variant={r.approved ? "default" : "outline"} onClick={() => act(r.id, { approved: !r.approved })}>{r.approved ? "Aprovada (ocultar)" : "Aprovar e mostrar"}</Button>
+              <Button size="sm" variant="ghost" onClick={() => act(r.id, { remove: true })}>Excluir</Button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </details>
   );
 }

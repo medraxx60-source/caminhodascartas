@@ -64,6 +64,13 @@
       "when": 1793509999742,
       "tag": "0008_asaas_pix",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793650017849,
+      "tag": "0009_create_reviews",
+      "breakpoints": true
     }
   ]
 }

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 function wrap(ctx: CanvasRenderingContext2D, text: string, maxW: number) {
   const lines: string[] = [];
@@ -51,7 +52,10 @@ export function StoryImageButton({ cardSrc, cardName, advice }: { cardSrc?: stri
       ctx.font = "28px sans-serif"; ctx.fillStyle = "#FFF3D6"; ctx.fillText("caminhodascartas.lovable.app", 540, 1835);
       const blob: Blob = await new Promise((r) => c.toBlob((b) => r(b!), "image/png"));
       const file = new File([blob], "conselho-caminho-das-cartas.png", { type: "image/png" });
+      // WhatsApp on iPhone often drops the text when an image is shared, so keep it ready to paste.
+      try { await navigator.clipboard.writeText(shareText); } catch { /* ignore */ }
       if (navigator.canShare?.({ files: [file], text: shareText })) {
+        toast.success("Mensagem com o link copiada — se ela não aparecer junto da imagem, é só colar na conversa.");
         await navigator.share({ files: [file], text: shareText, title: "Conselho dos Anjos" }).catch(() => {});
       } else {
         const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = file.name; a.click();

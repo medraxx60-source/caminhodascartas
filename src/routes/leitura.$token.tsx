@@ -166,9 +166,6 @@ function Leitura() {
                 <h2 className="mt-1 font-display text-3xl font-semibold text-primary">Conselho dos Anjos</h2>
                 <div className="gold-rule mx-auto mt-3 w-24" />
                 <p className="mt-4 whitespace-pre-line font-display text-xl italic leading-relaxed">{angels.trim()}</p>
-                <Button variant="outline" className="mt-5" onClick={() => { navigator.clipboard.writeText(`✦ Conselho dos Anjos ✦\n\n${angels.trim()}\n\n— Caminho das Cartas ${window.location.origin}`); toast.success("Conselho copiado"); }}>
-                  Copiar conselho
-                </Button>
                 <StoryImageButton cardSrc={cardImage(cards[cards.length - 1]!)} cardName={CARDS[cards[cards.length - 1]!]!} advice={angels.trim()} />
                 <Button variant="ghost" className="mt-2 w-full text-muted-foreground" onClick={() => window.print()}>Salvar leitura em PDF</Button>
               </section>

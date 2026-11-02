@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Menu } from "lucide-react";
+import { Check, Copy, Menu, MessageCircle } from "lucide-react";
 import { CardBack, CardReveal, preloadCardImages, cardImage } from "@/components/TarotCard";
 import { CARDS, PLANS, PIX_KEY, PIX_QR_SRC, formatBRL, type PlanId , CATEGORIES, type Category } from "@/lib/lenormand";
 import { createOrder, getOrderStatus, checkFreeReading, createFreeOrder } from "@/lib/orders.functions";
@@ -174,9 +174,15 @@ function Index() {
     }
   };
 
-  const copy = (text: string, label: string) => {
-    navigator.clipboard.writeText(text);
-    toast.success(`${label} copiado`);
+  const copy = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(`${label} copiado`);
+      return true;
+    } catch {
+      toast.error("Não foi possível copiar. Tente novamente ou use o QR Code.");
+      return false;
+    }
   };
 
   const MIN_Q = 10;
@@ -376,52 +382,56 @@ function Index() {
 
       {/* Payment screen is locked: it only leaves when the admin approves and we redirect to the reading. */}
       <Dialog open={!!token} onOpenChange={() => {}}>
-        <DialogContent className="mystic max-h-[90vh] overflow-y-auto pb-20 sm:pb-6 [&>button.absolute]:hidden" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
+        <DialogContent className="mystic w-[calc(100%-1.5rem)] max-w-lg max-h-[90dvh] min-w-0 overflow-x-hidden overflow-y-auto rounded-lg p-5 pb-8 sm:p-6 [&>button.absolute]:hidden" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle className="font-display text-3xl text-primary">Pague com Pix</DialogTitle>
-            <DialogDescription>Total: <strong className="text-lg text-foreground">{p && formatBRL(p.priceCents)}</strong></DialogDescription>
+            <DialogDescription className="text-base">Falta só o pagamento para iniciar a sua interpretação.</DialogDescription>
           </DialogHeader>
+          <dl className="min-w-0 space-y-2 border-y border-border py-3 text-sm">
+            <div className="flex flex-wrap justify-between gap-2"><dt className="text-muted-foreground">Sua consulta</dt><dd className="font-semibold text-foreground">{p?.name} · {p?.count} cartas</dd></div>
+            <div className="flex flex-wrap justify-between gap-2"><dt className="text-muted-foreground">Pedido</dt><dd className="break-all font-mono text-foreground">{orderCode}</dd></div>
+            <div className="flex flex-wrap items-center justify-between gap-2"><dt className="text-base text-foreground">Total a pagar</dt><dd className="font-display text-3xl font-bold text-gold">{p && formatBRL(p.priceCents)}</dd></div>
+          </dl>
           {pixCode ? (
             <>
-              <Button size="lg" className="gold-button h-16 w-full rounded-xl text-lg" onClick={() => { copy(pixCode.payload, "Código Pix"); setCopied(true); try { navigator.vibrate?.(60); } catch {} }}>
-                {copied ? "✓ Código copiado! Cole no app do seu banco" : "Copiar código Pix"}
+              <Button size="lg" className="gold-button h-14 w-full min-w-0 whitespace-normal rounded-lg px-3 text-base leading-snug" onClick={async () => { if (await copy(pixCode.payload, "Código Pix")) { setCopied(true); try { navigator.vibrate?.(60); } catch {} } }}>
+                {copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
+                <span>{copied ? "Código Pix copiado!" : "Copiar código Pix"}</span>
               </Button>
-              <ol className="space-y-2 text-base text-foreground">
-                {["Copie o código Pix acima", "Abra o app do seu banco e escolha Pix Copia e Cola", "Volte aqui: sua leitura abre sozinha"].map((t, i) => (
-                  <li key={t} className="flex items-center gap-3 rounded-lg border border-gold/40 bg-card p-3">
+              <p aria-live="polite" className="text-center text-base leading-relaxed text-foreground">{copied ? "Agora cole o código em Pix Copia e Cola no app do seu banco e confirme o pagamento." : "Use Pix Copia e Cola no app do seu banco."}</p>
+              <ol className="min-w-0 space-y-3 text-base text-foreground">
+                {["Copie o código Pix acima.", "No app do banco, abra Pix Copia e Cola, cole o código e confirme o pagamento.", "Volte a esta tela para receber sua interpretação após a confirmação."].map((t, i) => (
+                  <li key={t} className="flex min-w-0 items-start gap-3">
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gold font-bold text-background">{i + 1}</span>
-                    {t}
+                    <span className="min-w-0 flex-1 break-words leading-relaxed">{t}</span>
                   </li>
                 ))}
               </ol>
               {pixCode.image && (
                 <details className="text-center text-sm text-muted-foreground">
                   <summary className="cursor-pointer">Prefere escanear? Ver QR Code</summary>
-                  <img src={`data:image/png;base64,${pixCode.image}`} alt="QR Code Pix" className="mx-auto mt-3 aspect-square w-48 rounded-md border border-gold bg-white p-1 object-contain" />
+                  <img src={`data:image/png;base64,${pixCode.image}`} alt="QR Code Pix" className="mx-auto mt-3 aspect-square w-48 max-w-full rounded-md border border-gold object-contain" />
                 </details>
               )}
               <p className="text-center text-sm text-muted-foreground">🔒 Pode ir ao app do banco tranquilo(a): seu pedido fica guardado.</p>
             </>
           ) : (
             <>
-          <div className="grid grid-cols-3 gap-2 text-center text-xs text-foreground">
-              {["Copie a chave Pix", "Pague no app do banco", "Volte aqui para sua leitura"].map((t, i) => (
-                <div key={t} className="rounded-lg border border-gold/40 bg-card p-2">
-                  <span className="mx-auto mb-1 flex h-7 w-7 items-center justify-center rounded-full bg-gold font-bold text-background">{i + 1}</span>
-                  {t}
-                </div>
-              ))}
-            </div>
-            <Button size="lg" className="gold-button h-14 w-full rounded-xl text-lg" onClick={() => { copy(PIX_KEY, "Chave Pix"); try { navigator.vibrate?.(60); } catch {} }}>
-              Copiar chave Pix
+            <Button size="lg" className="gold-button h-14 w-full min-w-0 whitespace-normal rounded-lg px-3 text-base leading-snug" onClick={async () => { if (await copy(PIX_KEY, "Chave Pix")) { setCopied(true); try { navigator.vibrate?.(60); } catch {} } }}>
+              {copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
+              <span>{copied ? "Chave Pix copiada!" : "Copiar chave Pix"}</span>
             </Button>
+            <p aria-live="polite" className="text-center text-base leading-relaxed text-foreground">{copied ? "Agora abra o app do seu banco e faça um Pix usando a chave copiada." : "No app do banco, faça um Pix usando esta chave."}</p>
             <code className="block break-all rounded-md bg-muted px-3 py-2 text-center text-xs">{PIX_KEY}</code>
-            <img src={PIX_QR_SRC} alt="QR Code Pix" className="mx-auto aspect-square w-48 rounded-md border border-gold bg-card p-1 object-contain" />
-            <p className="text-center text-sm text-muted-foreground">Digite o valor <strong className="text-foreground">{p && formatBRL(p.priceCents)}</strong> no app do banco e confirme.</p>
-            <p className="rounded-md border border-border bg-card/70 p-3 text-center text-sm text-muted-foreground">🔒 Pode sair para o app do banco tranquilo(a): seu pedido e suas cartas ficam guardados e esta tela volta igual.</p>
-            <div className="flex items-center justify-between gap-2 rounded-md bg-muted px-3 py-2">
-              <p className="text-sm">Na descrição do Pix, informe: <span className="font-mono font-bold tracking-widest text-primary">{orderCode}</span></p>
-              <Button size="sm" variant="outline" onClick={() => copy(orderCode, "Número do pedido")}>Copiar</Button>
+            <p className="text-center text-base leading-relaxed text-foreground">Digite <strong>{p && formatBRL(p.priceCents)}</strong> e confirme o pagamento. Depois, volte a esta tela.</p>
+            <details className="text-center text-sm text-muted-foreground">
+              <summary className="cursor-pointer py-2">Prefere escanear? Ver QR Code</summary>
+              <img src={PIX_QR_SRC} alt="QR Code Pix" className="mx-auto mt-3 aspect-square w-48 max-w-full rounded-md border border-gold object-contain" />
+            </details>
+            <p className="text-center text-sm leading-relaxed text-muted-foreground">🔒 Seu pedido e suas cartas ficam guardados enquanto você vai ao app do banco.</p>
+            <div className="flex min-w-0 items-center justify-between gap-3 border-t border-border pt-3">
+              <p className="min-w-0 flex-1 break-words text-sm leading-relaxed">Na descrição do Pix, informe: <span className="break-all font-mono font-bold text-primary">{orderCode}</span></p>
+              <Button size="icon" variant="outline" className="h-11 w-11 shrink-0" aria-label="Copiar número do pedido" title="Copiar número do pedido" onClick={() => copy(orderCode, "Número do pedido")}><Copy aria-hidden="true" /></Button>
             </div>
             </>
           )}
@@ -431,7 +441,10 @@ function Index() {
             ) : slow ? (
               <p role="status" className="rounded-md border border-gold bg-gold/10 p-3 text-sm text-foreground">Ainda não identificamos a sua transferência. Abra o app do seu banco, cole o código Pix e confirme o pagamento para iniciar a sua interpretação.</p>
             ) : null}
-            <p role="status" className="flex items-start justify-center gap-3 rounded-md border border-gold/60 bg-gold/10 p-4 text-left text-base font-semibold leading-relaxed text-foreground"><span className="mt-2 inline-block h-3 w-3 shrink-0 animate-pulse rounded-full bg-gold" />Aguardando confirmação do banco… assim que confirmado, sua leitura abre sozinha nesta tela.</p>
+            <p role="status" className="flex min-w-0 items-start justify-center gap-3 rounded-md border border-gold/60 bg-gold/10 p-4 text-left text-base font-semibold leading-relaxed text-foreground"><span aria-hidden="true" className="mt-2 inline-block h-3 w-3 shrink-0 rounded-full bg-gold motion-safe:animate-pulse" /><span className="min-w-0 flex-1 break-words">Aguardando confirmação do pagamento… assim que confirmado, sua interpretação abre sozinha nesta tela.</span></p>
+            <Button asChild variant="link" className="h-auto min-h-11 w-full whitespace-normal text-base">
+              <a href={`https://wa.me/5563991167896?text=${encodeURIComponent(`Olá! Preciso de ajuda com o pedido ${orderCode} no Caminho das Cartas.`)}`} target="_blank" rel="noopener noreferrer"><MessageCircle aria-hidden="true" />Preciso de ajuda com o Pix</a>
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

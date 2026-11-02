@@ -9,6 +9,8 @@ import { getOrderByToken, runFreeGeneration } from "@/lib/orders.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { ReviewBox } from "@/components/ReviewBox";
+import { StoryImageButton } from "@/components/StoryImageButton";
 
 const orderQuery = (token: string) =>
   queryOptions({
@@ -170,9 +172,11 @@ function Leitura() {
                 <Button asChild className="gold-button mt-3 w-full">
                   <a href={`https://wa.me/?text=${encodeURIComponent(`Olha a mensagem que saiu pra mim no Baralho Cigano do Caminho das Cartas hoje:\n\n“${angels.trim()}”\n\nVocê também pode fazer a sua 1ª consulta grátis aqui: ${typeof window !== "undefined" ? window.location.origin : ""}`)}`} target="_blank" rel="noreferrer">Compartilhar conselho no WhatsApp</a>
                 </Button>
+                <StoryImageButton cardSrc={cardImage(cards[cards.length - 1]!)} cardName={CARDS[cards[cards.length - 1]!]!} advice={angels.trim()} />
                 <Button variant="ghost" className="mt-2 w-full text-muted-foreground" onClick={() => window.print()}>Salvar leitura em PDF</Button>
               </section>
             )}
+            <ReviewBox token={token} />
           </>
         );
       })() : order.status === "rejected" ? (

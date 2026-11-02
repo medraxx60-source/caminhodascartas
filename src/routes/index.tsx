@@ -262,6 +262,9 @@ function Index() {
                 {id === "profunda" && <span className="mb-1 inline-block rounded-full border border-gold px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-gold">✦ Mais escolhida</span>}
                 <h3 className="font-display text-2xl font-semibold leading-tight">{pl.name}</h3>
                 <p className="mt-1 text-sm text-muted-foreground">{pl.count} cartas · {PLAN_HINT[id]}</p>
+                <ul className="mt-2 space-y-0.5 text-xs text-foreground/85">
+                  {pl.positions.map((pos) => <li key={pos} className="flex gap-1.5"><span className="text-gold">✓</span>{pos}</li>)}
+                </ul>
               </div>
               <span className="shrink-0 font-display text-2xl font-bold text-gold">{priceLabel(id)}</span>
             </button>

@@ -17,7 +17,9 @@ function loadImg(src: string) {
 }
 
 // Builds a 1080x1920 image (Status/Stories) with the card and the angels' advice.
+export const SITE_URL = "https://caminhodascartas.lovable.app";
 export function StoryImageButton({ cardSrc, cardName, advice }: { cardSrc?: string | undefined; cardName: string; advice: string }) {
+  const shareText = `Olha só a mensagem que saiu pra mim no Baralho Cigano do Caminho das Cartas hoje:\n\n“${advice}”\n\nFaça a sua 1ª consulta grátis aqui: ${SITE_URL}`;
   const [busy, setBusy] = useState(false);
   const make = async () => {
     setBusy(true);
@@ -49,17 +51,18 @@ export function StoryImageButton({ cardSrc, cardName, advice }: { cardSrc?: stri
       ctx.font = "28px sans-serif"; ctx.fillStyle = "#FFF3D6"; ctx.fillText("caminhodascartas.lovable.app", 540, 1835);
       const blob: Blob = await new Promise((r) => c.toBlob((b) => r(b!), "image/png"));
       const file = new File([blob], "conselho-caminho-das-cartas.png", { type: "image/png" });
-      if (navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title: "Conselho dos Anjos" }).catch(() => {});
+      if (navigator.canShare?.({ files: [file], text: shareText })) {
+        await navigator.share({ files: [file], text: shareText, title: "Conselho dos Anjos" }).catch(() => {});
       } else {
         const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = file.name; a.click();
         setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+        window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, "_blank", "noopener");
       }
     } finally { setBusy(false); }
   };
   return (
-    <Button variant="outline" className="mt-3 w-full border-gold text-gold" disabled={busy} onClick={make}>
-      {busy ? "Preparando imagem..." : "Salvar imagem para Status / Stories"}
+    <Button className="gold-button mt-3 w-full whitespace-normal" disabled={busy} onClick={make}>
+      {busy ? "Preparando imagem..." : "✦ Compartilhar no WhatsApp / Stories"}
     </Button>
   );
 }

@@ -169,9 +169,6 @@ function Leitura() {
                 <Button variant="outline" className="mt-5" onClick={() => { navigator.clipboard.writeText(`✦ Conselho dos Anjos ✦\n\n${angels.trim()}\n\n— Caminho das Cartas ${window.location.origin}`); toast.success("Conselho copiado"); }}>
                   Copiar conselho
                 </Button>
-                <Button asChild className="gold-button mt-3 w-full">
-                  <a href={`https://wa.me/?text=${encodeURIComponent(`Olha a mensagem que saiu pra mim no Baralho Cigano do Caminho das Cartas hoje:\n\n“${angels.trim()}”\n\nVocê também pode fazer a sua 1ª consulta grátis aqui: ${typeof window !== "undefined" ? window.location.origin : ""}`)}`} target="_blank" rel="noreferrer">Compartilhar conselho no WhatsApp</a>
-                </Button>
                 <StoryImageButton cardSrc={cardImage(cards[cards.length - 1]!)} cardName={CARDS[cards[cards.length - 1]!]!} advice={angels.trim()} />
                 <Button variant="ghost" className="mt-2 w-full text-muted-foreground" onClick={() => window.print()}>Salvar leitura em PDF</Button>
               </section>

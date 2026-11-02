@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { HomeTrust } from "@/components/HomeTrust";
 import { Check, Copy, Menu, MessageCircle } from "lucide-react";
 import { CardBack, CardReveal, preloadCardImages, cardImage } from "@/components/TarotCard";
 import { CARDS, PLANS, PIX_KEY, PIX_QR_SRC, formatBRL, type PlanId , CATEGORIES, type Category } from "@/lib/lenormand";
@@ -282,6 +283,7 @@ function Index() {
       <Button size="lg" className="gold-button mt-8 h-14 w-full rounded-xl text-lg" disabled={!p} onClick={() => goStep(1)}>
         {p ? `Continuar com ${p.name}` : "Escolha uma consulta acima"}
       </Button>
+      <HomeTrust />
       </>)}
 
       {p && step === 1 && (

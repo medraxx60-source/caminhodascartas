@@ -130,7 +130,7 @@ function Leitura() {
         return (
           <>
             {lay.intro.length > 0 && (
-              <div className="mt-8 space-y-4 leading-relaxed">{lay.intro.map((p, k) => <p key={k}>{p}</p>)}</div>
+              <div className="mt-8 space-y-4 text-[17px] leading-8 text-foreground/90">{lay.intro.map((p, k) => <p key={k}>{p}</p>)}</div>
             )}
             <div className="mt-8 space-y-6">
               {cards.map((c, i) => (
@@ -146,7 +146,7 @@ function Leitura() {
                     </div>
                   </div>
                   {lay.perCard[i]!.length > 0 && (
-                    <div className="mt-4 space-y-3 border-t border-border/60 pt-4 leading-relaxed">
+                    <div className="mt-4 space-y-3 border-t border-border/60 pt-4 text-[17px] leading-8 text-foreground/90">
                       {lay.perCard[i]!.map((p, k) => <p key={k}>{p}</p>)}
                     </div>
                   )}
@@ -157,7 +157,7 @@ function Leitura() {
               <section className="mt-10">
                 <h2 className="text-center font-display text-2xl font-semibold text-primary">Conclusão da leitura</h2>
                 <div className="gold-rule mx-auto mt-3 w-24" />
-                <div className="mt-4 space-y-4 leading-relaxed">{lay.conclusion.map((p, k) => <p key={k}>{p}</p>)}</div>
+                <div className="mt-4 space-y-4 text-[17px] leading-8 text-foreground/90">{lay.conclusion.map((p, k) => <p key={k}>{p}</p>)}</div>
               </section>
             )}
             {angels?.trim() && (

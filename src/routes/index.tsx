@@ -278,15 +278,14 @@ function Index() {
             <button
               key={id}
               onClick={() => { choosePlan(id); try { navigator.vibrate?.(30); } catch {} }}
-              aria-pressed={active}
-              className={`flex w-full items-center justify-between gap-4 rounded-xl border-2 p-5 text-left shadow-sm transition-all duration-200 active:scale-[0.98] ${active ? "border-gold bg-secondary shadow-[0_0_30px_-8px] shadow-gold" : "border-border bg-card hover:-translate-y-0.5 hover:border-gold/70"}`}
+              className={`flex w-full items-center justify-between gap-4 rounded-xl border-2 p-5 text-left shadow-sm transition-all ${active ? "border-gold bg-secondary shadow-[0_0_30px_-8px] shadow-gold" : "border-border bg-card hover:border-gold"}`}
             >
               <div className="min-w-0">
                 {isFreePlan(id) && <span className="mb-1 inline-block rounded-full bg-gold px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-background">1ª Tiragem Gratuita</span>}
                 {id === "profunda" && <span className="mb-1 inline-block rounded-full border border-gold px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-gold">✦ Mais escolhida</span>}
                 <h3 className="font-display text-2xl font-semibold leading-tight">{pl.name}</h3>
                 <p className="mt-1 text-sm text-muted-foreground">{pl.count} cartas · {PLAN_HINT[id]}</p>
-                <ul className="mt-2 space-y-1 text-sm text-foreground/90">
+                <ul className="mt-2 space-y-0.5 text-xs text-foreground/85">
                   {pl.positions.map((pos) => <li key={pos} className="flex gap-1.5"><span className="text-gold">✓</span>{pos}</li>)}
                 </ul>
               </div>
@@ -295,7 +294,7 @@ function Index() {
           );
         })}
       </section>
-      <div className="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+      <div className="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
         <span>🔒 Consulta anônima e sigilosa</span><span>⚡ Sem cadastro</span><span>✦ Baralho Cigano tradicional</span>
       </div>
       {free?.enabled && !free.eligible && (

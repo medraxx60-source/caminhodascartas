@@ -86,6 +86,24 @@ function Index() {
   useEffect(() => {
     try { setMyReadings(JSON.parse(localStorage.getItem("entre_cartas_readings") || "[]")); } catch {}
   }, []);
+  // Shortcuts from the end of a reading: /?plano=profunda&categoria=Amor...
+  useEffect(() => {
+    try {
+      const sp = new URLSearchParams(window.location.search);
+      const pl = sp.get("plano"), cat = sp.get("categoria");
+      if (!pl && !cat) return;
+      if (cat && (CATEGORIES as readonly string[]).includes(cat)) setCategory(cat as Category);
+      if (pl && pl in PLANS) { setPlan(pl as PlanId); setDeck(shuffle(CARDS.length)); setStep(1); }
+      window.history.replaceState(null, "", "/");
+    } catch {}
+  }, []);
+  const [reservedAt, setReservedAt] = useState<number | null>(null);
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!token) return;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [token]);
   // Restore an unpaid Pix order if the phone reloaded the page while the user was in the bank app.
   useEffect(() => {
     try {
@@ -96,6 +114,7 @@ function Index() {
         if (s.question) setQuestion(s.question);
         if (Array.isArray(s.cards) && s.cards.length) { setPicked(s.cards); setRitualDone(true); setStep(2); }
         setOrderCode(s.orderCode ?? "");
+        setReservedAt(s.at ?? Date.now());
         setToken(s.token);
         setPixOpen(true);
       } else if (s) localStorage.removeItem(PENDING_KEY);
@@ -167,6 +186,7 @@ function Index() {
       const r = await create({ data: { plan, category: category ?? "Outros assuntos", question, cards: picked } });
       setOrderCode(r.orderCode);
       setPixCode(r.pixPayload ? { payload: r.pixPayload, image: r.pixImage } : null);
+      setReservedAt(Date.now());
       setToken(r.token);
       setPixOpen(true);
       try { localStorage.setItem(PENDING_KEY, JSON.stringify({ token: r.token, orderCode: r.orderCode, plan, category, question, cards: picked, at: Date.now() })); } catch {}
@@ -397,8 +417,25 @@ function Index() {
           <dl className="min-w-0 space-y-2 border-y border-border py-3 text-sm">
             <div className="flex flex-wrap justify-between gap-2"><dt className="text-muted-foreground">Sua consulta</dt><dd className="font-semibold text-foreground">{p?.name} · {p?.count} cartas</dd></div>
             <div className="flex flex-wrap justify-between gap-2"><dt className="text-muted-foreground">Pedido</dt><dd className="break-all font-mono text-foreground">{orderCode}</dd></div>
+            {question.trim() && (
+              <div className="min-w-0"><dt className="text-muted-foreground">Sua pergunta</dt><dd className="mt-1 break-words font-display text-lg italic leading-snug text-foreground">“{question.trim()}”</dd></div>
+            )}
             <div className="flex flex-wrap items-center justify-between gap-2"><dt className="text-base text-foreground">Total a pagar</dt><dd className="font-display text-3xl font-bold text-gold">{p && formatBRL(p.priceCents)}</dd></div>
           </dl>
+          {reservedAt && (() => {
+            const left = Math.max(0, 15 * 60 - Math.floor((now - reservedAt) / 1000));
+            const mm = String(Math.floor(left / 60)).padStart(2, "0"), ss = String(left % 60).padStart(2, "0");
+            return (
+              <div className="rounded-lg border border-gold/60 bg-gold/10 p-3 text-center">
+                {left > 0 ? (
+                  <p className="text-base font-semibold text-foreground">✦ Suas cartas estão reservadas por <span className="font-mono text-gold" aria-live="off">{mm}:{ss}</span></p>
+                ) : (
+                  <p className="text-base font-semibold text-foreground">✦ Suas cartas continuam guardadas. Conclua o Pix para receber sua leitura.</p>
+                )}
+                <p className="mt-1 text-sm text-muted-foreground">⚡ Assim que o Pix for confirmado, sua interpretação abre sozinha nesta tela.</p>
+              </div>
+            );
+          })()}
           {pixCode ? (
             <>
               <Button size="lg" className="gold-button h-14 w-full min-w-0 whitespace-normal rounded-lg px-3 text-base leading-snug" onClick={async () => { if (await copy(pixCode.payload, "Código Pix")) { setCopied(true); try { navigator.vibrate?.(60); } catch {} } }}>
@@ -491,6 +528,8 @@ function CardCarousel({ deck, picked, onPick }: { deck: number[]; picked: number
   const [cur, setCur] = useState(Math.floor(deck.length / 2));
   const [startX, setStartX] = useState<number | null>(null);
   const [drag, setDrag] = useState(0); // live drag offset in "cards"
+  const [hint, setHint] = useState(true);
+  useEffect(() => { const t = setTimeout(() => setHint(false), 6000); return () => clearTimeout(t); }, []);
   const STEP = 70;
   const n = deck.length;
   const go = (d: number) => setCur((c) => c + d);
@@ -505,7 +544,7 @@ function CardCarousel({ deck, picked, onPick }: { deck: number[]; picked: number
     <div className="mt-6 select-none">
       <div
         className="relative mx-auto h-[400px] w-full touch-none overscroll-contain overflow-hidden"
-        onTouchStart={(e) => { setStartX(e.touches[0]!.clientX); setDrag(0); }}
+        onTouchStart={(e) => { setHint(false); setStartX(e.touches[0]!.clientX); setDrag(0); }}
         onTouchMove={(e) => {
           if (startX === null) return;
           setDrag(Math.max(-2.5, Math.min(2.5, (e.touches[0]!.clientX - startX) / STEP)));
@@ -555,10 +594,15 @@ function CardCarousel({ deck, picked, onPick }: { deck: number[]; picked: number
             </button>
           );
         })}
+        <div aria-hidden="true" className={`pointer-events-none absolute inset-x-0 bottom-3 z-20 flex justify-center transition-opacity duration-700 ${hint && picked.length === 0 ? "opacity-100" : "opacity-0"}`}>
+          <span className="flex items-center gap-2 rounded-full border border-gold/60 bg-background/85 px-4 py-2 text-sm font-semibold text-gold shadow-lg backdrop-blur">
+            <span className="motion-safe:animate-[swipe-hint_1.6s_ease-in-out_infinite]">←</span> Deslize e toque na carta do centro <span className="motion-safe:animate-[swipe-hint_1.6s_ease-in-out_infinite_reverse]">→</span>
+          </span>
+        </div>
       </div>
       <div className="mt-3 mb-5 flex justify-center gap-6 text-sm text-gold">
-        <button onClick={() => go(-1)} aria-label="Carta anterior">‹ anterior</button>
-        <button onClick={() => go(1)} aria-label="Próxima carta">próxima ›</button>
+        <button onClick={() => { setHint(false); go(-1); }} aria-label="Carta anterior">‹ anterior</button>
+        <button onClick={() => { setHint(false); go(1); }} aria-label="Próxima carta">próxima ›</button>
       </div>
     </div>
   );

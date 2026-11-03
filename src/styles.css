@@ -116,17 +116,7 @@
 }
 
 @layer base {
-  h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; }
-  html { -webkit-tap-highlight-color: transparent; -webkit-text-size-adjust: 100%; }
-  p { text-wrap: pretty; }
-  button, a, summary, [role="button"] { touch-action: manipulation; }
-  button:not(:disabled), a, summary { transition: transform 150ms ease, opacity 150ms ease, border-color 200ms ease, background-color 200ms ease; }
-  button:not(:disabled):active { transform: scale(0.98); }
-  :focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; border-radius: 0.5rem; }
-  button:disabled { cursor: not-allowed; }
-  @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
-  }
+  h1, h2, h3 { font-family: var(--font-display); }
 }
 @utility card-face {
   background: linear-gradient(160deg, var(--card), var(--secondary));

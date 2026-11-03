@@ -205,3 +205,44 @@ function Leitura() {
     </main>
   );
 }
+
+const OTHER_TOPIC: Record<string, string> = {
+  "Amor e relacionamentos": "Dinheiro e prosperidade",
+  "Trabalho e carreira": "Dinheiro e prosperidade",
+  "Dinheiro e prosperidade": "Trabalho e carreira",
+  "Família e vida pessoal": "Amor e relacionamentos",
+  "Espiritualidade e autoconhecimento": "Amor e relacionamentos",
+  "Saúde e bem-estar": "Espiritualidade e autoconhecimento",
+  "Outros assuntos": "Amor e relacionamentos",
+};
+
+function NextReading({ planId, category, isFree }: { planId: PlanId; category: string | null; isFree: boolean }) {
+  const cat = category && category in OTHER_TOPIC ? category : "Outros assuntos";
+  const other = OTHER_TOPIC[cat]!;
+  const deeper: PlanId | null = planId === "completa" ? null : planId === "profunda" ? "completa" : "profunda";
+  const href = (plano: PlanId | null, categoria: string) =>
+    `/?${new URLSearchParams({ ...(plano ? { plano } : {}), categoria }).toString()}`;
+  return (
+    <section className="mt-12 rounded-xl border border-gold/50 bg-card/70 p-5 text-center">
+      <p className="text-2xl text-gold">✦</p>
+      <h2 className="mt-1 font-display text-2xl font-semibold text-primary">Continue seu caminho</h2>
+      <p className="mt-2 text-base text-foreground/90">
+        {isFree
+          ? "Você deu o primeiro passo. Para ver influências ocultas, conselho e desfecho com mais detalhes, faça uma consulta de 5 ou 7 cartas."
+          : "As cartas mostram um momento. Quando quiser, aprofunde ou pergunte sobre outra área da sua vida."}
+      </p>
+      <div className="mt-5 space-y-3">
+        {deeper && (
+          <Button asChild size="lg" className="gold-button h-auto min-h-14 w-full whitespace-normal rounded-xl py-3 text-base leading-snug">
+            <a href={href(deeper, cat)}>✦ Aprofundar esta questão · {PLANS[deeper].name} ({PLANS[deeper].count} cartas)</a>
+          </Button>
+        )}
+        <Button asChild size="lg" variant="outline" className="h-auto min-h-14 w-full whitespace-normal rounded-xl border-gold py-3 text-base leading-snug text-gold">
+          <a href={href(null, other)}>Perguntar sobre {other}</a>
+        </Button>
+        <Link to="/" className="block py-2 text-sm text-gold underline-offset-4 hover:underline">Fazer outra consulta do zero</Link>
+      </div>
+      <p className="mt-3 rounded-lg border border-border bg-background/50 p-3 text-sm text-muted-foreground">✓ Esta leitura ficou salva neste aparelho. Releia quando quiser em “Minhas leituras”, no menu ☰ da tela inicial.</p>
+    </section>
+  );
+}

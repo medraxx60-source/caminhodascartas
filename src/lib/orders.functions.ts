@@ -89,7 +89,7 @@ export const getOrderByToken = createServerFn({ method: "POST" })
     await syncAsaasPayment(data.token).catch((e) => console.error("[asaas] sync", e));
     const { data: row } = await supabaseAdmin
       .from("orders")
-      .select("plan, question, cards, status, reading, price_cents, created_at, is_free")
+      .select("plan, question, cards, status, reading, price_cents, created_at, is_free, category")
       .eq("access_token", data.token)
       .maybeSingle();
     if (row) {

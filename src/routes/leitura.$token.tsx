@@ -193,15 +193,15 @@ function Leitura() {
           <p className="mt-2 text-sm text-muted-foreground">Assim que seu Pix for confirmado, sua leitura aparecerá aqui automaticamente. Deixe esta página aberta.</p>
         </div>
       )}
-      <div className="mt-12 rounded-xl border border-gold/50 bg-card/70 p-5 text-center">
-        {order.status === "done" && plan.count < 7 && (
-          <p className="mb-3 text-base text-foreground">Quer aprofundar essa resposta? Uma tiragem de {plan.count < 5 ? "5 ou 7" : "7"} cartas mostra mais detalhes da sua situação.</p>
-        )}
-        <Button asChild size="lg" className="gold-button h-14 w-full rounded-xl text-lg">
-          <Link to="/">Fazer nova consulta</Link>
-        </Button>
-        <p className="mt-3 text-xs text-muted-foreground">Esta leitura fica salva em “Minhas leituras”, no menu ☰ da tela inicial.</p>
-      </div>
+      {order.status === "done" ? (
+        <NextReading planId={order.plan as PlanId} category={(order as { category?: string | null }).category ?? null} isFree={!!order.is_free} />
+      ) : (
+        <div className="mt-12 rounded-xl border border-gold/50 bg-card/70 p-5 text-center">
+          <Button asChild size="lg" className="gold-button h-14 w-full rounded-xl text-lg">
+            <Link to="/">Fazer nova consulta</Link>
+          </Button>
+        </div>
+      )}
     </main>
   );
 }

@@ -114,6 +114,7 @@ function Index() {
         if (s.question) setQuestion(s.question);
         if (Array.isArray(s.cards) && s.cards.length) { setPicked(s.cards); setRitualDone(true); setStep(2); }
         setOrderCode(s.orderCode ?? "");
+        setReservedAt(s.at ?? Date.now());
         setToken(s.token);
         setPixOpen(true);
       } else if (s) localStorage.removeItem(PENDING_KEY);
@@ -185,6 +186,7 @@ function Index() {
       const r = await create({ data: { plan, category: category ?? "Outros assuntos", question, cards: picked } });
       setOrderCode(r.orderCode);
       setPixCode(r.pixPayload ? { payload: r.pixPayload, image: r.pixImage } : null);
+      setReservedAt(Date.now());
       setToken(r.token);
       setPixOpen(true);
       try { localStorage.setItem(PENDING_KEY, JSON.stringify({ token: r.token, orderCode: r.orderCode, plan, category, question, cards: picked, at: Date.now() })); } catch {}
@@ -415,8 +417,25 @@ function Index() {
           <dl className="min-w-0 space-y-2 border-y border-border py-3 text-sm">
             <div className="flex flex-wrap justify-between gap-2"><dt className="text-muted-foreground">Sua consulta</dt><dd className="font-semibold text-foreground">{p?.name} · {p?.count} cartas</dd></div>
             <div className="flex flex-wrap justify-between gap-2"><dt className="text-muted-foreground">Pedido</dt><dd className="break-all font-mono text-foreground">{orderCode}</dd></div>
+            {question.trim() && (
+              <div className="min-w-0"><dt className="text-muted-foreground">Sua pergunta</dt><dd className="mt-1 break-words font-display text-lg italic leading-snug text-foreground">“{question.trim()}”</dd></div>
+            )}
             <div className="flex flex-wrap items-center justify-between gap-2"><dt className="text-base text-foreground">Total a pagar</dt><dd className="font-display text-3xl font-bold text-gold">{p && formatBRL(p.priceCents)}</dd></div>
           </dl>
+          {reservedAt && (() => {
+            const left = Math.max(0, 15 * 60 - Math.floor((now - reservedAt) / 1000));
+            const mm = String(Math.floor(left / 60)).padStart(2, "0"), ss = String(left % 60).padStart(2, "0");
+            return (
+              <div className="rounded-lg border border-gold/60 bg-gold/10 p-3 text-center">
+                {left > 0 ? (
+                  <p className="text-base font-semibold text-foreground">✦ Suas cartas estão reservadas por <span className="font-mono text-gold" aria-live="off">{mm}:{ss}</span></p>
+                ) : (
+                  <p className="text-base font-semibold text-foreground">✦ Suas cartas continuam guardadas. Conclua o Pix para receber sua leitura.</p>
+                )}
+                <p className="mt-1 text-sm text-muted-foreground">⚡ Assim que o Pix for confirmado, sua interpretação abre sozinha nesta tela.</p>
+              </div>
+            );
+          })()}
           {pixCode ? (
             <>
               <Button size="lg" className="gold-button h-14 w-full min-w-0 whitespace-normal rounded-lg px-3 text-base leading-snug" onClick={async () => { if (await copy(pixCode.payload, "Código Pix")) { setCopied(true); try { navigator.vibrate?.(60); } catch {} } }}>

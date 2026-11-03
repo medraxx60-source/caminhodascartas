@@ -86,6 +86,24 @@ function Index() {
   useEffect(() => {
     try { setMyReadings(JSON.parse(localStorage.getItem("entre_cartas_readings") || "[]")); } catch {}
   }, []);
+  // Shortcuts from the end of a reading: /?plano=profunda&categoria=Amor...
+  useEffect(() => {
+    try {
+      const sp = new URLSearchParams(window.location.search);
+      const pl = sp.get("plano"), cat = sp.get("categoria");
+      if (!pl && !cat) return;
+      if (cat && (CATEGORIES as readonly string[]).includes(cat)) setCategory(cat as Category);
+      if (pl && pl in PLANS) { setPlan(pl as PlanId); setDeck(shuffle(CARDS.length)); setStep(1); }
+      window.history.replaceState(null, "", "/");
+    } catch {}
+  }, []);
+  const [reservedAt, setReservedAt] = useState<number | null>(null);
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!token) return;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [token]);
   // Restore an unpaid Pix order if the phone reloaded the page while the user was in the bank app.
   useEffect(() => {
     try {

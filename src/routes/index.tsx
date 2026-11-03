@@ -528,6 +528,8 @@ function CardCarousel({ deck, picked, onPick }: { deck: number[]; picked: number
   const [cur, setCur] = useState(Math.floor(deck.length / 2));
   const [startX, setStartX] = useState<number | null>(null);
   const [drag, setDrag] = useState(0); // live drag offset in "cards"
+  const [hint, setHint] = useState(true);
+  useEffect(() => { const t = setTimeout(() => setHint(false), 6000); return () => clearTimeout(t); }, []);
   const STEP = 70;
   const n = deck.length;
   const go = (d: number) => setCur((c) => c + d);
@@ -542,7 +544,7 @@ function CardCarousel({ deck, picked, onPick }: { deck: number[]; picked: number
     <div className="mt-6 select-none">
       <div
         className="relative mx-auto h-[400px] w-full touch-none overscroll-contain overflow-hidden"
-        onTouchStart={(e) => { setStartX(e.touches[0]!.clientX); setDrag(0); }}
+        onTouchStart={(e) => { setHint(false); setStartX(e.touches[0]!.clientX); setDrag(0); }}
         onTouchMove={(e) => {
           if (startX === null) return;
           setDrag(Math.max(-2.5, Math.min(2.5, (e.touches[0]!.clientX - startX) / STEP)));
@@ -592,10 +594,15 @@ function CardCarousel({ deck, picked, onPick }: { deck: number[]; picked: number
             </button>
           );
         })}
+        <div aria-hidden="true" className={`pointer-events-none absolute inset-x-0 bottom-3 z-20 flex justify-center transition-opacity duration-700 ${hint && picked.length === 0 ? "opacity-100" : "opacity-0"}`}>
+          <span className="flex items-center gap-2 rounded-full border border-gold/60 bg-background/85 px-4 py-2 text-sm font-semibold text-gold shadow-lg backdrop-blur">
+            <span className="motion-safe:animate-[swipe-hint_1.6s_ease-in-out_infinite]">←</span> Deslize e toque na carta do centro <span className="motion-safe:animate-[swipe-hint_1.6s_ease-in-out_infinite_reverse]">→</span>
+          </span>
+        </div>
       </div>
       <div className="mt-3 mb-5 flex justify-center gap-6 text-sm text-gold">
-        <button onClick={() => go(-1)} aria-label="Carta anterior">‹ anterior</button>
-        <button onClick={() => go(1)} aria-label="Próxima carta">próxima ›</button>
+        <button onClick={() => { setHint(false); go(-1); }} aria-label="Carta anterior">‹ anterior</button>
+        <button onClick={() => { setHint(false); go(1); }} aria-label="Próxima carta">próxima ›</button>
       </div>
     </div>
   );

@@ -37,11 +37,11 @@ export function HomeTrust() {
         <h2 className="text-center font-display text-2xl font-semibold text-primary">Perguntas frequentes</h2>
         <div className="mt-4 space-y-2">
           {FAQ.map(([q, a]) => (
-            <details key={q} className="group rounded-xl border border-border bg-card p-4">
-              <summary className="cursor-pointer list-none text-base font-semibold text-foreground">
-                <span className="mr-2 text-gold group-open:hidden">+</span><span className="mr-2 hidden text-gold group-open:inline">−</span>{q}
+            <details key={q} className="group rounded-xl border border-border bg-card transition-colors open:border-gold/60">
+              <summary className="flex min-h-12 cursor-pointer list-none items-center gap-3 p-4 text-base font-semibold text-foreground [&::-webkit-details-marker]:hidden">
+                <span className="text-lg text-gold transition-transform duration-200 group-open:rotate-45">+</span>{q}
               </summary>
-              <p className="mt-3 leading-relaxed text-muted-foreground">{a}</p>
+              <p className="px-4 pb-4 leading-relaxed text-foreground/80">{a}</p>
             </details>
           ))}
         </div>

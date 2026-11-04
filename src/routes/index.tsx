@@ -48,6 +48,10 @@ const QUESTION_SUGGESTIONS: Record<string, string[]> = {
 };
 
 
+function scrollToId(id: string, delay = 150) {
+  setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "center" }), delay);
+}
+
 function shuffle(n: number) {
   const a = Array.from({ length: n }, (_, i) => i);
   for (let i = a.length - 1; i > 0; i--) {

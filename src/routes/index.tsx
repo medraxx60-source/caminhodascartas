@@ -278,7 +278,7 @@ function Index() {
           return (
             <button
               key={id}
-              onClick={() => { choosePlan(id); try { navigator.vibrate?.(30); } catch {} }}
+              onClick={() => { choosePlan(id); try { navigator.vibrate?.(30); } catch {} setTimeout(() => document.getElementById("continuar-plano")?.scrollIntoView({ behavior: "smooth", block: "center" }), 120); }}
               className={`flex w-full items-center justify-between gap-4 rounded-xl border-2 p-5 text-left shadow-sm transition-all ${active ? "border-gold bg-secondary shadow-[0_0_30px_-8px] shadow-gold" : "border-border bg-card hover:border-gold"}`}
             >
               <div className="min-w-0">
@@ -301,7 +301,7 @@ function Index() {
       {free?.enabled && !free.eligible && (
         <p className="mt-4 rounded-xl border border-gold/40 bg-card/70 p-4 text-center text-sm text-muted-foreground">Você já aproveitou sua 1ª leitura de cortesia ✦ As tiragens de 5 e 7 cartas trazem uma visão ainda mais completa da sua situação.</p>
       )}
-      <Button size="lg" className="gold-button mt-8 h-14 w-full rounded-xl text-lg" disabled={!p} onClick={() => goStep(1)}>
+      <Button id="continuar-plano" size="lg" className="gold-button mt-8 h-14 w-full scroll-mb-6 rounded-xl text-lg" disabled={!p} onClick={() => goStep(1)}>
         {p ? `Continuar com ${p.name}` : "Escolha uma consulta acima"}
       </Button>
       <HomeTrust />

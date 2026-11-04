@@ -240,11 +240,6 @@ function Index() {
           <h1 className="mt-2 text-4xl font-bold text-foreground">Caminho das Cartas</h1>
           <div className="gold-rule mx-auto mt-3 w-40" />
           <p className="mt-3 text-base text-foreground/90">Faça sua pergunta e receba sua leitura: amor, dinheiro, saúde, espiritualidade.</p>
-          {isFreePlan("essencial") && !plan && (
-            <button type="button" onClick={() => choosePlan("essencial")} className="gold-button mt-4 w-full rounded-xl px-4 py-3 text-base font-semibold">
-              ✦ Fazer minha 1ª tiragem grátis · 3 cartas
-            </button>
-          )}
         </div>
       </header>
 

@@ -2,7 +2,7 @@ export const WHATSAPP_NUMBER = "5563991167896";
 
 export type HelpScreen = "planos" | "pergunta" | "cartas" | "pagamento" | "leitura";
 
-export function helpMessage(screen: HelpScreen, orderCode?: string) {
+export function helpMessage(screen: HelpScreen, orderCode?: string | undefined) {
   switch (screen) {
     case "planos": return "Olá! Estou no Caminho das Cartas e fiquei com uma dúvida sobre os planos e a consulta.";
     case "pergunta": return "Olá! Estou no Caminho das Cartas escolhendo o assunto e queria saber se as cartas respondem sobre a minha situação.";
@@ -12,11 +12,11 @@ export function helpMessage(screen: HelpScreen, orderCode?: string) {
   }
 }
 
-export function helpLink(screen: HelpScreen, orderCode?: string) {
+export function helpLink(screen: HelpScreen, orderCode?: string | undefined) {
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(helpMessage(screen, orderCode))}`;
 }
 
-export function HelpButton({ screen, orderCode }: { screen: HelpScreen; orderCode?: string }) {
+export function HelpButton({ screen, orderCode }: { screen: HelpScreen; orderCode?: string | undefined }) {
   return (
     <a
       href={helpLink(screen, orderCode)}

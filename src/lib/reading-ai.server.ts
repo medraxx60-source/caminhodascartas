@@ -22,7 +22,7 @@ export async function generateReadingText(order: { id: string; plan: string; car
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
         body: JSON.stringify({
-          model: "gpt-5.6-sol",
+          model: "claude-haiku-4.5",
           stream: false,
           messages: [
             {

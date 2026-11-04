@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { CardFace, cardImage } from "@/components/TarotCard";
-import { CARDS, PLANS, type PlanId } from "@/lib/lenormand";
+import { CARDS, PLANS, formatBRL, type PlanId } from "@/lib/lenormand";
 import { layoutReading } from "@/lib/reading-layout";
 import { getOrderByToken, runFreeGeneration } from "@/lib/orders.functions";
 import { useServerFn } from "@tanstack/react-start";

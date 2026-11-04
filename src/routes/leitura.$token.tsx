@@ -11,6 +11,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ReviewBox } from "@/components/ReviewBox";
 import { StoryImageButton } from "@/components/StoryImageButton";
+import { HelpButton } from "@/components/HelpButton";
 
 const orderQuery = (token: string) =>
   queryOptions({
@@ -202,6 +203,7 @@ function Leitura() {
           </Button>
         </div>
       )}
+      <HelpButton screen="leitura" />
     </main>
   );
 }

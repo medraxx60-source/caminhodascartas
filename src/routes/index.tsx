@@ -1,3 +1,4 @@
+import { HelpButton, helpLink } from "@/components/HelpButton";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -265,7 +266,7 @@ function Index() {
             ))}
           </div>
           <div className="gold-rule my-6" />
-          <a href="https://wa.me/5563991167896?text=Ol%C3%A1!%20Preciso%20de%20ajuda%20no%20Cartas%20de%20Tar%C3%B4." target="_blank" rel="noreferrer" className="block rounded-xl border border-border bg-card px-3 py-3 text-sm text-foreground">Ajuda pelo WhatsApp <span className="float-right text-gold">›</span></a>
+          <a href={helpLink("planos")} target="_blank" rel="noreferrer" className="block rounded-xl border border-border bg-card px-3 py-3 text-sm text-foreground">Ajuda pelo WhatsApp <span className="float-right text-gold">›</span></a>
         </SheetContent>
       </Sheet>
 
@@ -487,7 +488,7 @@ function Index() {
             ) : null}
             <p role="status" className="flex min-w-0 items-start justify-center gap-3 rounded-md border border-gold/60 bg-gold/10 p-4 text-left text-base font-semibold leading-relaxed text-foreground"><span aria-hidden="true" className="mt-2 inline-block h-3 w-3 shrink-0 rounded-full bg-gold motion-safe:animate-pulse" /><span className="min-w-0 flex-1 break-words">Aguardando confirmação do pagamento… assim que confirmado, sua interpretação abre sozinha nesta tela.</span></p>
             <Button asChild variant="link" className="h-auto min-h-11 w-full whitespace-normal text-base">
-              <a href={`https://wa.me/5563991167896?text=${encodeURIComponent(`Olá! Preciso de ajuda com o pedido ${orderCode} no Caminho das Cartas.`)}`} target="_blank" rel="noopener noreferrer"><MessageCircle aria-hidden="true" />Preciso de ajuda com o Pix</a>
+              <a href={helpLink("pagamento", orderCode)} target="_blank" rel="noopener noreferrer"><MessageCircle aria-hidden="true" />Preciso de ajuda com o Pix</a>
             </Button>
           </div>
         </DialogContent>
@@ -497,15 +498,7 @@ function Index() {
         <p>© {new Date().getFullYear()} Caminho das Cartas · Todos os direitos reservados.</p>
         <a href="/admin" className="inline-block text-muted-foreground/60 hover:underline">Acesso administrativo</a>
       </footer>
-      <a
-        href={`https://wa.me/5563991167896?text=${encodeURIComponent(orderCode ? `Olá! Preciso de ajuda com o pedido ${orderCode} no Caminho das Cartas.` : "Olá! Preciso de ajuda no Caminho das Cartas.")}`}
-        target="_blank" rel="noopener noreferrer" aria-label="Precisa de ajuda? Falar no WhatsApp"
-        style={{ bottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
-        className="fixed right-3 z-[60] flex items-center gap-1.5 rounded-full border border-gold bg-primary px-2.5 py-2 text-xs font-semibold text-primary-foreground shadow-md"
-      >
-        <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current" aria-hidden><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.6-4-4.7-4.2-.1-.2-1.1-1.5-1.1-2.9s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.4.6-.3.4c-.1.1-.3.3-.1.6.2.3.7 1.2 1.6 2 1.1 1 2 1.3 2.3 1.4.3.2.4.1.6-.1l.8-1c.2-.3.4-.2.6-.1l1.9.9c.3.1.5.2.5.3.1.2.1.6-.1 1.2Z"/></svg>
-        <span className="sm:hidden">Ajuda</span><span className="hidden sm:inline">Precisa de ajuda?</span>
-      </a>
+      <HelpButton screen={token ? "pagamento" : step === 0 ? "planos" : step === 1 ? "pergunta" : "cartas"} orderCode={orderCode || undefined} />
     </main>
     </div>
   );

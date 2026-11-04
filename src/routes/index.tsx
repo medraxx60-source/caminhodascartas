@@ -70,6 +70,8 @@ function Index() {
   const [question, setQuestion] = useState("");
   const [category, setCategory] = useState<Category | null>(null);
   const [picked, setPicked] = useState<number[]>([]);
+  // Cards carried over from a previous reading when expanding to a bigger plan; they stay fixed.
+  const [lockedPicks, setLockedPicks] = useState(0);
   const [deck, setDeck] = useState(() => Array.from({ length: CARDS.length }, (_, i) => i));
   const [token, setToken] = useState<string | null>(null);
   const [pixOpen, setPixOpen] = useState(false);
@@ -95,10 +97,18 @@ function Index() {
   useEffect(() => {
     try {
       const sp = new URLSearchParams(window.location.search);
-      const pl = sp.get("plano"), cat = sp.get("categoria");
+      const pl = sp.get("plano"), cat = sp.get("categoria"), q = sp.get("pergunta"), cs = sp.get("cartas");
       if (!pl && !cat) return;
       if (cat && (CATEGORIES as readonly string[]).includes(cat)) setCategory(cat as Category);
-      if (pl && pl in PLANS) { setPlan(pl as PlanId); setDeck(shuffle(CARDS.length)); setStep(1); }
+      if (pl && pl in PLANS) {
+        setPlan(pl as PlanId); setDeck(shuffle(CARDS.length)); setStep(1);
+        // Expansion: keep the previous question and cards, user only picks the remaining ones.
+        const prev = (cs ?? "").split(",").map(Number).filter((n) => Number.isInteger(n) && n >= 0 && n < CARDS.length);
+        const uniq = [...new Set(prev)];
+        if (q && q.trim() && uniq.length && uniq.length < PLANS[pl as PlanId].count) {
+          setQuestion(q.slice(0, 1000)); setPicked(uniq); setLockedPicks(uniq.length); setRitualDone(true); setStep(2);
+        }
+      }
       window.history.replaceState(null, "", "/");
     } catch {}
   }, []);
@@ -162,7 +172,7 @@ function Index() {
 
   const choosePlan = (id: PlanId) => {
     if (id !== plan) {
-      setPicked([]); setDeck(shuffle(CARDS.length));
+      setPicked([]); setLockedPicks(0); setDeck(shuffle(CARDS.length));
       if (token) { setToken(null); setOrderCode(""); try { localStorage.removeItem(PENDING_KEY); } catch {} }
     }
     setPlan(id);
@@ -177,7 +187,7 @@ function Index() {
   const restart = () => {
     setToken(null); setOrderCode(""); setPixOpen(false);
     try { localStorage.removeItem(PENDING_KEY); } catch {}
-    setPicked([]); setDeck(shuffle(CARDS.length)); setQuestion(""); setCategory(null); setRitualDone(false);
+    setPicked([]); setLockedPicks(0); setDeck(shuffle(CARDS.length)); setQuestion(""); setCategory(null); setRitualDone(false);
     goStep(0);
   };
 
@@ -389,7 +399,11 @@ function Index() {
         <section className="mt-6">
           <div className="text-center">
             <h2 className="font-display text-3xl font-semibold text-foreground">Escolha {p.count} cartas</h2>
-            <p className="mx-auto mt-2 max-w-xs text-muted-foreground">Deslize para os lados e toque na carta do centro ✦</p>
+            {lockedPicks > 0 ? (
+              <p className="mx-auto mt-2 max-w-xs text-base text-foreground/90">Suas {lockedPicks} cartas da leitura anterior continuam na mesa ✦ Escolha mais {p.count - lockedPicks} para aprofundar.</p>
+            ) : (
+              <p className="mx-auto mt-2 max-w-xs text-muted-foreground">Deslize para os lados e toque na carta do centro ✦</p>
+            )}
           </div>
           <CardCarousel deck={deck} picked={picked} onPick={toggle} />
           <p className="mb-3 text-center text-sm font-semibold text-gold" aria-live="polite">
@@ -401,15 +415,15 @@ function Index() {
               return (
                 <button key={i} type="button" disabled
                   aria-label={filled ? `Carta ${i + 1} escolhida` : `Espaço ${i + 1}`}
-                  className={`flex h-14 w-10 overflow-hidden items-center justify-center rounded-md border font-display text-lg font-bold shadow-inner transition-all ${filled ? "border-gold bg-gold text-background shadow-lg" : "border-gold/40 bg-secondary text-foreground/80"}`}>
+                  className={`flex h-14 w-10 overflow-hidden items-center justify-center rounded-md border font-display text-lg font-bold shadow-inner transition-all ${filled ? "border-gold bg-gold text-background shadow-lg" : "border-gold/40 bg-secondary text-foreground/80"} ${i < lockedPicks ? "ring-2 ring-gold ring-offset-2 ring-offset-background" : ""}`}>
                   {filled ? <img src={cardImage(picked[i]!)} alt={CARDS[picked[i]!]} className="h-full w-full object-cover" /> : i + 1}
                 </button>
               );
             })}
           </div>
-          {picked.length > 0 && !token && (
+          {picked.length > lockedPicks && !token && (
             <button type="button" disabled={loading}
-              onClick={() => { setPicked([]); setDeck(shuffle(CARDS.length)); }}
+              onClick={() => { setPicked((cur) => cur.slice(0, lockedPicks)); setDeck(shuffle(CARDS.length)); }}
               className="mx-auto mt-3 block text-sm text-gold underline-offset-4 hover:underline">
               ↻ Embaralhar e escolher novamente
             </button>

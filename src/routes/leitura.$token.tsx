@@ -207,7 +207,7 @@ function Leitura() {
         </div>
       )}
       {order.status === "done" ? (
-        <NextReading planId={order.plan as PlanId} category={(order as { category?: string | null }).category ?? null} isFree={!!order.is_free} token={token} advice={(order.reading?.split(/\n*\s*CONSELHO DOS ANJOS:?\s*/i)[1] ?? "").trim()} />
+        <NextReading planId={order.plan as PlanId} category={(order as { category?: string | null }).category ?? null} isFree={!!order.is_free} token={token} advice={(order.reading?.split(/\n*\s*CONSELHO DOS ANJOS:?\s*/i)[1] ?? "").trim()} question={order.question ?? ""} cards={(order.cards as number[]) ?? []} />
       ) : (
         <div className="mt-12 rounded-xl border border-gold/50 bg-card/70 p-5 text-center">
           <Button asChild size="lg" className="gold-button h-14 w-full rounded-xl text-lg">
@@ -230,28 +230,33 @@ const OTHER_TOPIC: Record<string, string> = {
   "Outros assuntos": "Amor e relacionamentos",
 };
 
-function NextReading({ planId, category, isFree, token, advice }: { planId: PlanId; category: string | null; isFree: boolean; token: string; advice: string }) {
+function NextReading({ planId, category, isFree, token, advice, question, cards }: { planId: PlanId; category: string | null; isFree: boolean; token: string; advice: string; question: string; cards: number[] }) {
   const [showReview, setShowReview] = useState(false);
   const cat = category && category in OTHER_TOPIC ? category : "Outros assuntos";
   const other = OTHER_TOPIC[cat]!;
-  const deeper: PlanId | null = planId === "completa" ? null : planId === "profunda" ? "completa" : "profunda";
+  const deeperPlans: PlanId[] = planId === "completa" ? [] : planId === "profunda" ? ["completa"] : ["profunda", "completa"];
   const href = (plano: PlanId | null, categoria: string) =>
     `/?${new URLSearchParams({ ...(plano ? { plano } : {}), categoria }).toString()}`;
+  // Expansion keeps the same question and the cards already drawn; the user only picks the missing ones.
+  const expandHref = (plano: PlanId) =>
+    `/?${new URLSearchParams({ plano, categoria: cat, pergunta: question, cartas: cards.join(",") }).toString()}`;
   return (
     <section className="mt-12 rounded-xl border border-gold/50 bg-card/70 p-5 text-center">
       <p className="text-2xl text-gold">✦</p>
       <h2 className="mt-1 font-display text-2xl font-semibold text-primary">Continue seu caminho</h2>
       <p className="mt-2 text-base text-foreground/90">
         {isFree
-          ? `As 3 cartas mostraram sua situação, o desafio e a tendência. Mas há influências ocultas agindo nos bastidores que uma tiragem curta só sinaliza. Na leitura ${PLANS.profunda.name}, com 5 cartas, você vê o que está escondido, recebe o conselho e o desfecho do seu caminho — por ${formatBRL(PLANS.profunda.priceCents)}.`
-          : "As cartas mostram um momento. Quando quiser, aprofunde ou pergunte sobre outra área da sua vida."}
+          ? `As 3 cartas mostraram sua situação, o desafio e a tendência. Mas há influências ocultas agindo nos bastidores que uma tiragem curta só sinaliza. Suas cartas continuam na mesa: abra mais cartas sobre a mesma pergunta e veja o que está escondido, o conselho e o desfecho do seu caminho.`
+          : deeperPlans.length
+            ? "Suas cartas continuam na mesa. Abra mais cartas sobre a mesma pergunta para ver o desfecho, ou pergunte sobre outra área da sua vida."
+            : "As cartas mostram um momento. Quando quiser, pergunte sobre outra área da sua vida."}
       </p>
       <div className="mt-5 space-y-3">
-        {deeper && (
-          <Button asChild size="lg" className="gold-button h-auto min-h-14 w-full whitespace-normal rounded-xl py-3 text-base leading-snug">
-            <a href={href(deeper, cat)}>✦ Aprofundar esta questão · {PLANS[deeper].name} ({PLANS[deeper].count} cartas)</a>
+        {deeperPlans.map((d, i) => (
+          <Button key={d} asChild size="lg" variant={i === 0 ? "default" : "outline"} className={i === 0 ? "gold-button h-auto min-h-14 w-full whitespace-normal rounded-xl py-3 text-base leading-snug" : "h-auto min-h-12 w-full whitespace-normal rounded-xl border-gold py-3 text-base leading-snug text-gold"}>
+            <a href={expandHref(d)}>✦ Expandir para {PLANS[d].count} cartas · {PLANS[d].name} ({formatBRL(PLANS[d].priceCents)})<br /><span className="text-sm opacity-80">Suas {cards.length} cartas continuam na mesa · escolha mais {PLANS[d].count - cards.length}</span></a>
           </Button>
-        )}
+        ))}
         <Button asChild size="lg" variant="outline" className="h-auto min-h-12 w-full whitespace-normal rounded-xl border-gold py-3 text-base leading-snug text-gold">
           <a href={href(null, other)}>Perguntar sobre {other}</a>
         </Button>

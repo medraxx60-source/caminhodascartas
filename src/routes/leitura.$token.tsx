@@ -10,7 +10,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ReviewBox } from "@/components/ReviewBox";
-import { StoryImageButton } from "@/components/StoryImageButton";
+import { giftWhatsAppHref } from "@/components/StoryImageButton";
 import { HelpButton } from "@/components/HelpButton";
 
 const orderQuery = (token: string) =>
@@ -167,10 +167,8 @@ function Leitura() {
                 <h2 className="mt-1 font-display text-3xl font-semibold text-primary">Conselho dos Anjos</h2>
                 <div className="gold-rule mx-auto mt-3 w-24" />
                 <p className="mt-4 whitespace-pre-line font-display text-xl italic leading-relaxed">{angels.trim()}</p>
-                <StoryImageButton cardSrc={cardImage(cards[cards.length - 1]!)} cardName={CARDS[cards[cards.length - 1]!]!} advice={angels.trim()} />
               </section>
             )}
-            <ReviewBox token={token} />
           </>
         );
       })() : order.status === "rejected" ? (
@@ -195,7 +193,7 @@ function Leitura() {
         </div>
       )}
       {order.status === "done" ? (
-        <NextReading planId={order.plan as PlanId} category={(order as { category?: string | null }).category ?? null} isFree={!!order.is_free} />
+        <NextReading planId={order.plan as PlanId} category={(order as { category?: string | null }).category ?? null} isFree={!!order.is_free} token={token} advice={(order.reading?.split(/\n*\s*CONSELHO DOS ANJOS:?\s*/i)[1] ?? "").trim()} />
       ) : (
         <div className="mt-12 rounded-xl border border-gold/50 bg-card/70 p-5 text-center">
           <Button asChild size="lg" className="gold-button h-14 w-full rounded-xl text-lg">
@@ -218,7 +216,8 @@ const OTHER_TOPIC: Record<string, string> = {
   "Outros assuntos": "Amor e relacionamentos",
 };
 
-function NextReading({ planId, category, isFree }: { planId: PlanId; category: string | null; isFree: boolean }) {
+function NextReading({ planId, category, isFree, token, advice }: { planId: PlanId; category: string | null; isFree: boolean; token: string; advice: string }) {
+  const [showReview, setShowReview] = useState(false);
   const cat = category && category in OTHER_TOPIC ? category : "Outros assuntos";
   const other = OTHER_TOPIC[cat]!;
   const deeper: PlanId | null = planId === "completa" ? null : planId === "profunda" ? "completa" : "profunda";
@@ -239,11 +238,20 @@ function NextReading({ planId, category, isFree }: { planId: PlanId; category: s
             <a href={href(deeper, cat)}>✦ Aprofundar esta questão · {PLANS[deeper].name} ({PLANS[deeper].count} cartas)</a>
           </Button>
         )}
-        <Button asChild size="lg" variant="outline" className="h-auto min-h-14 w-full whitespace-normal rounded-xl border-gold py-3 text-base leading-snug text-gold">
+        <Button asChild size="lg" variant="outline" className="h-auto min-h-12 w-full whitespace-normal rounded-xl border-gold py-3 text-base leading-snug text-gold">
           <a href={href(null, other)}>Perguntar sobre {other}</a>
         </Button>
-        <Link to="/" className="block py-2 text-sm text-gold underline-offset-4 hover:underline">Fazer outra consulta do zero</Link>
+        <Link to="/" className="block py-1 text-sm text-gold underline-offset-4 hover:underline">Fazer outra consulta do zero</Link>
       </div>
+      <div className="mt-5 grid grid-cols-2 gap-2 border-t border-border/60 pt-4 text-sm">
+        <a href={giftWhatsAppHref(advice)} target="_blank" rel="noopener noreferrer" className="rounded-lg border border-border bg-background/40 px-2 py-3 text-foreground/90 hover:border-gold">
+          🎁 Presentear um amigo
+        </a>
+        <button type="button" onClick={() => setShowReview((v) => !v)} aria-expanded={showReview} className="rounded-lg border border-border bg-background/40 px-2 py-3 text-foreground/90 hover:border-gold">
+          ⭐ Avaliar leitura
+        </button>
+      </div>
+      {showReview && <ReviewBox token={token} />}
       <p className="mt-3 rounded-lg border border-border bg-background/50 p-3 text-sm text-muted-foreground">✓ Esta leitura ficou salva neste aparelho. Releia quando quiser em “Minhas leituras”, no menu ☰ da tela inicial.</p>
     </section>
   );

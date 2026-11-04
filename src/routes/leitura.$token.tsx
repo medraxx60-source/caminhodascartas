@@ -4,7 +4,6 @@ import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { CardFace, cardImage } from "@/components/TarotCard";
 import { CARDS, PLANS, formatBRL, type PlanId } from "@/lib/lenormand";
-import { layoutReading } from "@/lib/reading-layout";
 import { getOrderByToken, runFreeGeneration, resumePaidGeneration } from "@/lib/orders.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
@@ -141,40 +140,28 @@ function Leitura() {
       {order.status === "done" && order.reading ? (() => {
         const [main, angels] = order.reading.split(/\n*\s*CONSELHO DOS ANJOS:?\s*/i);
         const cards = order.cards as number[];
-        const lay = layoutReading((main ?? "").trim(), cards);
+        const paragraphs = (main ?? "").trim().split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
         return (
           <>
-            {lay.intro.length > 0 && (
-              <div className="mt-8 space-y-4 leading-relaxed">{lay.intro.map((p, k) => <p key={k}>{p}</p>)}</div>
-            )}
-            <div className="mt-8 space-y-6">
-              {cards.map((c, i) => (
-                <section key={c} className="rounded-xl border border-border bg-card p-4 shadow-sm">
-                  <div className="flex items-center gap-4">
-                    <div className="aspect-[5/8] w-20 shrink-0 overflow-hidden rounded-md shadow-md ring-1 ring-gold/50">
-                      {cardImage(c) && <img src={cardImage(c)} alt={CARDS[c]} width={640} height={1024} loading="lazy" className="h-full w-full object-cover" />}
+            <section className="mt-8 rounded-xl border border-gold/50 bg-card p-4 shadow-sm">
+              <p className="text-center text-xs uppercase tracking-[0.25em] text-gold">Sua mesa</p>
+              <div className="mt-3 flex flex-wrap justify-center gap-3">
+                {cards.map((c, i) => (
+                  <figure key={c} className="w-[28%] max-w-[110px] text-center">
+                    <div className="aspect-[5/8] overflow-hidden rounded-md shadow-md ring-1 ring-gold/50">
+                      {cardImage(c) && <img src={cardImage(c)} alt={CARDS[c]} width={640} height={1024} className="h-full w-full object-cover" />}
                     </div>
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.2em] text-gold">{i + 1}ª · {plan.positions[i]}</p>
-                      <h2 className="mt-1 font-display text-2xl font-semibold text-primary">{CARDS[c]}</h2>
-                      <p className="text-xs text-muted-foreground">Carta {c + 1}</p>
-                    </div>
-                  </div>
-                  {lay.perCard[i]!.length > 0 && (
-                    <div className="mt-4 space-y-3 border-t border-border/60 pt-4 leading-relaxed">
-                      {lay.perCard[i]!.map((p, k) => <p key={k}>{p}</p>)}
-                    </div>
-                  )}
-                </section>
-              ))}
+                    <figcaption className="mt-2">
+                      <span className="block text-[10px] uppercase tracking-wider text-gold">{i + 1}ª · {plan.positions[i]}</span>
+                      <span className="block font-display text-base font-semibold leading-tight text-primary">{CARDS[c]}</span>
+                    </figcaption>
+                  </figure>
+                ))}
+              </div>
+            </section>
+            <div className="mt-8 space-y-4 text-lg leading-relaxed">
+              {paragraphs.map((p, k) => <p key={k}>{p}</p>)}
             </div>
-            {lay.conclusion.length > 0 && (
-              <section className="mt-10">
-                <h2 className="text-center font-display text-2xl font-semibold text-primary">Conclusão da leitura</h2>
-                <div className="gold-rule mx-auto mt-3 w-24" />
-                <div className="mt-4 space-y-4 leading-relaxed">{lay.conclusion.map((p, k) => <p key={k}>{p}</p>)}</div>
-              </section>
-            )}
             {angels?.trim() && (
               <section className="mt-10 rounded-xl border-2 border-gold bg-card p-6 text-center shadow-sm">
                 <p className="text-2xl text-gold">✦</p>

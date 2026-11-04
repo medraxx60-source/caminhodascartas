@@ -39,9 +39,9 @@ function GeneratingProgress() {
     const id = setInterval(() => setElapsed((e) => e + 1), 1000);
     return () => clearInterval(id);
   }, []);
-  const step = Math.min(PROGRESS_STEPS.length - 1, Math.floor(elapsed / 4));
-  // Avança rápido no início e desacelera perto do fim, sem chegar a 100%.
-  const pct = Math.round(95 * (1 - Math.exp(-elapsed / 10)));
+  // Paced to the real AI time (~40s): each step ~9s, bar reaches ~90% around 40s and never hits 100%.
+  const step = Math.min(PROGRESS_STEPS.length - 1, Math.floor(elapsed / 9));
+  const pct = Math.round(96 * (1 - Math.exp(-elapsed / 15)));
   return (
     <div className="mt-10 rounded-lg border border-gold bg-card p-6 text-center">
       <p className="font-display text-2xl text-primary">Pagamento aprovado! Interpretando suas cartas…</p>

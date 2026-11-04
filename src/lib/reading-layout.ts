@@ -40,5 +40,12 @@ export function layoutReading(main: string, cards: number[]): ReadingLayout {
     }
     flush();
   });
+  // Cards mentioned only inside another card's sentence (e.g. "A Cruz junto da Montanha") get that passage too, so no card is left blank.
+  const all = sentencesByPara.flat().map((s) => s.trim());
+  perCard.forEach((pc, i) => {
+    if (pc.length) return;
+    const hit = all.filter((s) => patterns[i]!.test(s));
+    if (hit.length) pc.push(hit.join(" "));
+  });
   return { intro, perCard, conclusion };
 }

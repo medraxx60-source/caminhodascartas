@@ -26,36 +26,57 @@ const orderQuery = (token: string) =>
   });
 
 const PROGRESS_STEPS = [
-  "Conectando às suas cartas…",
-  "Alinhando as posições…",
-  "Relacionando as cartas com a sua pergunta…",
-  "Redigindo a interpretação…",
-  "Recebendo o Conselho dos Anjos…",
+  "Cruzando a energia da sua pergunta com as cartas",
+  "Analisando a influência de cada posição",
+  "Conectando as combinações e o que está oculto",
+  "Estruturando a sua orientação prática",
+  "Acolhendo o Conselho dos Anjos",
 ];
 
-function GeneratingProgress() {
+const REFLECTIONS = [
+  "As cartas não determinam seu destino; elas iluminam as escolhas que você tem nas mãos.",
+  "Respire fundo e mantenha o pensamento na sua pergunta.",
+  "Cada combinação é lida com atenção aos detalhes da sua história.",
+  "O que está oculto aos olhos muitas vezes já é sentido pelo coração.",
+  "Sua orientação está sendo preparada com cuidado e acolhimento.",
+];
+
+function GeneratingProgress({ isFree }: { isFree: boolean }) {
   const [elapsed, setElapsed] = useState(0);
   useEffect(() => {
     const id = setInterval(() => setElapsed((e) => e + 1), 1000);
     return () => clearInterval(id);
   }, []);
-  // Paced to the real AI time (~40s): each step ~9s, bar reaches ~90% around 40s and never hits 100%.
-  const step = Math.min(PROGRESS_STEPS.length - 1, Math.floor(elapsed / 9));
+  // Paced to the real AI time (~40s): each step ~8s; bar never hits 100% until the reading arrives.
+  const step = Math.min(PROGRESS_STEPS.length - 1, Math.floor(elapsed / 8));
   const pct = Math.round(96 * (1 - Math.exp(-elapsed / 15)));
+  const quoteIdx = Math.floor(elapsed / 8) % REFLECTIONS.length;
   return (
-    <div className="mt-10 rounded-lg border border-gold bg-card p-6 text-center">
-      <p className="font-display text-2xl text-primary">Pagamento aprovado! Interpretando suas cartas…</p>
-      <div className="mx-auto mt-5 h-2 w-full max-w-sm overflow-hidden rounded-full bg-muted">
+    <div className="mt-10 rounded-xl border border-gold bg-card p-6 text-center" role="status" aria-live="polite">
+      <p className="text-2xl text-gold animate-pulse" aria-hidden>✦</p>
+      <p className="mt-1 font-display text-2xl leading-snug text-primary">
+        {isFree ? "Sua mesa está aberta" : "Pagamento confirmado"}
+      </p>
+      <p className="mt-1 text-base text-muted-foreground">
+        {isFree ? "Consultando o Baralho Cigano…" : "A cartomante está diante da sua mesa…"}
+      </p>
+      <div className="mx-auto mt-5 h-2 w-full max-w-sm overflow-hidden rounded-full bg-muted" aria-hidden>
         <div className="h-full rounded-full bg-gold transition-all duration-1000 ease-out" style={{ width: `${Math.max(5, pct)}%` }} />
       </div>
-      <ol className="mx-auto mt-5 max-w-sm space-y-2 text-left text-sm">
+      <ol className="mx-auto mt-5 max-w-sm space-y-2.5 text-left text-base">
         {PROGRESS_STEPS.map((label, i) => (
-          <li key={label} className={i < step ? "text-muted-foreground" : i === step ? "font-semibold text-primary animate-pulse" : "text-muted-foreground/50"}>
-            {i < step ? "✓" : i === step ? "✦" : "○"} {i + 1}. {label}
+          <li key={label} className={`flex gap-2 ${i < step ? "text-muted-foreground" : i === step ? "font-semibold text-primary" : "text-muted-foreground/50"}`}>
+            <span className={`w-4 shrink-0 text-gold ${i === step ? "animate-pulse" : ""}`} aria-hidden>{i < step ? "✓" : i === step ? "✦" : "○"}</span>
+            <span>{label}{i === step ? "…" : ""}</span>
           </li>
         ))}
       </ol>
-      <p className="mt-4 text-sm text-muted-foreground">Sua leitura aparecerá aqui em instantes. Não feche esta página.</p>
+      <div className="mx-auto mt-6 flex min-h-24 max-w-sm items-center justify-center rounded-lg border border-gold/40 bg-background/40 px-4 py-3">
+        <p key={quoteIdx} className="font-display text-lg italic leading-relaxed text-foreground/90 animate-in fade-in duration-700">
+          “{REFLECTIONS[quoteIdx]}”
+        </p>
+      </div>
+      <p className="mt-5 text-sm text-muted-foreground">Leva cerca de 40 segundos. Pode deixar esta página aberta.</p>
     </div>
   );
 }
@@ -191,7 +212,7 @@ function Leitura() {
           <p className="mt-2 text-sm text-muted-foreground">Não conseguimos confirmar o pagamento deste pedido. Se você pagou, entre em contato informando o número do pedido.</p>
         </div>
       ) : order.is_free && order.status === "pending" ? (
-        <GeneratingProgress />
+        <GeneratingProgress isFree />
       ) : order.status === "error" ? (
         <div className="mt-10 rounded-lg border border-gold bg-card p-6 text-center">
           <p className="font-display text-2xl text-primary">Não conseguimos concluir sua leitura agora</p>
@@ -199,7 +220,7 @@ function Leitura() {
           <Button className="mt-4" onClick={startFree}>Tentar novamente</Button>
         </div>
       ) : order.status === "generating" ? (
-        <GeneratingProgress />
+        <GeneratingProgress isFree={!!order.is_free} />
       ) : (
         <div className="mt-10 rounded-lg border border-gold bg-card p-6 text-center">
           <p className="font-display text-2xl text-primary">Aguardando confirmação do pagamento</p>

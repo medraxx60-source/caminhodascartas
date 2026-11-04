@@ -406,6 +406,35 @@ export const runFreeGeneration = createServerFn({ method: "POST" })
     }
   });
 
+// Recovery for approved paid orders whose generation was interrupted (e.g. admin closed the panel mid-request).
+// Only orders already marked paid by the admin (paid_at set) and stalled for 90s+ can be resumed.
+export const resumePaidGeneration = createServerFn({ method: "POST" })
+  .inputValidator((input: { token: string }) => {
+    if (!/^[a-f0-9]{48}$/.test(input.token ?? "")) throw new Error("Link inválido");
+    return input;
+  })
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const staleBefore = new Date(Date.now() - 90 * 1000).toISOString();
+    const { data: locked } = await supabaseAdmin.from("orders")
+      .update({ status: "generating", generation_started_at: new Date().toISOString(), error_message: null })
+      .eq("access_token", data.token).eq("is_free", false).not("paid_at", "is", null).is("reading", null)
+      .or(`status.eq.error,and(status.eq.generating,generation_started_at.lt.${staleBefore})`)
+      .select("id, plan, cards, question, category").maybeSingle();
+    if (!locked) return { ok: true };
+    try {
+      const { generateReadingText } = await import("./reading-ai.server");
+      const reading = await generateReadingText({ id: locked.id, plan: locked.plan, cards: locked.cards as number[], question: locked.question, category: locked.category });
+      const { error } = await supabaseAdmin.from("orders").update({ status: "done", reading, completed_at: new Date().toISOString() }).eq("id", locked.id);
+      if (error) throw new Error("Falha ao salvar a leitura");
+      return { ok: true };
+    } catch (e) {
+      console.error(`[paid] resume failed order=${locked.id}`, e instanceof Error ? e.message : e);
+      await supabaseAdmin.from("orders").update({ status: "error", error_message: e instanceof Error ? e.message : "falha" }).eq("id", locked.id).is("reading", null);
+      return { ok: false };
+    }
+  });
+
 export const adminGetFreeSetting = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {

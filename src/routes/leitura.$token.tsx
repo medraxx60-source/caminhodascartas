@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { CardFace, cardImage } from "@/components/TarotCard";
 import { CARDS, PLANS, formatBRL, type PlanId } from "@/lib/lenormand";
 import { layoutReading } from "@/lib/reading-layout";
-import { getOrderByToken, runFreeGeneration } from "@/lib/orders.functions";
+import { getOrderByToken, runFreeGeneration, resumePaidGeneration } from "@/lib/orders.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -88,7 +88,21 @@ function Leitura() {
   const { token } = Route.useParams();
   const { data: order } = useSuspenseQuery(orderQuery(token));
   const runFree = useServerFn(runFreeGeneration);
+  const resumePaid = useServerFn(resumePaidGeneration);
   const qc = useQueryClient();
+  // If a paid reading stalls (approval request interrupted), retry it from here; the server only acts after 90s.
+  const isPaidStuck = !!order && !order.is_free && (order.status === "generating" || order.status === "error");
+  useEffect(() => {
+    if (!isPaidStuck) return;
+    let busy = false;
+    const tryResume = () => {
+      if (busy) return; busy = true;
+      resumePaid({ data: { token } }).catch(() => {}).finally(() => { busy = false; qc.invalidateQueries({ queryKey: ["order", token] }); });
+    };
+    tryResume();
+    const id = setInterval(tryResume, 30000);
+    return () => clearInterval(id);
+  }, [isPaidStuck, token, resumePaid, qc]);
   const [started, setStarted] = useState(false);
   const startFree = () => {
     setStarted(true);

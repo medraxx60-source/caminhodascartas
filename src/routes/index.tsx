@@ -240,6 +240,11 @@ function Index() {
           <h1 className="mt-2 text-4xl font-bold text-foreground">Caminho das Cartas</h1>
           <div className="gold-rule mx-auto mt-3 w-40" />
           <p className="mt-3 text-base text-foreground/90">Faça sua pergunta e receba sua leitura: amor, dinheiro, saúde, espiritualidade.</p>
+          {isFreePlan("essencial") && !plan && (
+            <button type="button" onClick={() => choosePlan("essencial")} className="gold-button mt-4 w-full rounded-xl px-4 py-3 text-base font-semibold">
+              ✦ Fazer minha 1ª tiragem grátis · 3 cartas
+            </button>
+          )}
         </div>
       </header>
 
@@ -316,7 +321,7 @@ function Index() {
           <div className="mt-6 rounded-xl border border-border bg-card p-4 shadow-sm">
             <div className="flex flex-wrap gap-2">
               {CATEGORIES.map((c) => (
-                <button key={c} type="button" onClick={() => setCategory(c)} aria-pressed={category === c}
+                <button key={c} type="button" onClick={() => { setCategory(c); if (!question.trim() || Object.values(QUESTION_SUGGESTIONS).some((l) => l.includes(question))) setQuestion((QUESTION_SUGGESTIONS[c] ?? QUESTION_SUGGESTIONS["Outros assuntos"]!)[0]!); }} aria-pressed={category === c}
                   className={`rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${category === c ? "border-gold bg-gold text-background shadow-lg" : "border-gold/70 bg-background text-gold hover:bg-gold hover:text-background"}`}>
                   {c}
                 </button>

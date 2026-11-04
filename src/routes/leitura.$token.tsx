@@ -230,7 +230,7 @@ function NextReading({ planId, category, isFree }: { planId: PlanId; category: s
       <h2 className="mt-1 font-display text-2xl font-semibold text-primary">Continue seu caminho</h2>
       <p className="mt-2 text-base text-foreground/90">
         {isFree
-          ? "Você deu o primeiro passo. Para ver influências ocultas, conselho e desfecho com mais detalhes, faça uma consulta de 5 ou 7 cartas."
+          ? `As 3 cartas mostraram sua situação, o desafio e a tendência. Mas há influências ocultas agindo nos bastidores que uma tiragem curta só sinaliza. Na leitura ${PLANS.profunda.name}, com 5 cartas, você vê o que está escondido, recebe o conselho e o desfecho do seu caminho — por ${formatBRL(PLANS.profunda.priceCents)}.`
           : "As cartas mostram um momento. Quando quiser, aprofunde ou pergunte sobre outra área da sua vida."}
       </p>
       <div className="mt-5 space-y-3">

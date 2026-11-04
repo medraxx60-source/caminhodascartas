@@ -125,7 +125,11 @@ function Index() {
     let id = localStorage.getItem("entre_cartas_device_id");
     if (!id || !/^[0-9a-f-]{36}$/i.test(id)) { id = crypto.randomUUID(); localStorage.setItem("entre_cartas_device_id", id); }
     setDeviceId(id);
-    checkFree({ data: { deviceId: id } }).then(setFree).catch(() => setFree(null));
+    checkFree({ data: { deviceId: id } }).then((f) => {
+      setFree(f);
+      // Returning visitors who used the free reading start with the Profunda pre-selected.
+      if (f?.enabled && !f.eligible) setPlan((cur) => cur ?? "profunda");
+    }).catch(() => setFree(null));
   }, [checkFree]);
   const isFreePlan = (id: PlanId) => id === "essencial" && !!free?.enabled && !!free?.eligible;
   const priceLabel = (id: PlanId) => (isFreePlan(id) ? "Grátis" : formatBRL(PLANS[id].priceCents));
@@ -219,6 +223,10 @@ function Index() {
 
   const goStep = (s: number) => { setStep(s); };
   useEffect(() => { window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior }); }, [step, ritualDone]);
+  // When the last card is drawn, bring the payment button under the thumb.
+  useEffect(() => {
+    if (p && picked.length === p.count && !token) scrollToId("ver-interpretacao", 700);
+  }, [picked.length, p, token]);
 
   return (
     <div className="mystic min-h-screen">
@@ -316,7 +324,7 @@ function Index() {
           <div className="mt-6 rounded-xl border border-border bg-card p-4 shadow-sm">
             <div className="flex flex-wrap gap-2">
               {CATEGORIES.map((c) => (
-                <button key={c} type="button" onClick={() => { setCategory(c); if (!question.trim() || Object.values(QUESTION_SUGGESTIONS).some((l) => l.includes(question))) setQuestion((QUESTION_SUGGESTIONS[c] ?? QUESTION_SUGGESTIONS["Outros assuntos"]!)[0]!); }} aria-pressed={category === c}
+                <button key={c} type="button" onClick={() => { setCategory(c); if (!question.trim() || Object.values(QUESTION_SUGGESTIONS).some((l) => l.includes(question))) setQuestion((QUESTION_SUGGESTIONS[c] ?? QUESTION_SUGGESTIONS["Outros assuntos"]!)[0]!); scrollToId("escolher-cartas"); }} aria-pressed={category === c}
                   className={`rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${category === c ? "border-gold bg-gold text-background shadow-lg" : "border-gold/70 bg-background text-gold hover:bg-gold hover:text-background"}`}>
                   {c}
                 </button>
@@ -343,7 +351,7 @@ function Index() {
               {!category ? "Escolha um assunto acima" : qOk ? "Sua pergunta está pronta ✓ Vamos às cartas." : "Conte um pouco mais sobre sua dúvida (ao menos uma frase)"}
             </p>
           </div>
-          <Button size="lg" className="gold-button mt-8 h-14 w-full rounded-xl text-lg"
+          <Button id="escolher-cartas" size="lg" className="gold-button mt-8 h-14 w-full scroll-mb-6 rounded-xl text-lg"
             onClick={() => (qOk ? goStep(2) : document.getElementById("pergunta")?.focus())}>
             {qOk ? "Escolher minhas cartas" : !category ? "Escolha um assunto para continuar" : "Escreva sua pergunta para continuar"}
           </Button>
@@ -351,7 +359,7 @@ function Index() {
       )}
 
       {p && step === 2 && !ritualDone && (
-        <section className="mt-10 animate-in fade-in duration-1000 text-center">
+        <section className="flex min-h-[calc(100dvh-5rem)] flex-col justify-center py-4 animate-in fade-in duration-1000 text-center">
           <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border border-gold/50 text-4xl text-gold shadow-[0_0_40px_-10px] shadow-gold animate-pulse [animation-duration:4s]">☾</div>
           <p className="mt-6 text-xs uppercase tracking-[0.3em] text-gold">✦ Momento de conexão ✦</p>
           <h2 className="mt-3 font-display text-3xl font-semibold text-foreground">Antes de abrir suas cartas…</h2>
@@ -402,7 +410,7 @@ function Index() {
               ↻ Embaralhar e escolher novamente
             </button>
           )}
-          <Button size="lg" className={`gold-button mt-8 h-14 w-full rounded-xl text-lg ${picked.length === p.count && !loading ? "animate-pulse [animation-duration:2.5s]" : ""}`} disabled={loading || picked.length < p.count} onClick={submit}>
+          <Button id="ver-interpretacao" size="lg" className={`gold-button mt-8 h-14 w-full scroll-mb-6 rounded-xl text-lg ${picked.length === p.count && !loading ? "animate-pulse [animation-duration:2.5s]" : ""}`} disabled={loading || picked.length < p.count} onClick={submit}>
             {loading ? "Preparando sua leitura..." : picked.length < p.count ? `Escolha mais ${p.count - picked.length} carta(s)` : token ? `Continuar pagamento · Pedido ${orderCode}` : `Ver interpretação · ${plan ? priceLabel(plan) : ""}`}
           </Button>
         </section>

@@ -12,7 +12,6 @@ import { Check, Copy, Menu, MessageCircle } from "lucide-react";
 import { CardBack, CardReveal, preloadCardImages, cardImage } from "@/components/TarotCard";
 import { CARDS, PLANS, PIX_KEY, PIX_QR_SRC, formatBRL, type PlanId , CATEGORIES, type Category } from "@/lib/lenormand";
 import { createOrder, getOrderStatus, checkFreeReading, createFreeOrder } from "@/lib/orders.functions";
-import heroTarot from "@/assets/hero-tarot.jpg";
 import cardBackSrc from "@/assets/card-back.jpg";
 
 export const Route = createFileRoute("/")({
@@ -254,15 +253,21 @@ function Index() {
       )}
 
       {step === 0 && (<>
-      <header className="relative -mx-5 mb-6 overflow-hidden">
-        <img src={heroTarot} alt="Cartas de tarô sobre veludo verde com vela e estrelas douradas" width={1280} height={960} className="h-[260px] w-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 px-6 pb-4 text-center">
-          <p className="text-xs uppercase tracking-[0.3em] text-gold">Baralho Cigano · Leitura online</p>
-          <h1 className="mt-2 text-4xl font-bold text-foreground">Caminho das Cartas</h1>
-          <div className="gold-rule mx-auto mt-3 w-40" />
-          <p className="mt-3 text-base text-foreground/90">Faça sua pergunta e receba sua leitura: amor, dinheiro, saúde, espiritualidade.</p>
+      <header className="mb-6 px-2 pt-16 text-center">
+        <div className="mx-auto flex items-end justify-center gap-2" aria-hidden="true">
+          <img src={cardBackSrc} alt="" width={56} height={84} className="h-[72px] w-12 -rotate-12 rounded-md border border-gold/50 object-cover shadow-lg" />
+          <img src={cardBackSrc} alt="" width={56} height={84} className="h-[84px] w-14 rounded-md border border-gold/70 object-cover shadow-[0_0_24px_-6px] shadow-gold" />
+          <img src={cardBackSrc} alt="" width={56} height={84} className="h-[72px] w-12 rotate-12 rounded-md border border-gold/50 object-cover shadow-lg" />
         </div>
+        <p className="mt-6 text-xs uppercase tracking-[0.3em] text-gold">Baralho Cigano tradicional</p>
+        <h1 className="mt-2 text-4xl font-bold text-foreground">Caminho das Cartas</h1>
+        <div className="gold-rule mx-auto mt-3 w-40" />
+        <p className="mt-4 text-lg leading-snug text-foreground/90">Coloque sua dúvida diante da mesa e veja o que as cartas revelam.</p>
+        {free?.enabled && free.eligible ? (
+          <p className="mx-auto mt-5 max-w-xs rounded-full border border-gold/60 bg-secondary px-4 py-2 text-sm text-gold">🎁 Sua 1ª tiragem de 3 cartas é um presente</p>
+        ) : (
+          <p className="mt-4 text-sm text-muted-foreground">Consultas a partir de R$ 4,90 · pagamento por Pix</p>
+        )}
       </header>
 
       <Sheet>
@@ -292,7 +297,7 @@ function Index() {
         </SheetContent>
       </Sheet>
 
-      <StepHeader n={1} title="Escolha sua consulta" hint="Toque em uma das opções abaixo." />
+      <StepHeader n={1} title="Escolha a profundidade da sua consulta" hint="O valor aparece em cada opção, sem surpresas no final." />
       <section className="space-y-3">
         {(Object.keys(PLANS) as PlanId[]).map((id) => {
           const pl = PLANS[id];

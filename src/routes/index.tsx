@@ -273,7 +273,7 @@ function Index() {
         <p className="mt-2 text-xs uppercase tracking-[0.3em] text-gold">Baralho Cigano tradicional</p>
         <p className="mt-4 text-lg leading-snug text-foreground/90">Coloque sua dúvida diante da mesa e veja o que as cartas revelam.</p>
         {free?.enabled && free.eligible ? (
-          <img src={presentSrc} alt="Sua 1ª tiragem de 3 cartas é um presente" width={1920} height={467}
+          <img src={presentSrc} alt="Sua 1ª tiragem de 3 cartas é um presente" width={1920} height={640}
             className="mx-auto mt-5 block w-full max-w-md rounded-xl" />
         ) : (
           <p className="mt-4 text-sm text-muted-foreground">Consultas a partir de R$ 4,90 · pagamento por Pix</p>

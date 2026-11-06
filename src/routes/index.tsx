@@ -269,7 +269,7 @@ function Index() {
       <header className="mb-10 pt-16 text-center">
         <h1 className="sr-only">Caminho das Cartas — Baralho Cigano</h1>
         <img src={heroSrc} alt="Caminho das Cartas" width={1200} height={564} fetchPriority="high"
-          className="block w-full rounded-2xl border border-gold/20" />
+          className="-mx-5 block w-[calc(100%+2.5rem)] max-w-none [mask-image:linear-gradient(to_bottom,transparent,black_15%,black_80%,transparent)]" />
         <p className="mt-6 text-xs uppercase tracking-[0.3em] text-gold">Baralho Cigano tradicional</p>
         <p className="mt-4 text-lg leading-snug text-foreground/90">Coloque sua dúvida diante da mesa e veja o que as cartas revelam.</p>
         {free?.enabled && free.eligible ? (

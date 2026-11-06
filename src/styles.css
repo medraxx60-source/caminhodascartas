@@ -106,6 +106,10 @@
     border-color: var(--color-border);
   }
 
+  html, body {
+    overscroll-behavior-y: none;
+  }
+
   body {
     background-color: var(--color-background);
     background-image: radial-gradient(ellipse at top, oklch(0.27 0.08 355), transparent 65%);

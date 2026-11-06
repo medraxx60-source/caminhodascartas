@@ -235,6 +235,17 @@ function Index() {
   const ready = !!p && missing.length === 0;
 
   const goStep = (s: number) => { setStep(s); };
+  // Home starts with the topic (connection first); the plan is preselected and shown with its price before the cards.
+  const startWith = (c: Category | null) => {
+    const def: PlanId = plan ?? (free?.enabled && free.eligible ? "essencial" : "profunda");
+    choosePlan(def);
+    if (c) {
+      setCategory(c);
+      if (!question.trim()) setQuestion((QUESTION_SUGGESTIONS[c] ?? QUESTION_SUGGESTIONS["Outros assuntos"]!)[0]!);
+    }
+    try { navigator.vibrate?.(30); } catch {}
+    goStep(1);
+  };
   useEffect(() => { window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior }); }, [step, ritualDone]);
   // When the last card is drawn, bring the payment button under the thumb.
   useEffect(() => {
@@ -297,39 +308,22 @@ function Index() {
         </SheetContent>
       </Sheet>
 
-      <StepHeader n={1} title="Escolha a profundidade da sua consulta" hint="O valor aparece em cada opção, sem surpresas no final." />
-      <section className="space-y-3">
-        {(Object.keys(PLANS) as PlanId[]).map((id) => {
-          const pl = PLANS[id];
-          const active = plan === id;
-          return (
-            <button
-              key={id}
-              onClick={() => { choosePlan(id); try { navigator.vibrate?.(30); } catch {} setTimeout(() => document.getElementById("continuar-plano")?.scrollIntoView({ behavior: "smooth", block: "center" }), 120); }}
-              className={`flex w-full items-center justify-between gap-4 rounded-xl border-2 p-5 text-left shadow-sm transition-all ${active ? "border-gold bg-secondary shadow-[0_0_30px_-8px] shadow-gold" : "border-border bg-card hover:border-gold"}`}
-            >
-              <div className="min-w-0">
-                {isFreePlan(id) && <span className="mb-1 inline-block rounded-full bg-gold px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-background">1ª Tiragem Gratuita</span>}
-                {id === "profunda" && <span className="mb-1 inline-block rounded-full border border-gold px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-gold">✦ Mais escolhida</span>}
-                <h3 className="font-display text-2xl font-semibold leading-tight">{pl.name}</h3>
-                <p className="mt-1 text-sm text-muted-foreground">{pl.count} cartas · {PLAN_HINT[id]}</p>
-                <ul className="mt-2 space-y-0.5 text-xs text-foreground/85">
-                  {pl.positions.map((pos) => <li key={pos} className="flex gap-1.5"><span className="text-gold">✓</span>{pos}</li>)}
-                </ul>
-              </div>
-              <span className="shrink-0 font-display text-2xl font-bold text-gold">{priceLabel(id)}</span>
+      <section className="text-center">
+        <h2 className="font-display text-2xl text-gold">Qual assunto pede luz hoje?</h2>
+        <div className="mt-5 flex flex-wrap justify-center gap-2">
+          {CATEGORIES.map((c) => (
+            <button key={c} type="button" onClick={() => startWith(c)}
+              className="rounded-full border border-gold/70 bg-card px-4 py-2.5 text-sm font-medium text-gold transition-colors active:bg-gold active:text-background">
+              {c}
             </button>
-          );
-        })}
+          ))}
+        </div>
       </section>
-      <div className="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-        <span>🔒 Consulta anônima e sigilosa</span><span>⚡ Sem cadastro</span><span>✦ Baralho Cigano tradicional</span>
+      <div className="mt-6 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+        <span>🔒 Sigilosa</span><span>⚡ Sem cadastro</span><span>✦ Resposta na hora</span>
       </div>
-      {free?.enabled && !free.eligible && (
-        <p className="mt-4 rounded-xl border border-gold/40 bg-card/70 p-4 text-center text-sm text-muted-foreground">Você já aproveitou sua 1ª leitura de cortesia ✦ As tiragens de 5 e 7 cartas trazem uma visão ainda mais completa da sua situação.</p>
-      )}
-      <Button id="continuar-plano" size="lg" className="gold-button mt-8 h-14 w-full scroll-mb-6 rounded-xl text-lg" disabled={!p} onClick={() => goStep(1)}>
-        {p ? `Continuar com ${p.name}` : "Escolha uma consulta acima"}
+      <Button size="lg" className="gold-button mt-6 h-14 w-full rounded-xl text-lg" onClick={() => startWith(null)}>
+        ✦ Abrir minha mesa de cartas
       </Button>
       <HomeTrust />
       </>)}
@@ -338,7 +332,6 @@ function Index() {
         <section className="mt-8">
           <div className="text-center">
             <h2 className="font-display text-3xl font-semibold text-foreground">Sobre o que é sua consulta?</h2>
-            <p className="mt-2 text-muted-foreground">Escolha o assunto da sua consulta.</p>
           </div>
           <div className="mt-6 rounded-xl border border-border bg-card p-4 shadow-sm">
             <div className="flex flex-wrap gap-2">
@@ -367,8 +360,25 @@ function Index() {
               )}
             </>)}
             <p className={`mt-2 text-sm ${qOk ? "text-gold" : category && qLen > 0 ? "text-destructive" : "text-muted-foreground"}`}>
-              {!category ? "Escolha um assunto acima" : qOk ? "Sua pergunta está pronta ✓ Vamos às cartas." : "Conte um pouco mais sobre sua dúvida (ao menos uma frase)"}
+              {!category ? "" : qOk ? "Sua pergunta está pronta ✓" : "Conte um pouco mais sobre sua dúvida (ao menos uma frase)"}
             </p>
+          </div>
+          <h3 className="mt-8 font-display text-2xl font-semibold text-foreground">Quantas cartas abrir?</h3>
+          <div className="mt-3 space-y-2">
+            {(Object.keys(PLANS) as PlanId[]).map((id) => {
+              const pl = PLANS[id];
+              const active = plan === id;
+              return (
+                <button key={id} type="button" onClick={() => choosePlan(id)} aria-pressed={active}
+                  className={`flex w-full items-center justify-between gap-3 rounded-xl border-2 px-4 py-3 text-left transition-all ${active ? "border-gold bg-secondary shadow-[0_0_24px_-8px] shadow-gold" : "border-border bg-card"}`}>
+                  <span className="min-w-0">
+                    <span className="block font-display text-xl font-semibold leading-tight">{pl.count} cartas · {pl.name}{id === "profunda" && <span className="ml-2 align-middle text-[10px] uppercase tracking-wider text-gold">✦ Mais escolhida</span>}</span>
+                    <span className="block text-xs text-muted-foreground">{PLAN_HINT[id]}</span>
+                  </span>
+                  <span className="shrink-0 font-display text-xl font-bold text-gold">{priceLabel(id)}</span>
+                </button>
+              );
+            })}
           </div>
           <Button id="escolher-cartas" size="lg" className="gold-button mt-8 h-14 w-full scroll-mb-6 rounded-xl text-lg"
             onClick={() => (qOk ? goStep(2) : document.getElementById("pergunta")?.focus())}>

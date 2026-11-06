@@ -309,10 +309,10 @@ function Index() {
 
       <section className="text-center">
         <h2 className="font-display text-2xl text-gold">Qual assunto pede luz hoje?</h2>
-        <div className="mt-5 flex flex-wrap justify-center gap-2">
-          {CATEGORIES.map((c) => (
+        <div className="mt-5 grid grid-cols-2 gap-2">
+          {CATEGORIES.map((c, i) => (
             <button key={c} type="button" onClick={() => startWith(c)}
-              className="rounded-full border border-gold/70 bg-card px-4 py-2.5 text-sm font-medium text-gold transition-colors active:bg-gold active:text-background">
+              className={`flex min-h-[3.25rem] items-center justify-center rounded-full border border-gold/70 bg-card px-3 py-2 text-sm font-medium leading-tight text-gold transition-colors active:bg-gold active:text-background ${i === CATEGORIES.length - 1 && CATEGORIES.length % 2 === 1 ? "col-span-2" : ""}`}>
               {c}
             </button>
           ))}

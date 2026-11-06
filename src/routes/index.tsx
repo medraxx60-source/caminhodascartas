@@ -312,7 +312,7 @@ function Index() {
         <div className="mt-5 grid grid-cols-2 gap-2">
           {CATEGORIES.map((c, i) => (
             <button key={c} type="button" onClick={() => startWith(c)}
-              className={`flex min-h-[3.25rem] items-center justify-center rounded-full border border-gold/70 bg-card px-3 py-2 text-sm font-medium leading-tight text-gold transition-colors active:bg-gold active:text-background ${i === CATEGORIES.length - 1 && CATEGORIES.length % 2 === 1 ? "col-span-2" : ""}`}>
+              className={`flex min-h-[3.25rem] items-center justify-center rounded-xl border border-gold/25 bg-gold/[0.04] px-3 py-2 text-sm font-medium leading-tight text-gold/90 backdrop-blur-sm transition-colors hover:border-gold/50 active:bg-gold/20 ${i === CATEGORIES.length - 1 && CATEGORIES.length % 2 === 1 ? "col-span-2" : ""}`}>
               {c}
             </button>
           ))}

@@ -6,8 +6,6 @@ const FAQ = [
   ["Como a leitura é feita?", "Você escolhe as cartas com a sua intenção. A interpretação é escrita por uma inteligência artificial treinada nos significados tradicionais do Baralho Cigano e nas combinações entre as cartas, seguindo o nosso jeito acolhedor de aconselhar."],
   ["Minha pergunta fica em sigilo?", "Sim. Não pedimos nome, e-mail nem cadastro. Sua pergunta nunca aparece para outras pessoas, e a leitura só abre pelo seu link pessoal."],
   ["Quanto tempo demora?", "A leitura gratuita sai em poucos segundos. Nas consultas pagas, assim que o Pix é confirmado a interpretação aparece sozinha na tela, em cerca de um minuto."],
-  ["Posso ver minha leitura depois?", "Pode. Ela fica guardada em “Minhas leituras”, no menu ☰ do topo da tela, neste mesmo celular."],
-  ["A leitura substitui um profissional?", "Não. O Baralho Cigano é uma ferramenta de reflexão e autoconhecimento. Para saúde, questões jurídicas ou financeiras, procure sempre um profissional."],
 ];
 
 export function HomeTrust() {

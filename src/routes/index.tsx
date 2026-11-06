@@ -266,11 +266,11 @@ function Index() {
       )}
 
       {step === 0 && (<>
-      <header className="mb-6 pt-14 text-center">
+      <header className="mb-10 pt-16 text-center">
         <h1 className="sr-only">Caminho das Cartas — Baralho Cigano</h1>
         <img src={heroSrc} alt="Caminho das Cartas" width={1200} height={564} fetchPriority="high"
-          className="-mx-5 block w-[calc(100%+2.5rem)] max-w-none [mask-image:linear-gradient(to_bottom,transparent,black_15%,black_80%,transparent)]" />
-        <p className="mt-2 text-xs uppercase tracking-[0.3em] text-gold">Baralho Cigano tradicional</p>
+          className="block w-full rounded-2xl border border-gold/20" />
+        <p className="mt-6 text-xs uppercase tracking-[0.3em] text-gold">Baralho Cigano tradicional</p>
         <p className="mt-4 text-lg leading-snug text-foreground/90">Coloque sua dúvida diante da mesa e veja o que as cartas revelam.</p>
         {free?.enabled && free.eligible ? (
           <img src={presentSrc} alt="Sua 1ª tiragem de 3 cartas é um presente" width={1920} height={640}
@@ -309,7 +309,7 @@ function Index() {
 
       <section className="text-center">
         <h2 className="font-display text-2xl text-gold">Qual assunto pede luz hoje?</h2>
-        <div className="mt-5 grid grid-cols-2 gap-2">
+        <div className="mt-6 grid grid-cols-2 gap-3">
           {CATEGORIES.map((c, i) => (
             <button key={c} type="button" onClick={() => startWith(c)}
               className={`flex min-h-[3.25rem] items-center justify-center rounded-xl border border-gold/25 bg-gold/[0.04] px-3 py-2 text-sm font-medium leading-tight text-gold/90 backdrop-blur-sm transition-colors hover:border-gold/50 active:bg-gold/20 ${i === CATEGORIES.length - 1 && CATEGORIES.length % 2 === 1 ? "col-span-2" : ""}`}>
@@ -318,7 +318,7 @@ function Index() {
           ))}
         </div>
       </section>
-      <div className="mt-6 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+      <div className="mt-8 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
         <span>🔒 Sigilosa</span><span>⚡ Sem cadastro</span><span>✦ Resposta na hora</span>
       </div>
       <Button size="lg" className="gold-button mt-6 h-14 w-full rounded-xl text-lg" onClick={() => startWith(null)}>

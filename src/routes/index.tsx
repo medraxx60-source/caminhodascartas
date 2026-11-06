@@ -14,6 +14,7 @@ import { CARDS, PLANS, PIX_KEY, PIX_QR_SRC, formatBRL, type PlanId , CATEGORIES,
 import { createOrder, getOrderStatus, checkFreeReading, createFreeOrder } from "@/lib/orders.functions";
 import cardBackSrc from "@/assets/card-back.jpg";
 import heroSrc from "@/assets/caminho-das-cartas-hero.jpg";
+import presentSrc from "@/assets/presente-tiragem-banner.jpg";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -272,7 +273,8 @@ function Index() {
         <p className="mt-2 text-xs uppercase tracking-[0.3em] text-gold">Baralho Cigano tradicional</p>
         <p className="mt-4 text-lg leading-snug text-foreground/90">Coloque sua dúvida diante da mesa e veja o que as cartas revelam.</p>
         {free?.enabled && free.eligible ? (
-          <p className="mx-auto mt-5 max-w-xs rounded-full border border-gold/60 bg-secondary px-4 py-2 text-sm text-gold">🎁 Sua 1ª tiragem de 3 cartas é um presente</p>
+          <img src={presentSrc} alt="Sua 1ª tiragem de 3 cartas é um presente" width={1920} height={467}
+            className="mx-auto mt-5 block w-full max-w-md rounded-xl shadow-[0_14px_34px_-16px_var(--gold)]" />
         ) : (
           <p className="mt-4 text-sm text-muted-foreground">Consultas a partir de R$ 4,90 · pagamento por Pix</p>
         )}

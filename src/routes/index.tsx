@@ -13,6 +13,7 @@ import { CardBack, CardReveal, preloadCardImages, cardImage } from "@/components
 import { CARDS, PLANS, PIX_KEY, PIX_QR_SRC, formatBRL, type PlanId , CATEGORIES, type Category } from "@/lib/lenormand";
 import { createOrder, getOrderStatus, checkFreeReading, createFreeOrder } from "@/lib/orders.functions";
 import cardBackSrc from "@/assets/card-back.jpg";
+import heroSrc from "@/assets/caminho-das-cartas-hero.jpg";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -264,15 +265,11 @@ function Index() {
       )}
 
       {step === 0 && (<>
-      <header className="mb-6 px-2 pt-16 text-center">
-        <div className="mx-auto flex items-end justify-center gap-2" aria-hidden="true">
-          <img src={cardBackSrc} alt="" width={56} height={84} className="h-[72px] w-12 -rotate-12 rounded-md border border-gold/50 object-cover shadow-lg" />
-          <img src={cardBackSrc} alt="" width={56} height={84} className="h-[84px] w-14 rounded-md border border-gold/70 object-cover shadow-[0_0_24px_-6px] shadow-gold" />
-          <img src={cardBackSrc} alt="" width={56} height={84} className="h-[72px] w-12 rotate-12 rounded-md border border-gold/50 object-cover shadow-lg" />
-        </div>
-        <p className="mt-6 text-xs uppercase tracking-[0.3em] text-gold">Baralho Cigano tradicional</p>
-        <h1 className="mt-2 text-4xl font-bold text-foreground">Caminho das Cartas</h1>
-        <div className="gold-rule mx-auto mt-3 w-40" />
+      <header className="mb-6 pt-14 text-center">
+        <h1 className="sr-only">Caminho das Cartas — Baralho Cigano</h1>
+        <img src={heroSrc} alt="Caminho das Cartas" width={1200} height={564} fetchPriority="high"
+          className="-mx-5 block w-[calc(100%+2.5rem)] max-w-none [mask-image:linear-gradient(to_bottom,black_80%,transparent)]" />
+        <p className="mt-2 text-xs uppercase tracking-[0.3em] text-gold">Baralho Cigano tradicional</p>
         <p className="mt-4 text-lg leading-snug text-foreground/90">Coloque sua dúvida diante da mesa e veja o que as cartas revelam.</p>
         {free?.enabled && free.eligible ? (
           <p className="mx-auto mt-5 max-w-xs rounded-full border border-gold/60 bg-secondary px-4 py-2 text-sm text-gold">🎁 Sua 1ª tiragem de 3 cartas é um presente</p>

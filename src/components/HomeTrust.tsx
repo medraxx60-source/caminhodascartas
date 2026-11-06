@@ -8,16 +8,20 @@ const FAQ = [
   ["Quanto tempo demora?", "A leitura gratuita sai em poucos segundos. Nas consultas pagas, assim que o Pix é confirmado a interpretação aparece sozinha na tela, em cerca de um minuto."],
 ];
 
+const toggle = "cursor-pointer list-none text-center font-display text-xl font-semibold text-primary";
+
 export function HomeTrust() {
   const { data } = useQuery({ queryKey: ["public-reviews"], queryFn: () => listPublicReviews(), staleTime: 60_000 });
   return (
-    <>
+    <div className="mt-12 space-y-4">
       {data && data.count > 0 && (
-        <section className="mt-12">
-          <h2 className="text-center font-display text-2xl font-semibold text-primary">O que dizem os consulentes</h2>
-          <p className="mt-2 flex items-center justify-center gap-1 text-sm text-muted-foreground">
-            <Star className="h-4 w-4 fill-gold text-gold" /> {data.average.toFixed(1).replace(".", ",")} de 5 · {data.count} avaliação{data.count > 1 ? "ões" : ""}
-          </p>
+        <details className="group rounded-xl border border-border bg-card/50 p-4">
+          <summary className={toggle}>
+            O que dizem os consulentes <span className="text-gold group-open:hidden">+</span><span className="hidden text-gold group-open:inline">−</span>
+            <span className="mt-1 flex items-center justify-center gap-1 font-sans text-sm font-normal text-muted-foreground">
+              <Star className="h-4 w-4 fill-gold text-gold" /> {data.average.toFixed(1).replace(".", ",")} de 5 · {data.count} avaliação{data.count > 1 ? "ões" : ""}
+            </span>
+          </summary>
           <div className="mt-4 space-y-3">
             {data.items.map((r) => (
               <figure key={r.id} className="rounded-xl border border-border bg-card p-4">
@@ -29,21 +33,21 @@ export function HomeTrust() {
               </figure>
             ))}
           </div>
-        </section>
+        </details>
       )}
-      <section className="mt-12">
-        <h2 className="text-center font-display text-2xl font-semibold text-primary">Perguntas frequentes</h2>
-        <div className="mt-4 space-y-2">
+      <details className="group rounded-xl border border-border bg-card/50 p-4">
+        <summary className={toggle}>
+          Perguntas frequentes <span className="text-gold group-open:hidden">+</span><span className="hidden text-gold group-open:inline">−</span>
+        </summary>
+        <div className="mt-4 space-y-4">
           {FAQ.map(([q, a]) => (
-            <details key={q} className="group rounded-xl border border-border bg-card p-4">
-              <summary className="cursor-pointer list-none text-base font-semibold text-foreground">
-                <span className="mr-2 text-gold group-open:hidden">+</span><span className="mr-2 hidden text-gold group-open:inline">−</span>{q}
-              </summary>
-              <p className="mt-3 leading-relaxed text-muted-foreground">{a}</p>
-            </details>
+            <div key={q}>
+              <p className="text-base font-semibold text-foreground">{q}</p>
+              <p className="mt-1 leading-relaxed text-muted-foreground">{a}</p>
+            </div>
           ))}
         </div>
-      </section>
-    </>
+      </details>
+    </div>
   );
 }

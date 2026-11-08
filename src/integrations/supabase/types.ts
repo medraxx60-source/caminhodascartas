@@ -38,6 +38,7 @@ export type Database = {
           created_at: string
           device_id: string
           expires_at: string
+          fingerprint: string | null
           id: string
           ip_hash: string
           order_id: string | null
@@ -48,6 +49,7 @@ export type Database = {
           created_at?: string
           device_id: string
           expires_at?: string
+          fingerprint?: string | null
           id?: string
           ip_hash: string
           order_id?: string | null
@@ -58,6 +60,7 @@ export type Database = {
           created_at?: string
           device_id?: string
           expires_at?: string
+          fingerprint?: string | null
           id?: string
           ip_hash?: string
           order_id?: string | null

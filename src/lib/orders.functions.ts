@@ -319,7 +319,7 @@ async function fpUsed(admin: any, fp: string | null) {
 }
 
 export const checkFreeReading = createServerFn({ method: "POST" })
-  .inputValidator((input: { deviceId: string; fp?: string }) => ({ deviceId: validDevice(input.deviceId), fp: validFp(input.fp) }))
+  .inputValidator((input: { deviceId: string; fp?: string | undefined }) => ({ deviceId: validDevice(input.deviceId), fp: validFp(input.fp) }))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     if (!(await freeEnabled(supabaseAdmin))) return { enabled: false, eligible: false };
@@ -344,7 +344,7 @@ function freeError(msg?: string) {
 }
 
 export const createFreeOrder = createServerFn({ method: "POST" })
-  .inputValidator((input: { deviceId: string; fp?: string; category?: string; question: string; cards: number[] }) => {
+  .inputValidator((input: { deviceId: string; fp?: string | undefined; category?: string; question: string; cards: number[] }) => {
     const plan = PLANS.essencial;
     const question = String(input.question ?? "").trim();
     if (question.length < 5 || question.length > 1000) throw new Error("Pergunta deve ter entre 5 e 1000 caracteres");

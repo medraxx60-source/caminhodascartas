@@ -43,6 +43,7 @@ export type Database = {
           ip_hash: string
           order_id: string | null
           status: string
+          user_id: string | null
         }
         Insert: {
           consumed_at?: string | null
@@ -54,6 +55,7 @@ export type Database = {
           ip_hash: string
           order_id?: string | null
           status?: string
+          user_id?: string | null
         }
         Update: {
           consumed_at?: string | null
@@ -65,6 +67,7 @@ export type Database = {
           ip_hash?: string
           order_id?: string | null
           status?: string
+          user_id?: string | null
         }
         Relationships: []
       }

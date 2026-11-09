@@ -344,6 +344,7 @@ function freeError(msg?: string) {
 }
 
 export const createFreeOrder = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: { deviceId: string; fp?: string | undefined; category?: string; question: string; cards: number[] }) => {
     const plan = PLANS.essencial;
     const question = String(input.question ?? "").trim();
@@ -354,9 +355,12 @@ export const createFreeOrder = createServerFn({ method: "POST" })
     const category = (CATEGORIES as readonly string[]).includes(String(input.category)) ? String(input.category) : null;
     return { deviceId: validDevice(input.deviceId), fp: validFp(input.fp), category, question, cards };
   })
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     if (!(await freeEnabled(supabaseAdmin))) throw new Error("A leitura de cortesia não está disponível no momento.");
+    // Uma leitura de cortesia por conta Google.
+    const { count: byUser } = await supabaseAdmin.from("free_reading_claims").select("id", { count: "exact", head: true }).eq("user_id", context.userId).in("status", ["reserved", "consumed"]);
+    if ((byUser ?? 0) > 0) throw new Error("Você já aproveitou sua 1ª leitura de cortesia nesta conta.");
     const ipHash = await clientIpHash();
     if (await fpUsed(supabaseAdmin, data.fp)) throw new Error("Você já aproveitou sua 1ª leitura de cortesia neste aparelho.");
     const { data: claimId, error: rErr } = await supabaseAdmin.rpc("reserve_free_reading", { _device: data.deviceId, _ip: ipHash, _ip_limit: FREE_IP_LIMIT });
@@ -370,7 +374,7 @@ export const createFreeOrder = createServerFn({ method: "POST" })
       await supabaseAdmin.from("free_reading_claims").update({ status: "released" }).eq("id", claimId);
       throw new Error("Não foi possível criar a leitura");
     }
-    await supabaseAdmin.from("free_reading_claims").update({ order_id: row.id, fingerprint: data.fp }).eq("id", claimId);
+    await supabaseAdmin.from("free_reading_claims").update({ order_id: row.id, fingerprint: data.fp, user_id: context.userId } as any).eq("id", claimId);
     return { token: row.access_token };
   });
 

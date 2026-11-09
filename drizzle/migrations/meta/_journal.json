@@ -78,6 +78,13 @@
       "when": 1794135644542,
       "tag": "0010_free_claims_fingerprint",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1794232694464,
+      "tag": "0011_free_claims_user",
+      "breakpoints": true
     }
   ]
 }

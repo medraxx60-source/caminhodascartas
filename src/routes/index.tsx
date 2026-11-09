@@ -12,6 +12,8 @@ import { Check, Copy, Menu, MessageCircle } from "lucide-react";
 import { CardBack, CardReveal, preloadCardImages, cardImage } from "@/components/TarotCard";
 import { CARDS, PLANS, PIX_KEY, PIX_QR_SRC, formatBRL, type PlanId , CATEGORIES, type Category } from "@/lib/lenormand";
 import { getDeviceFingerprint } from "@/lib/device-fingerprint";
+import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable/index";
 import { createOrder, getOrderStatus, checkFreeReading, createFreeOrder } from "@/lib/orders.functions";
 import cardBackSrc from "@/assets/card-back.jpg";
 import heroSrc from "@/assets/caminho-das-cartas-hero.jpg";
@@ -64,6 +66,7 @@ function shuffle(n: number) {
 }
 
 const PENDING_KEY = "entre_cartas_pending_order";
+const FREE_DRAFT_KEY = "entre_cartas_free_draft";
 
 function Index() {
   const [plan, setPlan] = useState<PlanId | null>(null);
@@ -202,6 +205,13 @@ function Index() {
     setLoading(true);
     try {
       if (isFreePlan(plan) && deviceId) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          try { localStorage.setItem(FREE_DRAFT_KEY, JSON.stringify({ category, question, cards: picked, at: Date.now() })); } catch {}
+          setGateOpen(true);
+          return;
+        }
+        try { localStorage.removeItem(FREE_DRAFT_KEY); } catch {}
         const r = await createFree({ data: { deviceId, fp, category: category ?? "Outros assuntos", question, cards: picked } });
         window.location.href = `/leitura/${r.token}`;
         return;
@@ -219,6 +229,33 @@ function Index() {
       setLoading(false);
     }
   };
+
+  const [gateOpen, setGateOpen] = useState(false);
+  const [gateBusy, setGateBusy] = useState(false);
+  const signInGoogle = async () => {
+    setGateBusy(true);
+    const r = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
+    if (r.error) { setGateBusy(false); toast.error("Não foi possível conectar com o Google. Tente novamente."); return; }
+    if (r.redirected) return;
+    setGateBusy(false); setGateOpen(false);
+    setResumeFree(true);
+  };
+  // After Google returns (popup or full redirect), restore the chosen cards and reveal the reading.
+  const [resumeFree, setResumeFree] = useState(false);
+  useEffect(() => {
+    try {
+      const d = JSON.parse(localStorage.getItem(FREE_DRAFT_KEY) || "null");
+      if (!d || Date.now() - (d.at ?? 0) > 60 * 60 * 1000) { localStorage.removeItem(FREE_DRAFT_KEY); return; }
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (!session) return;
+        setPlan("essencial"); if (d.category) setCategory(d.category); setQuestion(d.question ?? "");
+        setPicked(d.cards ?? []); setRitualDone(true); setStep(2); setResumeFree(true);
+      });
+    } catch {}
+  }, []);
+  useEffect(() => {
+    if (resumeFree && free?.eligible && deviceId && plan === "essencial" && picked.length === 3) { setResumeFree(false); submit(); }
+  }, [resumeFree, free, deviceId, plan, picked]);
 
   const copy = async (text: string, label: string) => {
     try {
@@ -452,6 +489,22 @@ function Index() {
       )}
 
       {/* Payment screen is locked: it only leaves when the admin approves and we redirect to the reading. */}
+      <Dialog open={gateOpen} onOpenChange={(o) => !gateBusy && setGateOpen(o)}>
+        <DialogContent className="mystic w-[calc(100%-1.5rem)] max-w-md rounded-lg p-6 text-center">
+          <DialogHeader>
+            <DialogTitle className="text-center font-display text-3xl text-gold">✦ Mesa consagrada ✦</DialogTitle>
+            <DialogDescription className="text-center text-base">Suas 3 cartas foram escolhidas e sua consulta de presente está pronta. Conecte-se em 1 toque para liberar sua leitura.</DialogDescription>
+          </DialogHeader>
+          <button type="button" onClick={signInGoogle} disabled={gateBusy}
+            style={{ background: "#FFFFFF", color: "#1F1F1F", border: "1px solid #747775" }}
+            className="mx-auto mt-2 flex h-12 w-full items-center justify-center gap-[10px] rounded-xl px-3 text-[14px] font-medium leading-5 disabled:opacity-60">
+            <svg aria-hidden="true" width="18" height="18" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58v3h3.86c2.26-2.09 3.56-5.17 3.56-8.82z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.86-3c-1.08.72-2.45 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96H1.29v3.09C3.26 21.3 7.31 24 12 24z"/><path fill="#FBBC05" d="M5.27 14.29c-.25-.72-.38-1.49-.38-2.29s.14-1.57.38-2.29V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.98-3.09z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.98 3.09c.95-2.85 3.6-4.96 6.73-4.96z"/></svg>
+            {gateBusy ? "Conectando..." : "Continuar com o Google"}
+          </button>
+          <p className="mt-3 text-xs text-muted-foreground">🔒 100% sigiloso · Sem senha · Sem mensagens</p>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={!!token} onOpenChange={() => {}}>
         <DialogContent className="mystic w-[calc(100%-1.5rem)] max-w-lg max-h-[90dvh] min-w-0 overflow-x-hidden overflow-y-auto rounded-lg p-5 pb-8 sm:p-6 [&>button.absolute]:hidden" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
           <DialogHeader>

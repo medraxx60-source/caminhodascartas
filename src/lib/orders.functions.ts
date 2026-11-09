@@ -307,9 +307,19 @@ function validDevice(id: unknown) {
   if (!UUID_RE.test(s)) throw new Error("Identificador inválido");
   return s.toLowerCase();
 }
+function validFp(fp: unknown) {
+  const s = String(fp ?? "");
+  return /^[a-f0-9]{64}$/.test(s) ? s : null;
+}
+async function fpUsed(admin: any, fp: string | null) {
+  if (!fp) return false;
+  const since = new Date(Date.now() - 90 * 86400000).toISOString();
+  const { count } = await admin.from("free_reading_claims").select("id", { count: "exact", head: true }).eq("fingerprint", fp).in("status", ["reserved", "consumed"]).gte("created_at", since);
+  return (count ?? 0) > 0;
+}
 
 export const checkFreeReading = createServerFn({ method: "POST" })
-  .inputValidator((input: { deviceId: string }) => ({ deviceId: validDevice(input.deviceId) }))
+  .inputValidator((input: { deviceId: string; fp?: string }) => ({ deviceId: validDevice(input.deviceId), fp: validFp(input.fp) }))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     if (!(await freeEnabled(supabaseAdmin))) return { enabled: false, eligible: false };
@@ -319,6 +329,7 @@ export const checkFreeReading = createServerFn({ method: "POST" })
       supabaseAdmin.from("free_reading_claims").select("id", { count: "exact", head: true }).eq("device_id", data.deviceId).eq("status", "consumed"),
       supabaseAdmin.from("free_reading_claims").select("id", { count: "exact", head: true }).eq("ip_hash", ipHash).in("status", ["reserved", "consumed"]).gte("created_at", since),
     ]);
+    if (await fpUsed(supabaseAdmin, data.fp)) return { enabled: true, eligible: false };
     return { enabled: true, eligible: (dev ?? 0) === 0 && (ip ?? 0) < FREE_IP_LIMIT };
   });
 
@@ -333,7 +344,7 @@ function freeError(msg?: string) {
 }
 
 export const createFreeOrder = createServerFn({ method: "POST" })
-  .inputValidator((input: { deviceId: string; category?: string; question: string; cards: number[] }) => {
+  .inputValidator((input: { deviceId: string; fp?: string; category?: string; question: string; cards: number[] }) => {
     const plan = PLANS.essencial;
     const question = String(input.question ?? "").trim();
     if (question.length < 5 || question.length > 1000) throw new Error("Pergunta deve ter entre 5 e 1000 caracteres");
@@ -341,12 +352,13 @@ export const createFreeOrder = createServerFn({ method: "POST" })
     if (cards.length !== plan.count || new Set(cards).size !== cards.length || cards.some((c) => !Number.isInteger(c) || c < 0 || c >= CARDS.length))
       throw new Error("Seleção de cartas inválida");
     const category = (CATEGORIES as readonly string[]).includes(String(input.category)) ? String(input.category) : null;
-    return { deviceId: validDevice(input.deviceId), category, question, cards };
+    return { deviceId: validDevice(input.deviceId), fp: validFp(input.fp), category, question, cards };
   })
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     if (!(await freeEnabled(supabaseAdmin))) throw new Error("A leitura de cortesia não está disponível no momento.");
     const ipHash = await clientIpHash();
+    if (await fpUsed(supabaseAdmin, data.fp)) throw new Error("Você já aproveitou sua 1ª leitura de cortesia neste aparelho.");
     const { data: claimId, error: rErr } = await supabaseAdmin.rpc("reserve_free_reading", { _device: data.deviceId, _ip: ipHash, _ip_limit: FREE_IP_LIMIT });
     if (rErr || !claimId) throw freeError(rErr?.message);
     const { data: row, error } = await supabaseAdmin
@@ -358,7 +370,7 @@ export const createFreeOrder = createServerFn({ method: "POST" })
       await supabaseAdmin.from("free_reading_claims").update({ status: "released" }).eq("id", claimId);
       throw new Error("Não foi possível criar a leitura");
     }
-    await supabaseAdmin.from("free_reading_claims").update({ order_id: row.id }).eq("id", claimId);
+    await supabaseAdmin.from("free_reading_claims").update({ order_id: row.id, fingerprint: data.fp }).eq("id", claimId);
     return { token: row.access_token };
   });
 

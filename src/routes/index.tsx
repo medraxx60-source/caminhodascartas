@@ -11,6 +11,7 @@ import { HomeTrust } from "@/components/HomeTrust";
 import { Check, Copy, Menu, MessageCircle } from "lucide-react";
 import { CardBack, CardReveal, preloadCardImages, cardImage } from "@/components/TarotCard";
 import { CARDS, PLANS, PIX_KEY, PIX_QR_SRC, formatBRL, type PlanId , CATEGORIES, type Category } from "@/lib/lenormand";
+import { getDeviceFingerprint } from "@/lib/device-fingerprint";
 import { createOrder, getOrderStatus, checkFreeReading, createFreeOrder } from "@/lib/orders.functions";
 import cardBackSrc from "@/assets/card-back.jpg";
 import heroSrc from "@/assets/caminho-das-cartas-hero.jpg";
@@ -89,6 +90,7 @@ function Index() {
   const checkFree = useServerFn(checkFreeReading);
   const createFree = useServerFn(createFreeOrder);
   const [deviceId, setDeviceId] = useState<string | null>(null);
+  const [fp, setFp] = useState<string | undefined>(undefined);
   const [free, setFree] = useState<{ enabled: boolean; eligible: boolean } | null>(null);
   const [myReadings, setMyReadings] = useState<{ token: string; at: string; plan: string }[]>([]);
   useEffect(() => {
@@ -140,7 +142,8 @@ function Index() {
     let id = localStorage.getItem("entre_cartas_device_id");
     if (!id || !/^[0-9a-f-]{36}$/i.test(id)) { id = crypto.randomUUID(); localStorage.setItem("entre_cartas_device_id", id); }
     setDeviceId(id);
-    checkFree({ data: { deviceId: id } }).then((f) => {
+    const devId = id;
+    getDeviceFingerprint().catch(() => undefined).then((f) => { setFp(f); return checkFree({ data: { deviceId: devId, fp: f } }); }).then((f) => {
       setFree(f);
       // Returning visitors who used the free reading start with the Profunda pre-selected.
       if (f?.enabled && !f.eligible) setPlan((cur) => cur ?? "profunda");
@@ -199,7 +202,7 @@ function Index() {
     setLoading(true);
     try {
       if (isFreePlan(plan) && deviceId) {
-        const r = await createFree({ data: { deviceId, category: category ?? "Outros assuntos", question, cards: picked } });
+        const r = await createFree({ data: { deviceId, fp, category: category ?? "Outros assuntos", question, cards: picked } });
         window.location.href = `/leitura/${r.token}`;
         return;
       }

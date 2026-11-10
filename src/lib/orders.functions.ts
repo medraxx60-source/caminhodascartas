@@ -311,12 +311,6 @@ function validFp(fp: unknown) {
   const s = String(fp ?? "");
   return /^[a-f0-9]{64}$/.test(s) ? s : null;
 }
-async function fpUsed(admin: any, fp: string | null) {
-  if (!fp) return false;
-  const since = new Date(Date.now() - 90 * 86400000).toISOString();
-  const { count } = await admin.from("free_reading_claims").select("id", { count: "exact", head: true }).eq("fingerprint", fp).in("status", ["reserved", "consumed"]).gte("created_at", since);
-  return (count ?? 0) > 0;
-}
 
 export const checkFreeReading = createServerFn({ method: "POST" })
   .inputValidator((input: { deviceId: string; fp?: string | undefined }) => ({ deviceId: validDevice(input.deviceId), fp: validFp(input.fp) }))
@@ -329,7 +323,7 @@ export const checkFreeReading = createServerFn({ method: "POST" })
       supabaseAdmin.from("free_reading_claims").select("id", { count: "exact", head: true }).eq("device_id", data.deviceId).eq("status", "consumed"),
       supabaseAdmin.from("free_reading_claims").select("id", { count: "exact", head: true }).eq("ip_hash", ipHash).in("status", ["reserved", "consumed"]).gte("created_at", since),
     ]);
-    if (await fpUsed(supabaseAdmin, data.fp)) return { enabled: true, eligible: false };
+    // Fingerprint is not unique (same phone model = same hash); stored only for audit, never used to block.
     return { enabled: true, eligible: (dev ?? 0) === 0 && (ip ?? 0) < FREE_IP_LIMIT };
   });
 
@@ -362,7 +356,6 @@ export const createFreeOrder = createServerFn({ method: "POST" })
     const { count: byUser } = await supabaseAdmin.from("free_reading_claims").select("id", { count: "exact", head: true }).eq("user_id", context.userId).in("status", ["reserved", "consumed"]);
     if ((byUser ?? 0) > 0) throw new Error("Você já aproveitou sua 1ª leitura de cortesia nesta conta.");
     const ipHash = await clientIpHash();
-    if (await fpUsed(supabaseAdmin, data.fp)) throw new Error("Você já aproveitou sua 1ª leitura de cortesia neste aparelho.");
     const { data: claimId, error: rErr } = await supabaseAdmin.rpc("reserve_free_reading", { _device: data.deviceId, _ip: ipHash, _ip_limit: FREE_IP_LIMIT });
     if (rErr || !claimId) throw freeError(rErr?.message);
     const { data: row, error } = await supabaseAdmin

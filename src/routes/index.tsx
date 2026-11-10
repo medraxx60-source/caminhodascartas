@@ -205,12 +205,6 @@ function Index() {
     setLoading(true);
     try {
       if (isFreePlan(plan) && deviceId) {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          try { localStorage.setItem(FREE_DRAFT_KEY, JSON.stringify({ category, question, cards: picked, at: Date.now() })); } catch {}
-          setGateOpen(true);
-          return;
-        }
         try { localStorage.removeItem(FREE_DRAFT_KEY); } catch {}
         const r = await createFree({ data: { deviceId, fp, category: category ?? "Outros assuntos", question, cards: picked } });
         window.location.href = `/leitura/${r.token}`;

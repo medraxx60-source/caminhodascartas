@@ -63,7 +63,7 @@ export const createOrder = createServerFn({ method: "POST" })
       if (lk && tk && chats.length) {
         const p = PLANS[data.plan];
         const price = (p.priceCents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-        const text = `🔔 Novo pedido aguardando aprovação\n\nCódigo: ${orderCode}\nPlano: ${p.name} (${price})\n\nO Pix é confirmado automaticamente pelo Asaas. Painel:\nhttps://entre-cartas.lovable.app/admin`;
+        const text = `🔔 Novo pedido aguardando aprovação\n\nCódigo: ${orderCode}\nPlano: ${p.name} (${price})\n\nO Pix é confirmado automaticamente. Painel:\nhttps://entre-cartas.lovable.app/admin`;
         await Promise.all(chats.map((chat_id) =>
           fetch("https://connector-gateway.lovable.dev/telegram/sendMessage", {
             method: "POST",

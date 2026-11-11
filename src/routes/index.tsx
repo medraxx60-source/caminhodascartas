@@ -82,6 +82,14 @@ function Index() {
   const [pixOpen, setPixOpen] = useState(false);
   const [orderCode, setOrderCode] = useState("");
   const [pixCode, setPixCode] = useState<{ payload: string; image: string | null } | null>(null);
+  const [qrSrc, setQrSrc] = useState<string | null>(null);
+  useEffect(() => {
+    if (!pixCode) { setQrSrc(null); return; }
+    if (pixCode.image) { setQrSrc(`data:image/png;base64,${pixCode.image}`); return; }
+    let live = true;
+    import("qrcode").then((Q) => Q.toDataURL(pixCode.payload, { margin: 2, width: 480 })).then((u) => { if (live) setQrSrc(u); }).catch(() => {});
+    return () => { live = false; };
+  }, [pixCode]);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const create = useServerFn(createOrder);
@@ -505,53 +513,23 @@ function Index() {
             <DialogTitle className="font-display text-3xl text-primary">Pague com Pix</DialogTitle>
             <DialogDescription className="text-base">Falta só o pagamento para iniciar a sua interpretação.</DialogDescription>
           </DialogHeader>
-          <dl className="min-w-0 space-y-2 border-y border-border py-3 text-sm">
-            <div className="flex flex-wrap justify-between gap-2"><dt className="text-muted-foreground">Sua consulta</dt><dd className="font-semibold text-foreground">{p?.name} · {p?.count} cartas</dd></div>
-            <div className="flex flex-wrap justify-between gap-2"><dt className="text-muted-foreground">Pedido</dt><dd className="break-all font-mono text-foreground">{orderCode}</dd></div>
-            {question.trim() && (
-              <div className="min-w-0"><dt className="text-muted-foreground">Sua pergunta</dt><dd className="mt-1 break-words font-display text-lg italic leading-snug text-foreground">“{question.trim()}”</dd></div>
-            )}
-            <div className="flex flex-wrap items-center justify-between gap-2"><dt className="text-base text-foreground">Total a pagar</dt><dd className="font-display text-3xl font-bold text-gold">{p && formatBRL(p.priceCents)}</dd></div>
-          </dl>
-          {reservedAt && (() => {
-            const left = Math.max(0, 15 * 60 - Math.floor((now - reservedAt) / 1000));
-            const mm = String(Math.floor(left / 60)).padStart(2, "0"), ss = String(left % 60).padStart(2, "0");
-            return (
-              <div className="rounded-lg border border-gold/60 bg-gold/10 p-3 text-center">
-                {left > 0 ? (
-                  <p className="text-base font-semibold text-foreground">✦ Suas cartas estão reservadas por <span className="font-mono text-gold" aria-live="off">{mm}:{ss}</span></p>
-                ) : (
-                  <p className="text-base font-semibold text-foreground">✦ Suas cartas continuam guardadas. Conclua o Pix para receber sua leitura.</p>
-                )}
-                <p className="mt-1 text-sm text-muted-foreground">⚡ Assim que o Pix for confirmado, sua interpretação abre sozinha nesta tela.</p>
-              </div>
-            );
-          })()}
           {pixCode ? (
             <>
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground">{p?.name} · {p?.count} cartas · Pedido <span className="font-mono">{orderCode}</span></p>
+                <p className="mt-1 font-display text-4xl font-bold text-gold">{p && formatBRL(p.priceCents)}</p>
+              </div>
+              <p className="text-center text-base text-foreground">Escaneie o QR Code ou copie o código Pix</p>
+              {qrSrc && <img src={qrSrc} alt="QR Code Pix" className="mx-auto aspect-square w-56 max-w-full rounded-lg bg-white p-2" />}
               <Button size="lg" className="gold-button h-14 w-full min-w-0 whitespace-normal rounded-lg px-3 text-base leading-snug" onClick={async () => { if (await copy(pixCode.payload, "Código Pix")) { setCopied(true); try { navigator.vibrate?.(60); } catch {} } }}>
                 {copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
                 <span>{copied ? "Código Pix copiado!" : "Copiar código Pix"}</span>
               </Button>
-              <p aria-live="polite" className="text-center text-base leading-relaxed text-foreground">{copied ? "Agora cole o código em Pix Copia e Cola no app do seu banco e confirme o pagamento." : "Use Pix Copia e Cola no app do seu banco."}</p>
-              <ol className="min-w-0 space-y-3 text-base text-foreground">
-                {["Copie o código Pix acima.", "No app do banco, abra Pix Copia e Cola, cole o código e confirme o pagamento.", "Volte a esta tela para receber sua interpretação após a confirmação."].map((t, i) => (
-                  <li key={t} className="flex min-w-0 items-start gap-3">
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gold font-bold text-background">{i + 1}</span>
-                    <span className="min-w-0 flex-1 break-words leading-relaxed">{t}</span>
-                  </li>
-                ))}
-              </ol>
-              {pixCode.image && (
-                <details className="text-center text-sm text-muted-foreground">
-                  <summary className="cursor-pointer">Prefere escanear? Ver QR Code</summary>
-                  <img src={`data:image/png;base64,${pixCode.image}`} alt="QR Code Pix" className="mx-auto mt-3 aspect-square w-48 max-w-full rounded-md border border-gold object-contain" />
-                </details>
-              )}
-              <p className="text-center text-sm text-muted-foreground">🔒 Pode ir ao app do banco tranquilo(a): seu pedido fica guardado.</p>
+              <code className="block max-h-20 overflow-y-auto break-all rounded-md bg-muted px-3 py-2 text-xs">{pixCode.payload}</code>
             </>
           ) : (
             <>
+            <p className="text-center font-display text-4xl font-bold text-gold">{p && formatBRL(p.priceCents)}</p>
             <Button size="lg" className="gold-button h-14 w-full min-w-0 whitespace-normal rounded-lg px-3 text-base leading-snug" onClick={async () => { if (await copy(PIX_KEY, "Chave Pix")) { setCopied(true); try { navigator.vibrate?.(60); } catch {} } }}>
               {copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
               <span>{copied ? "Chave Pix copiada!" : "Copiar chave Pix"}</span>
@@ -576,7 +554,7 @@ function Index() {
             ) : slow ? (
               <p role="status" className="rounded-md border border-gold bg-gold/10 p-3 text-sm text-foreground">Ainda não identificamos a sua transferência. Abra o app do seu banco, cole o código Pix e confirme o pagamento para iniciar a sua interpretação.</p>
             ) : null}
-            <p role="status" className="flex min-w-0 items-start justify-center gap-3 rounded-md border border-gold/60 bg-gold/10 p-4 text-left text-base font-semibold leading-relaxed text-foreground"><span aria-hidden="true" className="mt-2 inline-block h-3 w-3 shrink-0 rounded-full bg-gold motion-safe:animate-pulse" /><span className="min-w-0 flex-1 break-words">Aguardando confirmação do pagamento… assim que confirmado, sua interpretação abre sozinha nesta tela.</span></p>
+            <p role="status" className="flex min-w-0 items-start justify-center gap-3 rounded-md border border-gold/60 bg-gold/10 p-4 text-left text-base font-semibold leading-relaxed text-foreground"><span aria-hidden="true" className="mt-2 inline-block h-3 w-3 shrink-0 rounded-full bg-gold motion-safe:animate-pulse" /><span className="min-w-0 flex-1 break-words">Aguardando pagamento… sua leitura abre sozinha ao confirmar.</span></p>
             <Button asChild variant="link" className="h-auto min-h-11 w-full whitespace-normal text-base">
               <a href={helpLink("pagamento", orderCode)} target="_blank" rel="noopener noreferrer"><MessageCircle aria-hidden="true" />Preciso de ajuda com o Pix</a>
             </Button>

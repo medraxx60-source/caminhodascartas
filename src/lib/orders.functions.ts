@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeader } from "@tanstack/react-start/server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { CARDS, CATEGORIES, PLANS, type PlanId } from "./lenormand";
-import { freeReason, type FreeReason } from "./free-eligibility";
+import { freeReason, FREE_IP_LIMIT, FREE_IP_WINDOW_MS, type FreeReason } from "./free-eligibility";
 
 const IP_LIMIT = 20; // orders per IP per window
 const GLOBAL_LIMIT = 300; // orders per window across all clients
@@ -293,7 +293,6 @@ export const adminNudgePayment = createServerFn({ method: "POST" })
 
 // ================= 1ª tiragem gratuita (isolada do fluxo pago: sem Pix, Telegram ou aprovação) =================
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const FREE_IP_LIMIT = 3; // tiragens grátis por rede (IP) em 30 dias — proteção complementar, não bloqueio permanente
 
 async function clientIpHash() {
   const ip = getRequestHeader("cf-connecting-ip") || getRequestHeader("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
@@ -319,7 +318,7 @@ export const checkFreeReading = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     if (!(await freeEnabled(supabaseAdmin))) return { enabled: false, eligible: false, reason: "disabled" as FreeReason };
     const ipHash = await clientIpHash();
-    const since = new Date(Date.now() - 30 * 86400000).toISOString();
+    const since = new Date(Date.now() - FREE_IP_WINDOW_MS).toISOString();
     const nowIso = new Date().toISOString();
     const [{ count: dev }, { count: ip }] = await Promise.all([
       supabaseAdmin.from("free_reading_claims").select("id", { count: "exact", head: true }).eq("device_id", data.deviceId).eq("status", "consumed"),
@@ -387,7 +386,7 @@ export const runFreeGeneration = createServerFn({ method: "POST" })
     if (!claim) throw new Error("Pedido inválido");
     if (claim.status !== "reserved") {
       // Reserva anterior foi liberada (falha da IA): reserva de novo para esta mesma leitura.
-      const { error } = await supabaseAdmin.rpc("reserve_free_reading", { _device: claim.device_id, _ip: claim.ip_hash, _order: order.id, _ip_limit: FREE_IP_LIMIT + 1 });
+      const { error } = await supabaseAdmin.rpc("reserve_free_reading", { _device: claim.device_id, _ip: claim.ip_hash, _order: order.id, _ip_limit: FREE_IP_LIMIT });
       if (error) throw freeError(error.message);
     } else {
       await supabaseAdmin.from("free_reading_claims").update({ expires_at: new Date(Date.now() + 10 * 60000).toISOString() }).eq("id", claim.id);

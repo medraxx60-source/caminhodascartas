@@ -1,9 +1,13 @@
 // Pure rules for the free first reading (shared by server and tests).
 export type FreeReason = "eligible" | "device_already_used" | "network_limit" | "disabled";
-export type ClaimLike = { status: string; expires_at: string };
+// Network rule: rolling window, same values as the reserve_free_reading DB function.
+export const FREE_IP_LIMIT = 5;
+export const FREE_IP_WINDOW_MS = 24 * 60 * 60 * 1000;
+export type ClaimLike = { status: string; expires_at: string; created_at?: string };
 
 // A claim counts against the network only if consumed, or reserved and not yet expired.
 export function isActiveClaim(c: ClaimLike, now: number = Date.now()) {
+  if (c.created_at && new Date(c.created_at).getTime() <= now - FREE_IP_WINDOW_MS) return false;
   return c.status === "consumed" || (c.status === "reserved" && new Date(c.expires_at).getTime() > now);
 }
 

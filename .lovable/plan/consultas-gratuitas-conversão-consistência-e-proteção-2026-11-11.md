@@ -110,3 +110,48 @@ Quando não houver orçamento, não iniciar novas chamadas, não consumir a grat
 5. Decidir a ativação condicional do antibot após validar serviço e impactos.
 
 **Recomendação de ordem:** isolamento → motivos e mensagens → consistência → proteção calibrada → orçamento → teste real e liberação. Não começar simplesmente aumentando o limite por IP.
+
+## Complemento para revisão — arquivos, funções e tabelas envolvidos
+
+Este inventário esclarece a proposta original. São pontos de alteração possíveis para uma execução futura, não mudanças realizadas ou autorização para fazê-las.
+
+| Local existente | Alteração que poderá ser necessária |
+|---|---|
+| `src/lib/orders.functions.ts` | Ajustar apenas `checkFreeReading`, `createFreeOrder`, `runFreeGeneration` e auxiliares gratuitos como `clientIpHash`, `freeEnabled`, `validDevice`, `validFp` e `freeError`: motivos de disponibilidade, transações, retomadas e validação da proteção. Não modificar funções pagas do mesmo arquivo. |
+| `src/routes/index.tsx` | Exibir motivos corretos, tratar indisponibilidade sem afirmar uso anterior, preservar pergunta/cartas e impedir conversão automática para cobrança. |
+| `src/routes/leitura.$token.tsx` | Retomar o mesmo pedido gratuito e apresentar espera, falha e conclusão de forma compatível com a nova resposta do servidor. Preservar a apresentação de leituras pagas. |
+| `src/lib/device-fingerprint.ts` | Revisar somente o tratamento como sinal complementar, minimização e transparência. Não torná-lo identidade única nem bloqueio isolado. Nenhuma mudança é obrigatória se a auditoria confirmar o comportamento desejado. |
+| `src/lib/reading-ai.server.ts` | Reutilizar o gerador existente. Prompt, modelo e comportamento compartilhado ficam intactos; controle de custos e adaptação de testes ficam fora dele. Se algum dado de uso exigir alteração nesse arquivo, apresentar uma autorização separada antes. |
+| `drizzle/migrations/` | Criar novas migrações compatíveis na etapa autorizada. Não reescrever as migrações históricas, especialmente `0005_free_reading.sql`. Validar primeiro no banco isolado. |
+| `src/test/` | Acrescentar testes específicos de elegibilidade, transações, concorrência, retomadas, orçamento e ausência de cobrança; manter os testes atuais. |
+| `AGENTS.md` | Registrar as decisões técnicas efetivamente implementadas, apenas na futura execução. |
+
+**Tabelas e funções existentes:**
+
+- `free_reading_claims`: revisar contagem, validade, consumo e vínculo; possíveis campos adicionais para tentativas ficam sujeitos ao desenho e aprovação da migração.
+- `orders`: continuar usando os mesmos pedidos gratuitos, identificados por `is_free`, preço zero e plano Essencial; vínculo e conclusão transacionais. Qualquer extensão deve ser compatível com pedidos pagos e históricos.
+- `app_settings`: possível armazenamento de ativação, limites aprovados e orçamento; visitantes não podem alterar configurações.
+- `reserve_free_reading`: revisar concorrência, expiração e retomada sem “limite + 1”.
+- **Novas funções propostas, nomes provisórios:** criar/vincular pedido gratuito, admitir tentativa, finalizar leitura e reservar/reconciliar orçamento, com validações e permissões restritas. A finalização deve recusar pedidos pagos ou tentativas substituídas.
+- **Registros novos, se necessários:** eventos mínimos de proteção e controle de orçamento/tentativas gratuitos, privados. Evitar duplicar o cadastro de consultas ou criar um segundo sistema de pedidos. Definir estrutura e retenção antes da migração.
+
+As novas tabelas terão concessões explícitas, segurança por linha e acesso mínimo. Funções privilegiadas não serão diretamente executáveis por visitantes; chamadas públicas do servidor devem validar entradas e direito ao pedido antes de qualquer gravação. Dados de auditoria não serão publicados.
+
+**Fora do escopo:** `lenormand_cards`, nomes/identificadores/ilustrações da Base Oracular, `src/lib/asaas.server.ts`, pagamentos, aprovação de pedidos pagos e cadastro obrigatório. Arquivos gerados de integração não serão editados manualmente. Configurações do ambiente de testes serão próprias, sem trocar o destino da produção.
+
+## Complemento para revisão — critérios de aprovação por etapa
+
+| Etapa | Critério para aceitar e avançar |
+|---|---|
+| 1 — Isolamento | Base independente comprovada para navegador e servidor; gravação fictícia exclusiva do ambiente de testes; ausência de dados pessoais importados, cobranças e notificações reais; chamadas de IA real desativadas por padrão. |
+| 2 — Elegibilidade e mensagens | Todos os motivos previstos cobertos por testes; bloqueio de rede nunca afirma consumo próprio; erros não liberam geração indevidamente; preço não muda automaticamente; seleção preservada; confirmação sempre revalidada no servidor. |
+| 3 — Consistência | Concorrência cria um único pedido/reserva aplicável; vencidas não contam; mesma retomada não recebe uma cota extra; texto e consumo concluem juntos ou nenhum conclui; finalização repetida não duplica consumo; respostas antigas não sobrescrevem; histórico existente permanece acessível. |
+| 4 — Proteção | Uso do controle específico confirmado pelo dono; valores e janelas aprovados antes de ativar; visitantes distintos na mesma rede não são marcados como usuários já consumidos; antibot validado no servidor, quando aprovado; falhas oferecem tentativa posterior sem cobrança. |
+| 5 — Custos | Período, moeda e teto aprovados; estimativa ou precisão declaradas; cada chamada, inclusive nova tentativa, exige margem; concorrência não ultrapassa a margem admitida; falha não apaga custo possivelmente cobrado; fim do orçamento não consome gratuidade nem impede consultas pagas. |
+| 6 — Liberação | Testes automáticos aprovados e relatório do fluxo real na base isolada; custo da IA documentado quando disponível; nenhuma gravação de teste em produção; fluxo móvel e histórico verificados; regressões pagas verificadas sem alegar pagamento real não testado; ativação e plano de desativação aprovados separadamente. |
+
+Um teto monetário não será declarado garantido se houver apenas estimativa por chamada. Se não for possível comprovar o custo máximo, essa limitação precisa ser aceita antes da ativação, ou deve ser usado um bloqueio financeiro confiável do provedor que não prejudique consultas pagas.
+
+## Condição de execução
+
+Esta reapresentação é **somente para revisão**. Aprovar a organização ou o conteúdo do plano não autoriza automaticamente criar ambiente, executar chamadas de IA, aplicar migrações, mudar limites, configurar serviços ou publicar alterações. Antes de qualquer execução, solicitar autorização expressa para a etapa e resolver suas dependências; valores ainda não definidos continuam pendentes.

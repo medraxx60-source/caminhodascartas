@@ -12,6 +12,7 @@ import { Check, Copy, Menu, MessageCircle } from "lucide-react";
 import { CardBack, CardReveal, preloadCardImages, cardImage } from "@/components/TarotCard";
 import { CARDS, PLANS, PIX_KEY, PIX_QR_SRC, formatBRL, type PlanId , CATEGORIES, type Category } from "@/lib/lenormand";
 import { getDeviceFingerprint } from "@/lib/device-fingerprint";
+import { PROGRESS_KEY, parseProgress, keepPicksOnPlanChange } from "@/lib/free-progress";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { createOrder, getOrderStatus, checkFreeReading, createFreeOrder } from "@/lib/orders.functions";
@@ -106,6 +107,19 @@ function Index() {
   useEffect(() => {
     try { setMyReadings(JSON.parse(localStorage.getItem("entre_cartas_readings") || "[]")); } catch {}
   }, []);
+  const [restored, setRestored] = useState(false);
+  const [freeLost, setFreeLost] = useState(false);
+  // Restore free-flow progress after a reload (same tab only). URL shortcuts and pending Pix orders take precedence.
+  useEffect(() => {
+    try {
+      const sp = new URLSearchParams(window.location.search);
+      if (sp.get("plano") || sp.get("categoria") || localStorage.getItem(PENDING_KEY)) return;
+      const d = parseProgress(sessionStorage.getItem(PROGRESS_KEY));
+      if (!d) { sessionStorage.removeItem(PROGRESS_KEY); return; }
+      setPlan(d.plan); if (d.category) setCategory(d.category as Category); setQuestion(d.question);
+      setPicked(d.picked); setRitualDone(d.ritualDone); setStep(d.step); setRestored(true);
+    } catch {}
+  }, []);
   // Shortcuts from the end of a reading: /?plano=profunda&categoria=Amor...
   useEffect(() => {
     try {
@@ -160,6 +174,13 @@ function Index() {
     }).catch(() => setFree(null));
   }, [checkFree]);
   const isFreePlan = (id: PlanId) => id === "essencial" && !!free?.enabled && !!free?.eligible;
+  // Restored a free draft but the server no longer grants the gift: keep the cards and offer the plans.
+  useEffect(() => { if (restored && free?.enabled !== undefined && !free.eligible) setFreeLost(true); }, [restored, free]);
+  // Keep free-flow progress across reloads (this tab only, 1h). Never decides eligibility.
+  useEffect(() => {
+    if (token || step < 1 || !plan || !(isFreePlan(plan) || freeLost)) return;
+    try { sessionStorage.setItem(PROGRESS_KEY, JSON.stringify({ plan, category, question, picked, step, ritualDone, at: Date.now() })); } catch {}
+  }, [plan, category, question, picked, step, ritualDone, token, free, freeLost]);
   const priceLabel = (id: PlanId) => (isFreePlan(id) ? "Grátis" : formatBRL(PLANS[id].priceCents));
   const [nudged, setNudged] = useState(false);
   const [slow, setSlow] = useState(false);
@@ -186,6 +207,7 @@ function Index() {
 
   const choosePlan = (id: PlanId) => {
     if (id !== plan) {
+      if (freeLost) { setPicked((cur) => keepPicksOnPlanChange(cur, id)); setPlan(id); return; }
       setPicked([]); setLockedPicks(0); setDeck(shuffle(CARDS.length));
       if (token) { setToken(null); setOrderCode(""); try { localStorage.removeItem(PENDING_KEY); } catch {} }
     }
@@ -199,7 +221,8 @@ function Index() {
   };
 
   const restart = () => {
-    setToken(null); setOrderCode(""); setPixOpen(false);
+    setToken(null); setOrderCode(""); setPixOpen(false); setFreeLost(false);
+    try { sessionStorage.removeItem(PROGRESS_KEY); } catch {}
     try { localStorage.removeItem(PENDING_KEY); } catch {}
     setPicked([]); setLockedPicks(0); setDeck(shuffle(CARDS.length)); setQuestion(""); setCategory(null); setRitualDone(false);
     goStep(0);
@@ -213,7 +236,18 @@ function Index() {
     try {
       if (isFreePlan(plan) && deviceId) {
         try { localStorage.removeItem(FREE_DRAFT_KEY); } catch {}
-        const r = await createFree({ data: { deviceId, fp, category: category ?? "Outros assuntos", question, cards: picked } });
+        let r: { token: string };
+        try {
+          r = await createFree({ data: { deviceId, fp, category: category ?? "Outros assuntos", question, cards: picked } });
+        } catch (e) {
+          const m = e instanceof Error ? e.message : "";
+          toast.error(m && !/fetch|network|failed/i.test(m) ? m : "Sem conexão com o servidor. Suas cartas continuam na mesa; tente de novo.");
+          // Ask the server again; if the gift is gone, keep question and cards and offer the plans with prices.
+          const f = await checkFree({ data: { deviceId, fp } }).catch(() => null);
+          if (f) { setFree(f); if (!f.eligible) setFreeLost(true); }
+          return;
+        }
+        try { sessionStorage.removeItem(PROGRESS_KEY); } catch {}
         window.location.href = `/leitura/${r.token}`;
         return;
       }
@@ -223,6 +257,7 @@ function Index() {
       setReservedAt(Date.now());
       setToken(r.token);
       setPixOpen(true);
+      try { sessionStorage.removeItem(PROGRESS_KEY); } catch {}
       try { localStorage.setItem(PENDING_KEY, JSON.stringify({ token: r.token, orderCode: r.orderCode, plan, category, question, cards: picked, at: Date.now() })); } catch {}
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao criar pedido");
@@ -487,6 +522,20 @@ function Index() {
               className="mx-auto mt-3 block text-sm text-gold underline-offset-4 hover:underline">
               ↻ Embaralhar e escolher novamente
             </button>
+          )}
+          {freeLost && !token && (
+            <div role="status" className="mt-6 rounded-xl border border-gold/50 bg-card/80 p-4 text-center">
+              <p className="text-sm text-foreground">Sua consulta gratuita não está disponível agora. Sua pergunta e suas cartas continuam na mesa — escolha como deseja continuar:</p>
+              <div className="mt-3 space-y-2">
+                {(Object.keys(PLANS) as PlanId[]).map((id) => (
+                  <button key={id} type="button" onClick={() => choosePlan(id)} aria-pressed={plan === id}
+                    className={`flex w-full items-center justify-between rounded-lg border px-3 py-2 text-left text-sm ${plan === id ? "border-gold bg-secondary" : "border-border bg-background"}`}>
+                    <span>{PLANS[id].count} cartas · {PLANS[id].name}</span>
+                    <span className="font-semibold text-gold">{formatBRL(PLANS[id].priceCents)}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
           )}
           <Button id="ver-interpretacao" size="lg" className={`gold-button mt-8 h-14 w-full scroll-mb-6 rounded-xl text-lg ${picked.length === p.count && !loading ? "animate-pulse [animation-duration:2.5s]" : ""}`} disabled={loading || picked.length < p.count} onClick={submit}>
             {loading ? "Preparando sua leitura..." : picked.length < p.count ? `Escolha mais ${p.count - picked.length} carta(s)` : token ? `Continuar pagamento · Pedido ${orderCode}` : `Ver interpretação · ${plan ? priceLabel(plan) : ""}`}

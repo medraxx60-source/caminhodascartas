@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeader } from "@tanstack/react-start/server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { CARDS, CATEGORIES, PLANS, type PlanId } from "./lenormand";
+import { freeReason, type FreeReason } from "./free-eligibility";
 
 const IP_LIMIT = 20; // orders per IP per window
 const GLOBAL_LIMIT = 300; // orders per window across all clients
@@ -316,21 +317,25 @@ export const checkFreeReading = createServerFn({ method: "POST" })
   .inputValidator((input: { deviceId: string; fp?: string | undefined }) => ({ deviceId: validDevice(input.deviceId), fp: validFp(input.fp) }))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    if (!(await freeEnabled(supabaseAdmin))) return { enabled: false, eligible: false };
+    if (!(await freeEnabled(supabaseAdmin))) return { enabled: false, eligible: false, reason: "disabled" as FreeReason };
     const ipHash = await clientIpHash();
     const since = new Date(Date.now() - 30 * 86400000).toISOString();
+    const nowIso = new Date().toISOString();
     const [{ count: dev }, { count: ip }] = await Promise.all([
       supabaseAdmin.from("free_reading_claims").select("id", { count: "exact", head: true }).eq("device_id", data.deviceId).eq("status", "consumed"),
-      supabaseAdmin.from("free_reading_claims").select("id", { count: "exact", head: true }).eq("ip_hash", ipHash).in("status", ["reserved", "consumed"]).gte("created_at", since),
+      // Expired reservations no longer count against the network.
+      supabaseAdmin.from("free_reading_claims").select("id", { count: "exact", head: true }).eq("ip_hash", ipHash).gte("created_at", since)
+        .or(`status.eq.consumed,and(status.eq.reserved,expires_at.gt.${nowIso})`),
     ]);
     // Fingerprint is not unique (same phone model = same hash); stored only for audit, never used to block.
-    return { enabled: true, eligible: (dev ?? 0) === 0 && (ip ?? 0) < FREE_IP_LIMIT };
+    const reason = freeReason({ enabled: true, deviceConsumed: dev ?? 0, networkActive: ip ?? 0, ipLimit: FREE_IP_LIMIT });
+    return { enabled: true, eligible: reason === "eligible", reason };
   });
 
 const FREE_ERR: Record<string, string> = {
   already_used: "Você já aproveitou sua 1ª leitura de cortesia.",
   in_progress: "Sua leitura gratuita já está sendo preparada em outra aba.",
-  ip_limit: "O limite de leituras de cortesia desta rede foi atingido.",
+  ip_limit: "O limite de consultas gratuitas desta rede foi atingido temporariamente. Você pode tentar novamente mais tarde ou conhecer nossos planos.",
 };
 function freeError(msg?: string) {
   const k = Object.keys(FREE_ERR).find((key) => msg?.includes(key));

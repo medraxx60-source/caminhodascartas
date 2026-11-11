@@ -101,7 +101,7 @@ function Index() {
   const createFree = useServerFn(createFreeOrder);
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [fp, setFp] = useState<string | undefined>(undefined);
-  const [free, setFree] = useState<{ enabled: boolean; eligible: boolean } | null>(null);
+  const [free, setFree] = useState<{ enabled: boolean; eligible: boolean; reason?: string } | null>(null);
   const [myReadings, setMyReadings] = useState<{ token: string; at: string; plan: string }[]>([]);
   useEffect(() => {
     try { setMyReadings(JSON.parse(localStorage.getItem("entre_cartas_readings") || "[]")); } catch {}
@@ -318,8 +318,11 @@ function Index() {
           Experimentar gratuitamente
         </Button>
         <p className="mt-3 text-xs tracking-wide text-muted-foreground">100% online · Sigilosa · Sem cadastro</p>
-        {free?.enabled && !free.eligible && (
-          <p className="mt-2 text-xs text-muted-foreground">Você já usou sua tiragem gratuita · consultas a partir de R$ 4,90 por Pix</p>
+        {free?.enabled && free.reason === "device_already_used" && (
+          <p className="mt-2 text-xs text-muted-foreground">Você já aproveitou sua primeira consulta de cortesia neste aparelho.</p>
+        )}
+        {free?.enabled && free.reason === "network_limit" && (
+          <p className="mt-2 text-xs text-muted-foreground">O limite de consultas gratuitas desta rede foi atingido temporariamente. Você pode tentar novamente mais tarde ou conhecer nossos planos.</p>
         )}
       </header>
 

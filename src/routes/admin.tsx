@@ -208,6 +208,7 @@ function Orders() {
       <FreeToggle />
       <ReviewsAdmin />
       <Button variant="outline" className="mt-3 w-full" asChild><Link to="/admin/conteudo">✦ Gerador de Carta do Dia (vídeos)</Link></Button>
+      <Button variant="outline" className="mt-3 w-full" asChild><Link to="/admin/base-oracular">✦ Base Oracular (36 cartas)</Link></Button>
       <div className="mt-4 grid grid-cols-3 gap-2 text-center">
         <div className="rounded-lg border border-border bg-card p-3"><p className="text-xs text-muted-foreground">Consultas pagas</p><p className="text-2xl font-bold text-primary">{paidDone.length}</p></div>
         <div className="rounded-lg border border-border bg-card p-3"><p className="text-xs text-muted-foreground">Receita recebida</p><p className="text-lg font-bold text-primary">{formatBRL(revenue)}</p></div>

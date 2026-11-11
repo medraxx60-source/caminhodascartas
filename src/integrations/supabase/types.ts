@@ -71,6 +71,72 @@ export type Database = {
         }
         Relationships: []
       }
+      lenormand_cards: {
+        Row: {
+          card_number: number
+          challenging_meaning: string | null
+          content_status: string
+          core_meaning: string | null
+          created_at: string
+          family_meaning: string | null
+          id: string
+          is_published: boolean
+          keywords: string[]
+          love_meaning: string | null
+          money_meaning: string | null
+          name: string
+          position_meanings: Json
+          positive_meaning: string | null
+          prediction_meaning: string | null
+          slug: string
+          spirituality_meaning: string | null
+          updated_at: string
+          work_meaning: string | null
+        }
+        Insert: {
+          card_number: number
+          challenging_meaning?: string | null
+          content_status?: string
+          core_meaning?: string | null
+          created_at?: string
+          family_meaning?: string | null
+          id?: string
+          is_published?: boolean
+          keywords?: string[]
+          love_meaning?: string | null
+          money_meaning?: string | null
+          name: string
+          position_meanings?: Json
+          positive_meaning?: string | null
+          prediction_meaning?: string | null
+          slug: string
+          spirituality_meaning?: string | null
+          updated_at?: string
+          work_meaning?: string | null
+        }
+        Update: {
+          card_number?: number
+          challenging_meaning?: string | null
+          content_status?: string
+          core_meaning?: string | null
+          created_at?: string
+          family_meaning?: string | null
+          id?: string
+          is_published?: boolean
+          keywords?: string[]
+          love_meaning?: string | null
+          money_meaning?: string | null
+          name?: string
+          position_meanings?: Json
+          positive_meaning?: string | null
+          prediction_meaning?: string | null
+          slug?: string
+          spirituality_meaning?: string | null
+          updated_at?: string
+          work_meaning?: string | null
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           access_token: string

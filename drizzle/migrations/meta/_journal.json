@@ -85,6 +85,13 @@
       "when": 1794232694464,
       "tag": "0011_free_claims_user",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1794415920088,
+      "tag": "0012_create_lenormand_cards",
+      "breakpoints": true
     }
   ]
 }

@@ -357,6 +357,13 @@ export const createFreeOrder = createServerFn({ method: "POST" })
     if (!(await freeEnabled(supabaseAdmin))) throw new Error("A leitura de cortesia não está disponível no momento.");
     const ipHash = await clientIpHash();
     const { data: claimId, error: rErr } = await supabaseAdmin.rpc("reserve_free_reading", { _device: data.deviceId, _ip: ipHash, _ip_limit: FREE_IP_LIMIT });
+    if (rErr?.message?.includes("in_progress")) {
+      const { data: c } = await supabaseAdmin.from("free_reading_claims").select("order_id").eq("device_id", data.deviceId).eq("status", "reserved").maybeSingle();
+      if (c?.order_id) {
+        const { data: o } = await supabaseAdmin.from("orders").select("access_token").eq("id", c.order_id).eq("is_free", true).maybeSingle();
+        if (o) return { token: o.access_token };
+      }
+    }
     if (rErr || !claimId) throw freeError(rErr?.message);
     const { data: row, error } = await supabaseAdmin
       .from("orders")
@@ -391,28 +398,46 @@ export const runFreeGeneration = createServerFn({ method: "POST" })
     } else {
       await supabaseAdmin.from("free_reading_claims").update({ expires_at: new Date(Date.now() + 10 * 60000).toISOString() }).eq("id", claim.id);
     }
-    // Trava atômica da geração: apenas uma requisição passa.
-    const staleBefore = new Date(Date.now() - 5 * 60000).toISOString();
-    const { data: locked } = await supabaseAdmin.from("orders")
-      .update({ status: "generating", generation_started_at: new Date().toISOString(), error_message: null })
-      .eq("id", order.id).is("reading", null)
-      .or(`status.in.(pending,error),and(status.eq.generating,generation_started_at.lt.${staleBefore})`)
-      .select("id, plan, cards, question, category").maybeSingle();
-    if (!locked) return { ok: true }; // outra aba já está gerando
-    const release = () => supabaseAdmin.from("free_reading_claims").update({ status: "released" }).eq("order_id", order.id).eq("status", "reserved");
-    try {
-      const { generateReadingText } = await import("./reading-ai.server");
-      const reading = await generateReadingText({ id: locked.id, plan: locked.plan, cards: locked.cards as number[], question: locked.question, category: locked.category });
-      const { error } = await supabaseAdmin.from("orders").update({ status: "done", reading, completed_at: new Date().toISOString() }).eq("id", locked.id);
-      if (error) throw new Error("Falha ao salvar a leitura");
-      await supabaseAdmin.from("free_reading_claims").update({ status: "consumed", consumed_at: new Date().toISOString() }).eq("order_id", order.id).eq("status", "reserved");
-      return { ok: true };
-    } catch (e) {
-      console.error(`[free] generation failed order=${locked.id}`, e instanceof Error ? e.message : e);
-      await supabaseAdmin.from("orders").update({ status: "error", error_message: e instanceof Error ? e.message : "falha" }).eq("id", locked.id).is("reading", null);
-      await release();
-      return { ok: false };
-    }
+    const { runFreeAttempt, FREE_STALE_MS } = await import("./free-generation");
+    const db = supabaseAdmin.from("orders");
+    const r = await runFreeAttempt({
+      lock: async () => {
+        const started = new Date().toISOString();
+        const staleBefore = new Date(Date.now() - FREE_STALE_MS).toISOString();
+        const { data: l } = await db
+          .update({ status: "generating", generation_started_at: started, error_message: null })
+          .eq("id", order.id).is("reading", null)
+          .or(`status.in.(pending,error),and(status.eq.generating,generation_started_at.lt.${staleBefore})`)
+          .select("id, plan, cards, question, category, generation_started_at").maybeSingle();
+        if (!l) return null;
+        // Keep the reservation alive while this attempt runs.
+        await supabaseAdmin.from("free_reading_claims").update({ expires_at: new Date(Date.now() + 10 * 60000).toISOString() }).eq("order_id", order.id).eq("status", "reserved");
+        return { started: l.generation_started_at as string, order: { id: l.id, plan: l.plan, cards: l.cards as number[], question: l.question, category: l.category } };
+      },
+      generate: async (o) => {
+        const { generateReadingText } = await import("./reading-ai.server");
+        return generateReadingText(o);
+      },
+      save: async (started, reading) => {
+        const { data: u, error } = await supabaseAdmin.from("orders").update({ status: "done", reading, completed_at: new Date().toISOString() })
+          .eq("id", order.id).eq("status", "generating").eq("generation_started_at", started).is("reading", null).select("id");
+        if (error) throw new Error("Falha ao salvar a leitura");
+        return (u?.length ?? 0) > 0;
+      },
+      markError: async (started, msg) => {
+        console.error(`[free] generation failed order=${order.id}`, msg);
+        const { data: u } = await supabaseAdmin.from("orders").update({ status: "error", error_message: msg })
+          .eq("id", order.id).eq("status", "generating").eq("generation_started_at", started).is("reading", null).select("id");
+        return (u?.length ?? 0) > 0;
+      },
+      consume: async () => {
+        await supabaseAdmin.from("free_reading_claims").update({ status: "consumed", consumed_at: new Date().toISOString() }).eq("order_id", order.id).eq("status", "reserved");
+      },
+      release: async () => {
+        await supabaseAdmin.from("free_reading_claims").update({ status: "released" }).eq("order_id", order.id).eq("status", "reserved");
+      },
+    });
+    return { ok: r.ok };
   });
 
 // Recovery for approved paid orders whose generation was interrupted (e.g. admin closed the panel mid-request).

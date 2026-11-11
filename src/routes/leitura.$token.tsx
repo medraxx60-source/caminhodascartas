@@ -125,11 +125,28 @@ function Leitura() {
     return () => clearInterval(id);
   }, [isPaidStuck, token, resumePaid, qc]);
   const [started, setStarted] = useState(false);
-  const startFree = () => {
+  const [retryBusy, setRetryBusy] = useState(false);
+  const [retryError, setRetryError] = useState<string | null>(null);
+  const startFree = (manual = false) => {
     setStarted(true);
-    runFree({ data: { token } }).catch(() => {}).finally(() => qc.invalidateQueries({ queryKey: ["order", token] }));
+    if (manual) { setRetryBusy(true); setRetryError(null); }
+    runFree({ data: { token } })
+      .then((r) => { if (manual && !r?.ok) setRetryError("Não conseguimos concluir agora. Aguarde um instante e tente de novo."); })
+      .catch((e) => {
+        if (!manual) return;
+        const msg = e instanceof Error && e.message && !/fetch|network|failed/i.test(e.message) ? e.message : "Sem conexão com o servidor. Verifique sua internet e tente de novo.";
+        setRetryError(msg); toast.error(msg);
+      })
+      .finally(() => { setRetryBusy(false); qc.invalidateQueries({ queryKey: ["order", token] }); });
     setTimeout(() => qc.invalidateQueries({ queryKey: ["order", token] }), 800);
   };
+  // A free reading stuck in "generating" (connection dropped, tab closed) is retaken here; the server only acts after 2 min.
+  const isFreeStuck = !!order?.is_free && order.status === "generating";
+  useEffect(() => {
+    if (!isFreeStuck) return;
+    const id = setInterval(() => { runFree({ data: { token } }).catch(() => {}).finally(() => qc.invalidateQueries({ queryKey: ["order", token] })); }, 30000);
+    return () => clearInterval(id);
+  }, [isFreeStuck, token, runFree, qc]);
   useEffect(() => {
     if (!order) return;
     try {
@@ -217,7 +234,8 @@ function Leitura() {
         <div className="mt-10 rounded-lg border border-gold bg-card p-6 text-center">
           <p className="font-display text-2xl text-primary">Não conseguimos concluir sua leitura agora</p>
           <p className="mt-2 text-sm text-muted-foreground">Sua leitura de cortesia não foi consumida. Toque abaixo para tentar novamente.</p>
-          <Button className="mt-4" onClick={startFree}>Tentar novamente</Button>
+          <Button className="mt-4" disabled={retryBusy} onClick={() => startFree(true)}>{retryBusy ? "Tentando…" : "Tentar novamente"}</Button>
+          {retryError && <p role="alert" className="mt-3 text-sm text-destructive">{retryError}</p>}
         </div>
       ) : order.status === "generating" ? (
         <GeneratingProgress isFree={!!order.is_free} />

@@ -17,7 +17,6 @@ import { lovable } from "@/integrations/lovable/index";
 import { createOrder, getOrderStatus, checkFreeReading, createFreeOrder } from "@/lib/orders.functions";
 import cardBackSrc from "@/assets/card-back.jpg";
 import heroSrc from "@/assets/caminho-das-cartas-hero.jpg";
-import presentSrc from "@/assets/presente-tiragem-banner.jpg";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -308,17 +307,19 @@ function Index() {
       )}
 
       {step === 0 && (<>
-      <header className="mb-10 pt-14 text-center">
+      <header className="mb-10 pt-12 text-center">
         <h1 className="sr-only">Caminho das Cartas — Baralho Cigano</h1>
         <img src={heroSrc} alt="Caminho das Cartas" width={1200} height={564} fetchPriority="high"
           className="-mx-5 block w-[calc(100%+2.5rem)] max-w-none [mask-image:linear-gradient(to_bottom,transparent,black_15%,black_80%,transparent)]" />
-        <p className="mt-2 text-xs uppercase tracking-[0.3em] text-gold">Baralho Cigano tradicional</p>
-        <p className="mt-4 text-lg leading-snug text-foreground/90">Coloque sua dúvida diante da mesa e veja o que as cartas revelam.</p>
-        {free?.enabled && free.eligible ? (
-          <img src={presentSrc} alt="Sua 1ª tiragem de 3 cartas é um presente" width={1920} height={640}
-            className="mx-auto mt-5 block w-full max-w-md rounded-xl" />
-        ) : (
-          <p className="mt-4 text-sm text-muted-foreground">Consultas a partir de R$ 4,90 · pagamento por Pix</p>
+        <p className="mt-1 text-xs uppercase tracking-[0.3em] text-gold/80">Baralho Cigano tradicional</p>
+        <p className="mx-auto mt-5 max-w-sm font-display text-[1.7rem] font-semibold leading-tight text-gold">Sua primeira tiragem de 3 cartas é por nossa conta.</p>
+        <p className="mx-auto mt-3 max-w-sm text-base leading-relaxed text-foreground/85">Descubra o que o Baralho Cigano pode revelar sobre sua dúvida. Faça sua primeira consulta gratuitamente, de forma online, privada e simples.</p>
+        <Button size="lg" className="gold-button mt-6 h-14 w-full rounded-xl text-lg" onClick={() => startWith(null)}>
+          Experimentar gratuitamente
+        </Button>
+        <p className="mt-3 text-xs tracking-wide text-muted-foreground">100% online · Sigilosa · Sem cadastro</p>
+        {free?.enabled && !free.eligible && (
+          <p className="mt-2 text-xs text-muted-foreground">Você já usou sua tiragem gratuita · consultas a partir de R$ 4,90 por Pix</p>
         )}
       </header>
 
@@ -350,7 +351,7 @@ function Index() {
       </Sheet>
 
       <section className="text-center">
-        <h2 className="font-display text-2xl text-gold">Qual assunto pede luz hoje?</h2>
+        <h2 className="font-display text-xl text-gold">Ou escolha o assunto que pede luz hoje</h2>
         <div className="mt-6 grid grid-cols-2 gap-3">
           {CATEGORIES.map((c, i) => (
             <button key={c} type="button" onClick={() => startWith(c)}

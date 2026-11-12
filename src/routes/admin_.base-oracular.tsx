@@ -71,7 +71,7 @@ function Base() {
     <main className="mx-auto max-w-2xl px-4 py-8">
       <Link to="/admin" className="text-sm text-muted-foreground hover:text-primary">← Voltar ao painel</Link>
       <h1 className="mt-3 font-display text-2xl text-gold">Base Oracular</h1>
-      <p className="mt-1 text-sm text-muted-foreground">Fichas privadas das 36 cartas. Ainda não são usadas pela IA nem exibidas ao público.</p>
+      <p className="mt-1 text-sm text-muted-foreground">Fichas privadas das 36 cartas. Quando a função estiver ativada no painel, somente as fichas completas e autorizadas serão usadas como referência pela IA. O conteúdo não é exibido ao público.</p>
       <div className="mt-4 flex flex-wrap gap-2 text-sm">
         {[["todas", `Todas (${cards.length})`], ["pendente", `Pendentes (${count("pendente")})`], ["em_andamento", `Em andamento (${count("em_andamento")})`], ["completa", `Completas (${count("completa")})`]].map(([k, l]) => (
           <button key={k} onClick={() => setFilter(k!)} className={`rounded-full border px-3 py-1 ${filter === k ? "border-gold text-gold" : "border-gold/20 text-muted-foreground"}`}>{l}</button>
@@ -84,7 +84,7 @@ function Base() {
             <button onClick={() => setOpen(c)} className="flex w-full items-center gap-3 rounded-xl border border-gold/20 bg-gold/[0.04] px-3 py-3 text-left hover:border-gold/50">
               <span className="w-8 text-center font-display text-gold">{c.card_number}</span>
               <span className="flex-1">{c.name}</span>
-              {c.is_published && <span className="text-xs text-muted-foreground">publicação marcada</span>}
+              {c.is_published && <span className="text-xs text-muted-foreground">autorizada para IA</span>}
               <span className={`rounded-full border px-2 py-0.5 text-xs ${BADGE[c.content_status]}`}>{STATUS_LABEL[c.content_status]}</span>
             </button>
           </li>
@@ -151,7 +151,7 @@ function Editor({ card, onClose }: { card: CardRow; onClose: (saved: boolean) =>
       )}
       <label className="mt-6 flex items-center gap-2 text-sm">
         <input type="checkbox" checked={published} onChange={(e) => setPublished(e.target.checked)} />
-        Marcar para publicação futura (continua privado nesta etapa)
+        Autorizar uso desta ficha pela IA quando a Base Oracular estiver ativada (a ficha continua privada)
       </label>
       <Button className="mt-4 w-full" disabled={busy} onClick={save}>{busy ? "Salvando…" : "Salvar ficha"}</Button>
     </main>

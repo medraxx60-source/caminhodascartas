@@ -43,9 +43,9 @@ describe("sinônimos tradicionais sem perder o texto das cartas", () => {
     ].join("\n\n");
     const out = layoutReading(raw, [22, 4, 6]);
     expect(out.intro).toEqual(["A mesa chama a atenção por uma tensão antiga."]);
-    expect(out.perCard[0].join(" ")).toContain("Os Ratos");
-    expect(out.perCard[1].join(" ")).toContain("A Árvore");
-    expect(out.perCard[2].join(" ")).toContain("A Serpente");
+    expect(out.perCard[0]!.join(" ")).toContain("Os Ratos");
+    expect(out.perCard[1]!.join(" ")).toContain("A Árvore");
+    expect(out.perCard[2]!.join(" ")).toContain("A Serpente");
     expect(out.conclusion).toEqual(["O caminho pede atenção ao que se repete."]);
   });
 
@@ -67,7 +67,7 @@ describe("sinônimos tradicionais sem perder o texto das cartas", () => {
     ].join("\n\n");
     const out = layoutReading(raw, [27, 28]);
     expect(out.intro).toEqual(["Havia um homem comum na situação apresentada."]);
-    expect(out.perCard[0].join(" ")).toContain("O Homem");
-    expect(out.perCard[1].join(" ")).toContain("A Mulher");
+    expect(out.perCard[0]!.join(" ")).toContain("O Homem");
+    expect(out.perCard[1]!.join(" ")).toContain("A Mulher");
   });
 });

@@ -16,6 +16,13 @@ dist-ssr
 .nitro
 *.local
 
+# Environment files: keep local credentials and API tokens out of new commits.
+# Existing tracked files must be reviewed and untracked separately.
+.env
+.env.*
+!.env.example
+!.env.sample
+
 # Wrangler / Cloudflare
 .wrangler/
 .dev.vars

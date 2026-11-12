@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { CARDS, PLANS, formatBRL, type PlanId } from "@/lib/lenormand";
-import { adminGetAiModel, adminSetAiModel, adminTestAiModel, adminGetFreeSetting, adminSetFreeSetting, adminConfirmAndGenerate, adminListOrders, adminRejectOrder, adminNudgePayment, adminSaveReading, adminStatus, claimAdmin } from "@/lib/orders.functions";
+import { adminGetAiModel, adminSetAiModel, adminTestAiModel, adminGetOracularAiSetting, adminSetOracularAiSetting, adminGetFreeSetting, adminSetFreeSetting, adminConfirmAndGenerate, adminListOrders, adminRejectOrder, adminNudgePayment, adminSaveReading, adminStatus, claimAdmin } from "@/lib/orders.functions";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -207,6 +207,7 @@ function Orders() {
       </div>
       <FreeToggle />
       <AiModelPanel />
+      <OracularAiPanel />
       <ReviewsAdmin />
       <Button variant="outline" className="mt-3 w-full" asChild><Link to="/admin/conteudo">✦ Gerador de Carta do Dia (vídeos)</Link></Button>
       <Button variant="outline" className="mt-3 w-full" asChild><Link to="/admin/base-oracular">✦ Base Oracular (36 cartas)</Link></Button>
@@ -297,6 +298,52 @@ function FreeToggle() {
         <p className="text-xs text-muted-foreground">3 cartas grátis para quem ainda não usou.</p>
       </div>
       <Button variant={on ? "default" : "outline"} disabled={on === null} onClick={flip}>{on === null ? "..." : on ? "Ativada" : "Desativada"}</Button>
+    </div>
+  );
+}
+
+function OracularAiPanel() {
+  const get = useServerFn(adminGetOracularAiSetting);
+  const set = useServerFn(adminSetOracularAiSetting);
+  const [info, setInfo] = useState<{ enabled: boolean; readyCards: number } | null>(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    get().then(setInfo).catch(() => { setInfo(null); toast.error("Não foi possível consultar a Base Oracular."); });
+  }, [get]);
+  const flip = async () => {
+    if (!info || busy) return;
+    setBusy(true);
+    try {
+      const next = await set({ data: { enabled: !info.enabled } });
+      setInfo(next);
+      toast.success(next.enabled ? "Base Oracular ativada para as próximas leituras" : "Base Oracular desativada");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Não foi possível atualizar a Base Oracular");
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="mt-4 rounded-lg border border-border bg-card p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="font-semibold">Base Oracular na interpretação da IA</p>
+          <p className="text-xs text-muted-foreground">
+            {info === null ? "Consultando status…" : `${info.readyCards} de 36 cartas completas e autorizadas para a IA.`}
+          </p>
+        </div>
+        <Button variant={info?.enabled ? "default" : "outline"} onClick={flip}
+          disabled={busy || info === null || (!info.enabled && info.readyCards === 0)}>
+          {busy || info === null ? "..." : info.enabled ? "Ativada" : "Desativada"}
+        </Button>
+      </div>
+      <p className="mt-2 text-xs text-muted-foreground">
+        Quando ativada, somente as fichas completas e marcadas para uso entram como referência nas próximas leituras.
+        As outras cartas continuam sendo interpretadas pelo motor original. Uma única chamada à IA por consulta.
+      </p>
+      {info?.readyCards === 0 && (
+        <p className="mt-2 text-xs text-muted-foreground">Preencha e marque pelo menos uma carta na Base Oracular antes de ativar.</p>
+      )}
     </div>
   );
 }

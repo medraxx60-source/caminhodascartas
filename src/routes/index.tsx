@@ -582,6 +582,7 @@ function Index() {
             </>
           ) : (
             <>
+            <p role="alert" className="rounded-md border border-gold/60 bg-gold/10 p-3 text-center text-sm leading-relaxed text-foreground">O Pix automático está indisponível no momento. Você ainda pode pagar pela chave abaixo, mas a liberação será manual, após conferência do comprovante.</p>
             <p className="text-center font-display text-4xl font-bold text-gold">{p && formatBRL(p.priceCents)}</p>
             <Button size="lg" className="gold-button h-14 w-full min-w-0 whitespace-normal rounded-lg px-3 text-base leading-snug" onClick={async () => { if (await copy(PIX_KEY, "Chave Pix")) { setCopied(true); try { navigator.vibrate?.(60); } catch {} } }}>
               {copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
@@ -594,7 +595,7 @@ function Index() {
               <summary className="cursor-pointer py-2">Prefere escanear? Ver QR Code</summary>
               <img src={PIX_QR_SRC} alt="QR Code Pix" className="mx-auto mt-3 aspect-square w-48 max-w-full rounded-md border border-gold object-contain" />
             </details>
-            <p className="text-center text-sm leading-relaxed text-muted-foreground">🔒 Seu pedido e suas cartas ficam guardados enquanto você vai ao app do banco.</p>
+            <p className="text-center text-sm leading-relaxed text-muted-foreground">🔒 Seu pedido e suas cartas ficam guardados enquanto você vai ao app do banco. Depois de pagar, use “Preciso de ajuda com o Pix” abaixo para enviar o comprovante e o número do pedido.</p>
             <div className="flex min-w-0 items-center justify-between gap-3 border-t border-border pt-3">
               <p className="min-w-0 flex-1 break-words text-sm leading-relaxed">Na descrição do Pix, informe: <span className="break-all font-mono font-bold text-primary">{orderCode}</span></p>
               <Button size="icon" variant="outline" className="h-11 w-11 shrink-0" aria-label="Copiar número do pedido" title="Copiar número do pedido" onClick={() => copy(orderCode, "Número do pedido")}><Copy aria-hidden="true" /></Button>
@@ -605,9 +606,9 @@ function Index() {
             {nudged ? (
               <p role="alert" className="rounded-md border border-destructive bg-destructive/15 p-3 text-sm font-semibold text-foreground">Atenção: conferimos e o seu Pix ainda não foi identificado. Verifique no app do seu banco se a transferência foi concluída com o valor correto.</p>
             ) : slow ? (
-              <p role="status" className="rounded-md border border-gold bg-gold/10 p-3 text-sm text-foreground">Ainda não identificamos a sua transferência. Abra o app do seu banco, cole o código Pix e confirme o pagamento para iniciar a sua interpretação.</p>
+              <p role="status" className="rounded-md border border-gold bg-gold/10 p-3 text-sm text-foreground">{pixCode ? "Ainda não identificamos sua transferência. Confira se o Pix foi concluído no app do banco." : "Se você já pagou pela chave Pix, envie o comprovante e o número do pedido pelo botão de ajuda para verificarmos."}</p>
             ) : null}
-            <p role="status" className="flex min-w-0 items-start justify-center gap-3 rounded-md border border-gold/60 bg-gold/10 p-4 text-left text-base font-semibold leading-relaxed text-foreground"><span aria-hidden="true" className="mt-2 inline-block h-3 w-3 shrink-0 rounded-full bg-gold motion-safe:animate-pulse" /><span className="min-w-0 flex-1 break-words">Aguardando pagamento… sua leitura abre sozinha ao confirmar.</span></p>
+            <p role="status" className="flex min-w-0 items-start justify-center gap-3 rounded-md border border-gold/60 bg-gold/10 p-4 text-left text-base font-semibold leading-relaxed text-foreground"><span aria-hidden="true" className="mt-2 inline-block h-3 w-3 shrink-0 rounded-full bg-gold motion-safe:animate-pulse" /><span className="min-w-0 flex-1 break-words">{pixCode ? "Aguardando pagamento… sua leitura abre sozinha ao confirmar." : "Aguardando conferência manual do Pix. Envie o comprovante pelo botão de ajuda após pagar."}</span></p>
             <Button asChild variant="link" className="h-auto min-h-11 w-full whitespace-normal text-base">
               <a href={helpLink("pagamento", orderCode)} target="_blank" rel="noopener noreferrer"><MessageCircle aria-hidden="true" />Preciso de ajuda com o Pix</a>
             </Button>

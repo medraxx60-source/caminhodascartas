@@ -5,7 +5,7 @@ import { listPublicReviews } from "@/lib/reviews.functions";
 const FAQ = [
   ["Como a leitura é feita?", "Você escolhe as cartas com a sua intenção. A interpretação é escrita por uma inteligência artificial treinada nos significados tradicionais do Baralho Cigano e nas combinações entre as cartas, seguindo o nosso jeito acolhedor de aconselhar."],
   ["Minha pergunta fica em sigilo?", "Sim. Não pedimos nome, e-mail nem cadastro. Sua pergunta nunca aparece para outras pessoas, e a leitura só abre pelo seu link pessoal."],
-  ["Quanto tempo demora?", "A leitura gratuita sai em poucos segundos. Nas consultas pagas, assim que o Pix é confirmado a interpretação aparece sozinha na tela, em cerca de um minuto."],
+  ["Quanto tempo demora?", "A interpretação começa após a escolha das cartas (ou confirmação do Pix, nas consultas pagas). O tempo varia conforme a conexão e o processamento. Se houver demora, seu pedido fica salvo e você não precisa pagar novamente."],
 ];
 
 const toggle = "cursor-pointer list-none text-center font-display text-xl font-semibold text-primary";
@@ -49,5 +49,22 @@ export function HomeTrust() {
         </div>
       </details>
     </div>
+  );
+}
+
+/** Prova social genuína, imediatamente visível após o botão principal. */
+export function HomeProof() {
+  const { data } = useQuery({ queryKey: ["public-reviews"], queryFn: () => listPublicReviews(), staleTime: 60_000 });
+  const first = data?.items.find((r) => !!r.comment);
+  if (!data?.count || !first) return null;
+  return (
+    <aside className="mx-auto mt-5 max-w-sm rounded-xl border border-gold/30 bg-card/80 px-4 py-3 text-left" aria-label="Avaliação real de consulente">
+      <div className="flex items-center gap-2 text-gold">
+        <Star className="h-4 w-4 fill-gold" />
+        <span className="text-xs font-semibold">{data.average.toFixed(1).replace(".", ",")}/5 · {data.count} avaliações reais</span>
+      </div>
+      <p className="mt-2 text-sm italic leading-relaxed text-foreground/90">“{first.comment}”</p>
+      <p className="mt-1 text-xs text-muted-foreground">— {first.display_name || "Consulente anônimo"}</p>
+    </aside>
   );
 }

@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { adminListReviews, adminSetReview } from "@/lib/reviews.functions";
+import { ConversionDashboard } from "@/components/ConversionDashboard";
 import { toast } from "sonner";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,10 +15,10 @@ import { adminGetAiModel, adminSetAiModel, adminTestAiModel, adminGetOracularAiS
 export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
-      { title: "Painel — EntreCarta.tarô" },
+      { title: "Painel — Caminho das Cartas" },
       { name: "description", content: "Painel administrativo de pedidos." },
       { name: "robots", content: "noindex, nofollow" },
-      { property: "og:title", content: "Painel — EntreCarta.tarô" },
+      { property: "og:title", content: "Painel — Caminho das Cartas" },
       { property: "og:description", content: "Painel administrativo." },
     ],
   }),
@@ -208,6 +209,7 @@ function Orders() {
       <FreeToggle />
       <AiModelPanel />
       <OracularAiPanel />
+      <ConversionDashboard />
       <ReviewsAdmin />
       <Button variant="outline" className="mt-3 w-full" asChild><Link to="/admin/conteudo">✦ Gerador de Carta do Dia (vídeos)</Link></Button>
       <Button variant="outline" className="mt-3 w-full" asChild><Link to="/admin/base-oracular">✦ Base Oracular (36 cartas)</Link></Button>

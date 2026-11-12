@@ -17,9 +17,9 @@ describe("oferta pós-primeira tiragem grátis", () => {
   });
   it("explica benefícios distintos e verdadeiros para cada plano", () => {
     const [five,seven] = getPostFreeUpgradeOffers(3);
-    expect(five.description).toContain("conselho");
-    expect(five.description).not.toContain("o que está oculto");
-    expect(seven.description).toContain("o que está oculto");
-    expect(seven.description).toContain("desfecho");
+    expect(five!.description).toContain("conselho");
+    expect(five!.description).not.toContain("o que está oculto");
+    expect(seven!.description).toContain("o que está oculto");
+    expect(seven!.description).toContain("desfecho");
   });
 });

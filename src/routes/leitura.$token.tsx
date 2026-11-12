@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type MouseEvent } from "react";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { CardFace, cardImage } from "@/components/TarotCard";
 import { CARDS, PLANS, formatBRL, type PlanId } from "@/lib/lenormand";
 import { layoutReading } from "@/lib/reading-layout";
 import { EXPANSION_KEY } from "@/lib/reading-expansion";
+import { getPostFreeUpgradeOffers } from "@/lib/post-free-upgrades";
 import { getOrderByToken, runFreeGeneration, resumePaidGeneration } from "@/lib/orders.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
@@ -287,33 +288,59 @@ function NextReading({ planId, category, isFree, token, advice, question, cards 
   const cat = category && category in OTHER_TOPIC ? category : "Outros assuntos";
   const other = OTHER_TOPIC[cat]!;
   const deeperPlans: PlanId[] = planId === "completa" ? [] : planId === "profunda" ? ["completa"] : ["profunda", "completa"];
+  const freeUpgradeOffers = isFree && planId === "essencial" ? getPostFreeUpgradeOffers(cards.length) : [];
   const href = (plano: PlanId | null, categoria: string) =>
     `/?${new URLSearchParams({ ...(plano ? { plano } : {}), categoria }).toString()}`;
   // Expansion keeps the same question and the cards already drawn; the user only picks the missing ones.
   const expandHref = (plano: PlanId) =>
     `/?${new URLSearchParams({ plano, categoria: cat }).toString()}`;
+  const keepExpansion = (plano: PlanId, event: MouseEvent<HTMLAnchorElement>) => {
+    try {
+      sessionStorage.setItem(EXPANSION_KEY, JSON.stringify({ plan: plano, question, cards, at: Date.now() }));
+    } catch {
+      event.preventDefault();
+      toast.error("Não foi possível preservar sua pergunta neste navegador. Tente novamente.");
+    }
+  };
   return (
     <section className="mt-12 rounded-xl border border-gold/50 bg-card/70 p-5 text-center">
       <p className="text-2xl text-gold">✦</p>
-      <h2 className="mt-1 font-display text-2xl font-semibold text-primary">Continue seu caminho</h2>
+      <h2 className="mt-1 font-display text-2xl font-semibold text-primary">{isFree ? "Sua primeira leitura está completa" : "Continue seu caminho"}</h2>
       <p className="mt-2 text-base text-foreground/90">
         {isFree
-          ? `As 3 cartas mostraram sua situação, o desafio e a tendência. Mas há influências ocultas agindo nos bastidores que uma tiragem curta só sinaliza. Suas cartas continuam na mesa: abra mais cartas sobre a mesma pergunta e veja o que está escondido, o conselho e o desfecho do seu caminho.`
+          ? "Você já recebeu sua orientação gratuita com 3 cartas. Se quiser explorar a mesma pergunta por outros ângulos, escolha uma tiragem maior. O aprofundamento é opcional."
           : deeperPlans.length
-            ? "Suas cartas continuam na mesa. Abra mais cartas sobre a mesma pergunta para ver o desfecho, ou pergunte sobre outra área da sua vida."
+            ? "Se quiser, explore outros aspectos da mesma pergunta em uma tiragem maior. Sua leitura anterior continua salva."
             : "As cartas mostram um momento. Quando quiser, pergunte sobre outra área da sua vida."}
       </p>
       <div className="mt-5 space-y-3">
-        {deeperPlans.map((d, i) => (
+        {isFree && freeUpgradeOffers.length > 0 ? (
+          <>
+            <div className="space-y-3 text-left" aria-label="Opções pagas para aprofundar a leitura">
+              {freeUpgradeOffers.map((item, i) => (
+                <div key={item.plan} className={i === 0 ? "rounded-xl border border-gold bg-gold/[0.06] p-4" : "rounded-xl border border-border bg-background/40 p-4"}>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-gold">{item.tag}</span>
+                    <span className="font-display text-2xl font-semibold text-primary">{formatBRL(item.priceCents)}</span>
+                  </div>
+                  <h3 className="mt-2 font-display text-xl font-semibold text-primary">{item.count} cartas — {item.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-foreground/85">{item.description}</p>
+                  <Button asChild size="lg" variant={i === 0 ? "default" : "outline"}
+                    className={i === 0 ? "gold-button mt-4 h-auto min-h-12 w-full whitespace-normal rounded-xl py-3 text-base" : "mt-4 h-auto min-h-12 w-full whitespace-normal rounded-xl border-gold py-3 text-base text-gold"}>
+                    <a href={expandHref(item.plan)} onClick={(event) => keepExpansion(item.plan, event)}>
+                      Continuar com {item.count} cartas · escolher mais {item.extraCards}
+                    </a>
+                  </Button>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              Valores totais das novas consultas, pagos por Pix. As 3 cartas já escolhidas serão aproveitadas e reinterpretadas nas posições da tiragem maior. Você escolhe apenas as cartas restantes. Sua leitura grátis continua salva.
+            </p>
+          </>
+        ) : deeperPlans.map((d, i) => (
           <Button key={d} asChild size="lg" variant={i === 0 ? "default" : "outline"} className={i === 0 ? "gold-button h-auto min-h-14 w-full whitespace-normal rounded-xl py-3 text-base leading-snug" : "h-auto min-h-12 w-full whitespace-normal rounded-xl border-gold py-3 text-base leading-snug text-gold"}>
-            <a href={expandHref(d)} onClick={(event) => {
-              try {
-                sessionStorage.setItem(EXPANSION_KEY, JSON.stringify({ plan: d, question, cards, at: Date.now() }));
-              } catch {
-                event.preventDefault();
-                toast.error("Não foi possível preservar sua pergunta neste navegador. Tente novamente.");
-              }
-            }}>✦ Expandir para {PLANS[d].count} cartas · {PLANS[d].name} ({formatBRL(PLANS[d].priceCents)})<br /><span className="text-sm opacity-80">Suas {cards.length} cartas continuam na mesa · escolha mais {PLANS[d].count - cards.length}</span></a>
+            <a href={expandHref(d)} onClick={(event) => keepExpansion(d, event)}>✦ Expandir para {PLANS[d].count} cartas · {PLANS[d].name} ({formatBRL(PLANS[d].priceCents)})<span className="block text-sm opacity-80">Aproveite suas {cards.length} cartas e escolha mais {PLANS[d].count - cards.length}</span></a>
           </Button>
         ))}
         <Button asChild size="lg" variant="outline" className="h-auto min-h-12 w-full whitespace-normal rounded-xl border-gold py-3 text-base leading-snug text-gold">

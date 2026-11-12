@@ -93,3 +93,23 @@ describe("geração completa com MandAPI simulada (sem cobranças)", () => {
     })).rejects.toThrow("Saldo insuficiente na MandAPI.");
   });
 });
+
+describe("limite de duração da MandAPI", () => {
+  it("usa AbortSignal na chamada principal e explica o timeout", async () => {
+    vi.stubEnv("MANDAPI_API_KEY", "fake-mandapi-key");
+    vi.stubEnv("MANDAPI_BASE_URL", "https://mandapi.example.invalid/v1");
+    vi.mocked(getAiModel).mockResolvedValue("gpt-6-sol");
+    vi.mocked(loadOracularReference).mockResolvedValue(null);
+    const fetchMock = vi.fn().mockRejectedValue(new DOMException("Deadline exceeded", "TimeoutError"));
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      await expect(generateReadingText({
+        id:"timeout",plan:"essencial",cards:[0,20,30],question:"Como agir agora?",category:null,
+      })).rejects.toThrow("A MandAPI demorou a responder.");
+      expect(fetchMock).toHaveBeenCalledOnce();
+      expect(fetchMock.mock.calls[0]?.[1]?.signal).toBeInstanceOf(AbortSignal);
+    } finally {
+      vi.unstubAllGlobals(); vi.unstubAllEnvs(); vi.resetAllMocks();
+    }
+  });
+});

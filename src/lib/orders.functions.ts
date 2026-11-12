@@ -473,6 +473,8 @@ export const resumePaidGeneration = createServerFn({ method: "POST" })
       .select("id, plan, cards, question, category, generation_started_at").maybeSingle();
     if (!locked) return { ok: true };
     const startedAt = String(locked.generation_started_at);
+    const attemptStartedMs = Date.now();
+    console.info(`[reading] stage=started path=recovery order=${locked.id}`);
     try {
       const { generateReadingText } = await import("./reading-ai.server");
       const reading = await generateReadingText({ id: locked.id, plan: locked.plan, cards: locked.cards as number[], question: locked.question, category: locked.category });
@@ -480,8 +482,10 @@ export const resumePaidGeneration = createServerFn({ method: "POST" })
         .update({ status: "done", reading, completed_at: new Date().toISOString() })
         .eq("id", locked.id).eq("status", "generating").eq("generation_started_at", startedAt).is("reading", null);
       if (error) throw new Error("Falha ao salvar a leitura");
+      console.info(`[reading] stage=complete path=recovery order=${locked.id} elapsed_ms=${Date.now() - attemptStartedMs}`);
       return { ok: true };
     } catch (e) {
+      console.warn(`[reading] stage=failed path=recovery order=${locked.id} elapsed_ms=${Date.now() - attemptStartedMs} error=${e instanceof Error ? e.name : "unknown"}`);
       console.error(`[paid] resume failed order=${locked.id}`, e instanceof Error ? e.message : e);
       await supabaseAdmin.from("orders")
         .update({ status: "error", error_message: e instanceof Error ? e.message : "falha" })

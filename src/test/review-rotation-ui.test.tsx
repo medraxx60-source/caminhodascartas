@@ -21,11 +21,10 @@ describe("depoimentos rotativos e estáveis", () => {
     expect(screen.getByText("1/2")).toBeInTheDocument();
   });
 
-  it("troca com o controle manual e pausa no hover", () => {
+  it("troca com o controle manual e pausa quando um controle recebe foco", () => {
     vi.useFakeTimers();
     const { container } = render(<ReviewRotation reviews={reviews} average={4.5} count={2} />);
-    const region = screen.getByRole("region", { name: "Avaliações reais dos consulentes" });
-    fireEvent.mouseEnter(region);
+    fireEvent.focus(screen.getByRole("button", { name: "Próxima avaliação" }));
     act(() => vi.advanceTimersByTime(10000));
     expect(screen.getByText("1/2")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Próxima avaliação" }));

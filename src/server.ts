@@ -46,6 +46,13 @@ function isH3SwallowedErrorBody(body: string): boolean {
 
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
+    // Rotas públicas de notificação. Verificação de assinatura e de pagamento
+    // ocorre no servidor, sem interferir no roteamento do site.
+    const pathname = new URL(request.url).pathname;
+    if (pathname === "/api/webhooks/asaas" || pathname === "/api/webhooks/wyvi") {
+      const { handlePaymentWebhook } = await import("./lib/payment-webhooks.server");
+      return handlePaymentWebhook(request, pathname.endsWith("/asaas") ? "asaas" : "wyvi", ctx);
+    }
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);

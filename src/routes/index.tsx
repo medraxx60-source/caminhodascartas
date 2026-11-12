@@ -7,7 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { HomeTrust } from "@/components/HomeTrust";
+import { HomeTrust, HomeProof } from "@/components/HomeTrust";
+import { useConversion } from "@/lib/use-conversion";
+import { getConversionContext } from "@/lib/conversion-tracking";
 import { Check, Copy, Menu, MessageCircle } from "lucide-react";
 import { CardBack, CardReveal, cardImage } from "@/components/TarotCard";
 import { EXPANSION_KEY, parseExpansion } from "@/lib/reading-expansion";
@@ -26,7 +28,7 @@ export const Route = createFileRoute("/")({
       { title: "Caminho das Cartas — Baralho Cigano online" },
       { name: "description", content: "Faça sua pergunta objetiva sobre amor, dinheiro, saúde ou espiritualidade e receba sua leitura de Baralho Cigano." },
       { property: "og:title", content: "Caminho das Cartas — Baralho Cigano online" },
-      { property: "og:description", content: "Leituras de Baralho Cigano personalizadas, a partir de R$ 4,90." },
+      { property: "og:description", content: "Primeira tiragem de 3 cartas grátis. Faça sua pergunta e receba uma interpretação personalizada do Baralho Cigano." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { property: "og:image", content: "https://caminhodascartas.lovable.app/__l5e/assets-v1/5d79658c-3851-488d-b2b6-126ea53c114b/caminho-das-cartas-share-v2.jpg" },
@@ -99,6 +101,8 @@ function Index() {
   const checkStatus = useServerFn(getOrderStatus);
   useEffect(() => { const b = new Image(); b.src = cardBackSrc; }, []);
   const checkFree = useServerFn(checkFreeReading);
+  const track = useConversion();
+  useEffect(() => { track("landing_view"); }, []);
   const createFree = useServerFn(createFreeOrder);
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [fp, setFp] = useState<string | undefined>(undefined);
@@ -175,9 +179,11 @@ function Index() {
       setFree(f);
       // Returning visitors who used the free reading start with the Profunda pre-selected.
       if (f?.enabled && !f.eligible) setPlan((cur) => cur ?? "profunda");
-    }).catch(() => setFree(null));
+    }).catch(() => setFree({ enabled: false, eligible: false, reason: "unavailable" }));
   }, [checkFree]);
-  const isFreePlan = (id: PlanId) => id === "essencial" && !!free?.enabled && !!free?.eligible;
+  const freePending = free === null;
+  const freeEligible = !!free?.enabled && !!free?.eligible;
+  const isFreePlan = (id: PlanId) => id === "essencial" && freeEligible;
   // Restored a free draft but the server no longer grants the gift: keep the cards and offer the plans.
   useEffect(() => { if (restored && free?.enabled !== undefined && !free.eligible) setFreeLost(true); }, [restored, free]);
   // Keep free-flow progress across reloads (this tab only, 1h). Never decides eligibility.
@@ -242,7 +248,7 @@ function Index() {
         try { localStorage.removeItem(FREE_DRAFT_KEY); } catch {}
         let r: { token: string };
         try {
-          r = await createFree({ data: { deviceId, fp, category: category ?? "Outros assuntos", question, cards: picked } });
+          r = await createFree({ data: { deviceId, fp, category: category ?? "Outros assuntos", question, cards: picked, conversionSession: getConversionContext()?.sessionId } });
         } catch (e) {
           const m = e instanceof Error ? e.message : "";
           toast.error(m && !/fetch|network|failed/i.test(m) ? m : "Sem conexão com o servidor. Suas cartas continuam na mesa; tente de novo.");
@@ -255,12 +261,13 @@ function Index() {
         window.location.href = `/leitura/${r.token}`;
         return;
       }
-      const r = await create({ data: { plan, category: category ?? "Outros assuntos", question, cards: picked } });
+      const r = await create({ data: { plan, category: category ?? "Outros assuntos", question, cards: picked, conversionSession: getConversionContext()?.sessionId } });
       setOrderCode(r.orderCode);
       setPixCode(r.pixPayload ? { payload: r.pixPayload, image: r.pixImage } : null);
       setReservedAt(Date.now());
       setToken(r.token);
       setPixOpen(true);
+      track("pix_view", plan);
       try { sessionStorage.removeItem(PROGRESS_KEY); } catch {}
       try { localStorage.setItem(PENDING_KEY, JSON.stringify({ token: r.token, orderCode: r.orderCode, plan, category, question, cards: picked, at: Date.now() })); } catch {}
     } catch (e) {
@@ -315,11 +322,14 @@ function Index() {
   if (p && !qOk) missing.push(`Escrever sua pergunta (mínimo ${MIN_Q} caracteres)`);
   if (p && picked.length < p.count) missing.push(`Escolher mais ${p.count - picked.length} carta(s)`);
   const ready = !!p && missing.length === 0;
+  const primaryAction = freePending ? "Verificando disponibilidade…" : freeEligible ? "Experimentar gratuitamente" : "Conhecer planos e valores";
 
   const goStep = (s: number) => { setStep(s); };
   // Home starts with the topic (connection first); the plan is preselected and shown with its price before the cards.
   const startWith = (c: Category | null) => {
-    const def: PlanId = plan ?? (free?.enabled && free.eligible ? "essencial" : "profunda");
+    if (freePending) return;
+    const def: PlanId = plan ?? (freeEligible ? "essencial" : "profunda");
+    if (def === "essencial" && freeEligible) track("free_start", def);
     choosePlan(def);
     if (c) {
       setCategory(c);
@@ -351,15 +361,17 @@ function Index() {
         <img src={heroSrc} alt="Caminho das Cartas" width={1200} height={564} fetchPriority="high"
           className="-mx-5 block w-[calc(100%+2.5rem)] max-w-none [mask-image:linear-gradient(to_bottom,transparent,black_15%,black_80%,transparent)]" />
         <p className="mt-1 text-xs uppercase tracking-[0.3em] text-gold/80">Baralho Cigano tradicional</p>
-        <p className="mx-auto mt-5 max-w-sm font-display text-[1.7rem] font-semibold leading-tight text-gold">Sua primeira tiragem de 3 cartas é por nossa conta.</p>
-        <p className="mx-auto mt-3 max-w-sm text-base leading-relaxed text-foreground/85">Descubra o que o Baralho Cigano pode revelar sobre sua dúvida. Faça sua primeira consulta gratuitamente, de forma online, privada e simples.</p>
-        <Button size="lg" className="gold-button mt-6 h-14 w-full rounded-xl text-lg" onClick={() => startWith(null)}>
-          Experimentar gratuitamente
+        <p className="mx-auto mt-5 max-w-sm font-display text-[1.7rem] font-semibold leading-tight text-gold">{freePending ? "Uma pergunta. Uma leitura feita para você." : freeEligible ? "Sua primeira tiragem de 3 cartas é por nossa conta." : "Continue seu caminho com uma nova leitura."}</p>
+        <p className="mx-auto mt-3 max-w-sm text-base leading-relaxed text-foreground/85">{freeEligible ? "Faça sua pergunta e escolha 3 cartas. Sua primeira leitura é gratuita, online e sem cadastro." : "Escolha seu assunto, faça uma pergunta e receba uma interpretação personalizada do Baralho Cigano."}</p>
+        <Button size="lg" className="gold-button mt-6 h-14 w-full rounded-xl text-lg" disabled={freePending} onClick={() => startWith(null)}>
+          {primaryAction}
         </Button>
-        <p className="mt-3 text-xs tracking-wide text-muted-foreground">100% online · Sigilosa · Sem cadastro</p>
+        <p className="mt-3 text-xs tracking-wide text-muted-foreground">100% online · Consulta privada · Sem cadastro</p>
+        <HomeProof />
         {free?.enabled && free.reason === "device_already_used" && (
           <p className="mt-2 text-xs text-muted-foreground">Você já aproveitou sua primeira consulta de cortesia neste aparelho.</p>
         )}
+        {free?.reason === "unavailable" && <p className="mt-2 text-xs text-muted-foreground">Não foi possível verificar sua cortesia neste momento. Os planos pagos continuam disponíveis.</p>}
         {free?.enabled && free.reason === "network_limit" && (
           <p className="mt-2 text-xs text-muted-foreground">O limite de consultas gratuitas desta rede foi atingido temporariamente. Você pode tentar novamente mais tarde ou conhecer nossos planos.</p>
         )}
@@ -396,7 +408,7 @@ function Index() {
         <h2 className="font-display text-xl text-gold">Ou escolha o assunto que pede luz hoje</h2>
         <div className="mt-6 grid grid-cols-2 gap-3">
           {CATEGORIES.map((c, i) => (
-            <button key={c} type="button" onClick={() => startWith(c)}
+            <button key={c} type="button" disabled={freePending} onClick={() => startWith(c)}
               className={`flex min-h-[3.25rem] items-center justify-center rounded-xl border border-gold/25 bg-gold/[0.04] px-3 py-2 text-sm font-medium leading-tight text-gold/90 backdrop-blur-sm transition-colors hover:border-gold/50 active:bg-gold/20 ${i === CATEGORIES.length - 1 && CATEGORIES.length % 2 === 1 ? "col-span-2" : ""}`}>
               {c}
             </button>
@@ -404,10 +416,10 @@ function Index() {
         </div>
       </section>
       <div className="mt-8 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-        <span>🔒 Sigilosa</span><span>⚡ Sem cadastro</span><span>✦ Resposta na hora</span>
+        <span>🔒 Consulta privada</span><span>✦ Sem cadastro</span><span>⚡ Leitura online</span>
       </div>
-      <Button size="lg" className="gold-button mt-6 h-14 w-full rounded-xl text-lg" onClick={() => startWith(null)}>
-        ✦ Abrir minha mesa de cartas
+      <Button size="lg" className="gold-button mt-6 h-14 w-full rounded-xl text-lg" disabled={freePending} onClick={() => startWith(null)}>
+        {freePending ? "Verificando disponibilidade…" : "✦ Abrir minha mesa de cartas"}
       </Button>
       <HomeTrust />
       </>)}
@@ -578,7 +590,7 @@ function Index() {
               </div>
               <p className="text-center text-base text-foreground">Escaneie o QR Code ou copie o código Pix</p>
               {qrSrc && <img src={qrSrc} alt="QR Code Pix" className="mx-auto aspect-square w-56 max-w-full rounded-lg bg-white p-2" />}
-              <Button size="lg" className="gold-button h-14 w-full min-w-0 whitespace-normal rounded-lg px-3 text-base leading-snug" onClick={async () => { if (await copy(pixCode.payload, "Código Pix")) { setCopied(true); try { navigator.vibrate?.(60); } catch {} } }}>
+              <Button size="lg" className="gold-button h-14 w-full min-w-0 whitespace-normal rounded-lg px-3 text-base leading-snug" onClick={async () => { if (await copy(pixCode.payload, "Código Pix")) { track("pix_copy", plan ?? "none"); setCopied(true); try { navigator.vibrate?.(60); } catch {} } }}>
                 {copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
                 <span>{copied ? "Código Pix copiado!" : "Copiar código Pix"}</span>
               </Button>
@@ -588,7 +600,7 @@ function Index() {
             <>
             <p role="alert" className="rounded-md border border-gold/60 bg-gold/10 p-3 text-center text-sm leading-relaxed text-foreground">O Pix automático está indisponível no momento. Você ainda pode pagar pela chave abaixo, mas a liberação será manual, após conferência do comprovante.</p>
             <p className="text-center font-display text-4xl font-bold text-gold">{p && formatBRL(p.priceCents)}</p>
-            <Button size="lg" className="gold-button h-14 w-full min-w-0 whitespace-normal rounded-lg px-3 text-base leading-snug" onClick={async () => { if (await copy(PIX_KEY, "Chave Pix")) { setCopied(true); try { navigator.vibrate?.(60); } catch {} } }}>
+            <Button size="lg" className="gold-button h-14 w-full min-w-0 whitespace-normal rounded-lg px-3 text-base leading-snug" onClick={async () => { if (await copy(PIX_KEY, "Chave Pix")) { track("pix_copy", plan ?? "none"); setCopied(true); try { navigator.vibrate?.(60); } catch {} } }}>
               {copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
               <span>{copied ? "Chave Pix copiada!" : "Copiar chave Pix"}</span>
             </Button>

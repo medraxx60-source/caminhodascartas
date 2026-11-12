@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Star } from "lucide-react";
 import { listPublicReviews } from "@/lib/reviews.functions";
+import { ReviewRotation } from "@/components/ReviewRotation";
 
 const FAQ = [
   ["Como a leitura é feita?", "Você escolhe as cartas com a sua intenção. A interpretação é escrita por uma inteligência artificial treinada nos significados tradicionais do Baralho Cigano e nas combinações entre as cartas, seguindo o nosso jeito acolhedor de aconselhar."],
@@ -52,19 +53,9 @@ export function HomeTrust() {
   );
 }
 
-/** Prova social genuína, imediatamente visível após o botão principal. */
+/** Prova social genuína alternando sem mudar o conteúdo indexável da página. */
 export function HomeProof() {
   const { data } = useQuery({ queryKey: ["public-reviews"], queryFn: () => listPublicReviews(), staleTime: 60_000 });
-  const first = data?.items.find((r) => !!r.comment);
-  if (!data?.count || !first) return null;
-  return (
-    <aside className="mx-auto mt-5 max-w-sm rounded-xl border border-gold/30 bg-card/80 px-4 py-3 text-left" aria-label="Avaliação real de consulente">
-      <div className="flex items-center gap-2 text-gold">
-        <Star className="h-4 w-4 fill-gold" />
-        <span className="text-xs font-semibold">{data.average.toFixed(1).replace(".", ",")}/5 · {data.count} avaliações reais</span>
-      </div>
-      <p className="mt-2 text-sm italic leading-relaxed text-foreground/90">“{first.comment}”</p>
-      <p className="mt-1 text-xs text-muted-foreground">— {first.display_name || "Consulente anônimo"}</p>
-    </aside>
-  );
+  if (!data?.count || !data.items.some((review) => !!review.comment?.trim())) return null;
+  return <ReviewRotation reviews={data.items} average={data.average} count={data.count} />;
 }

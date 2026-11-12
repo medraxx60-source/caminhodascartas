@@ -86,7 +86,7 @@ export const getOrderByToken = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    // Recover a paid Asaas order whose generation stalled or failed.
+    // Sincroniza pagamento (Wyvi Pay ou Asaas legado) sem requerer aprovação manual.
     await syncAsaasPayment(data.token).catch((e) => console.error("[asaas] sync", e));
     const { data: row } = await supabaseAdmin
       .from("orders")
@@ -100,15 +100,15 @@ export const getOrderByToken = createServerFn({ method: "POST" })
     }
     const s = row?.status;
     const status: "done" | "rejected" | "generating" | "pending" | "error" =
-      s === "done" ? "done" : s === "rejected" ? "rejected" : s === "generating" ? "generating" : s === "error" && row?.is_free ? "error" : "pending";
+      s === "done" ? "done" : s === "rejected" ? "rejected" : s === "generating" ? "generating" : s === "error" ? "error" : "pending";
     return row ? { ...row, status } : null;
   });
 
-// Checks Asaas for a received Pix and, if paid, marks the order and generates the reading (no admin needed).
+// Confirma Pix na Wyvi Pay (ou Asaas legado), depois gera a leitura uma única vez por claim.
 export async function syncAsaasPayment(token: string) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const db = supabaseAdmin.from("orders") as any;
-  const { data: o } = await db.select("id, plan, cards, question, category, status, price_cents, asaas_qr_id, asaas_payment_id, generation_started_at, is_free").eq("access_token", token).maybeSingle();
+  const { data: o } = await db.select("id, plan, cards, question, category, status, price_cents, asaas_qr_id, asaas_payment_id, generation_started_at, paid_at, is_free").eq("access_token", token).maybeSingle();
   if (!o || o.is_free || !o.asaas_qr_id) return;
   const staleBefore = new Date(Date.now() - 2 * 60 * 1000).toISOString();
   // Consultamos o intermediador apenas uma vez por verificação de um pedido pendente.
@@ -120,22 +120,28 @@ export async function syncAsaasPayment(token: string) {
   const payId = o.asaas_payment_id ?? (await findAsaasPayment(o.asaas_qr_id, o.price_cents));
   if (!payId) return;
   const now = new Date().toISOString();
+  const alreadyPaidAt = o.paid_at ?? now; // Não sobrescrever o instante original ao tentar novamente.
   const { data: locked } = await (supabaseAdmin.from("orders") as any)
-    .update({ status: "generating", paid_at: now, asaas_payment_id: payId, generation_started_at: now, error_message: null })
+    .update({ status: "generating", paid_at: alreadyPaidAt, asaas_payment_id: payId, generation_started_at: now, error_message: null })
     .eq("id", o.id).is("reading", null)
     .or(`status.in.(pending,error),and(status.eq.generating,generation_started_at.lt.${staleBefore})`)
     .select("id, generation_started_at").maybeSingle();
   if (!locked) return;
   // A resposta desta tentativa não pode sobrescrever uma geração posterior.
   const startedAt = String(locked.generation_started_at);
+  const attemptStartedMs = Date.now();
+  console.info(`[reading] stage=started path=pix provider=${String(o.asaas_qr_id).startsWith("wy:") ? "wyvi" : "asaas"} order=${o.id}`);
   try {
     const { generateReadingText } = await import("./reading-ai.server");
     const reading = await generateReadingText({ id: o.id, plan: o.plan, cards: o.cards as number[], question: o.question, category: o.category ?? null });
-    const { error } = await supabaseAdmin.from("orders")
+    const { data: saved, error } = await supabaseAdmin.from("orders")
       .update({ status: "done", reading, completed_at: new Date().toISOString(), error_message: null })
-      .eq("id", o.id).eq("status", "generating").eq("generation_started_at", startedAt).is("reading", null);
+      .eq("id", o.id).eq("status", "generating").eq("generation_started_at", startedAt).is("reading", null)
+      .select("id").maybeSingle();
     if (error) throw error;
+    console.info(`[reading] stage=${saved ? "complete" : "superseded"} path=pix order=${o.id} elapsed_ms=${Date.now() - attemptStartedMs}`);
   } catch (e) {
+    console.warn(`[reading] stage=failed path=pix order=${o.id} elapsed_ms=${Date.now() - attemptStartedMs} error=${e instanceof Error ? e.name : "unknown"}`);
     await supabaseAdmin.from("orders")
       .update({ status: "error", error_message: e instanceof Error ? e.message : "falha" })
       .eq("id", o.id).eq("status", "generating").eq("generation_started_at", startedAt).is("reading", null);
@@ -467,6 +473,8 @@ export const resumePaidGeneration = createServerFn({ method: "POST" })
       .select("id, plan, cards, question, category, generation_started_at").maybeSingle();
     if (!locked) return { ok: true };
     const startedAt = String(locked.generation_started_at);
+    const attemptStartedMs = Date.now();
+    console.info(`[reading] stage=started path=recovery order=${locked.id}`);
     try {
       const { generateReadingText } = await import("./reading-ai.server");
       const reading = await generateReadingText({ id: locked.id, plan: locked.plan, cards: locked.cards as number[], question: locked.question, category: locked.category });
@@ -474,8 +482,10 @@ export const resumePaidGeneration = createServerFn({ method: "POST" })
         .update({ status: "done", reading, completed_at: new Date().toISOString() })
         .eq("id", locked.id).eq("status", "generating").eq("generation_started_at", startedAt).is("reading", null);
       if (error) throw new Error("Falha ao salvar a leitura");
+      console.info(`[reading] stage=complete path=recovery order=${locked.id} elapsed_ms=${Date.now() - attemptStartedMs}`);
       return { ok: true };
     } catch (e) {
+      console.warn(`[reading] stage=failed path=recovery order=${locked.id} elapsed_ms=${Date.now() - attemptStartedMs} error=${e instanceof Error ? e.name : "unknown"}`);
       console.error(`[paid] resume failed order=${locked.id}`, e instanceof Error ? e.message : e);
       await supabaseAdmin.from("orders")
         .update({ status: "error", error_message: e instanceof Error ? e.message : "falha" })

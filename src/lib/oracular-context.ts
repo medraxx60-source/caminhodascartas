@@ -69,12 +69,15 @@ export function buildOracularReference(
       const short = brief(value, limit);
       if (short) chunks.push(`${label}: ${short}`);
     };
-    add("Significado central", record.core_meaning, 210);
-    if (categoryKey) add("Aplicação ao assunto", record[categoryKey], 190);
-    if (positionKey) add("Na posição", record.position_meanings?.[positionKey], 190);
-    add("Aspecto favorável", record.positive_meaning, 110);
-    add("Aspecto desafiador", record.challenging_meaning, 110);
-    add("Tendência simbólica", record.prediction_meaning, 160);
+    // Priorizar assunto + posição para apoiar uma narrativa, não enviar uma ficha-dicionário inteira.
+    // Reduz tokens e evita que aspectos contraditórios de toda carta dominem a pergunta.
+    add("Significado central", record.core_meaning, 165);
+    if (categoryKey) add("Aplicação ao assunto", record[categoryKey], 170);
+    if (positionKey) add("Na posição", record.position_meanings?.[positionKey], 175);
+    if (positionLabel === "Desafio") add("Aspecto desafiador", record.challenging_meaning, 105);
+    if (positionLabel === "Conselho") add("Aspecto favorável", record.positive_meaning, 105);
+    if (positionLabel === "Tendência" || positionLabel === "Desfecho")
+      add("Tendência simbólica", record.prediction_meaning, 145);
     if (chunks.length) sections.push(
       `${position + 1}. ${CARDS[index]} — ${positionLabel}\n${chunks.join("\n")}`
     );

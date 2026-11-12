@@ -626,10 +626,9 @@ function Index() {
       </Dialog>
 
       <Dialog open={!!token && pixOpen} onOpenChange={(open) => setPixOpen(open)}>
-        <DialogContent className="mystic cc-checkout-live w-[calc(100%-1.5rem)] max-w-lg max-h-[90dvh] min-w-0 overflow-x-hidden overflow-y-auto rounded-lg p-5 pb-8 sm:p-6 [&>button.absolute]:hidden" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
+        <DialogContent className="mystic w-[calc(100%-1.5rem)] max-w-lg max-h-[90dvh] min-w-0 overflow-x-hidden overflow-y-auto rounded-lg p-5 pb-8 sm:p-6 [&>button.absolute]:hidden" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
           <DialogHeader>
-            <DialogTitle className="font-display text-3xl text-primary"><span aria-hidden="true" className="cc-checkout-star mr-2 inline-block text-gold">✦</span>Pague com Pix</DialogTitle>
-            <div aria-hidden="true" className="cc-checkout-line mx-auto mt-2 h-0.5 w-28 rounded-full bg-gold" />
+            <DialogTitle className="font-display text-3xl text-primary">Pague com Pix</DialogTitle>
             <DialogDescription className="text-base">Falta só o pagamento para iniciar a sua interpretação.</DialogDescription>
           </DialogHeader>
           {pixCode ? (
@@ -641,7 +640,7 @@ function Index() {
               <p className="rounded-lg bg-gold/10 px-3 py-3 text-center text-sm leading-relaxed text-foreground">
                 1. Copie o código Pix · 2. Pague no aplicativo do banco · 3. Volte aqui. A liberação é automática após a confirmação.
               </p>
-              <Button size="lg" className="gold-button cc-cta-alive h-14 w-full min-w-0 whitespace-normal rounded-lg px-3 text-base leading-snug" onClick={async () => { if (await copy(pixCode.payload, "Código Pix")) { track("pix_copy", plan ?? "none"); setCopied(true); try { navigator.vibrate?.(60); } catch {} } }}>
+              <Button size="lg" className="gold-button h-14 w-full min-w-0 whitespace-normal rounded-lg px-3 text-base leading-snug" onClick={async () => { if (await copy(pixCode.payload, "Código Pix")) { track("pix_copy", plan ?? "none"); setCopied(true); try { navigator.vibrate?.(60); } catch {} } }}>
                 {copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
                 <span>{copied ? "Código Pix copiado! Abra seu banco" : "Copiar código Pix"}</span>
               </Button>
@@ -654,7 +653,7 @@ function Index() {
             </>
           ) : (
             <>
-            <div role="alert" className="cc-payment-pulse rounded-xl border border-gold/60 bg-gold/10 p-4 text-center">
+            <div role="alert" className="rounded-xl border border-gold/60 bg-gold/10 p-4 text-center">
               <p className="font-display text-xl font-semibold text-gold">Estamos preparando seu Pix</p>
               <p className="mt-2 text-sm leading-relaxed text-foreground">
                 Não foi possível gerar o código de pagamento nesta tentativa. Seu pedido e suas cartas continuam salvos.
@@ -664,7 +663,7 @@ function Index() {
               </p>
             </div>
             <p className="text-center font-display text-4xl font-bold text-gold">{p && formatBRL(p.priceCents)}</p>
-            <Button size="lg" className="gold-button cc-cta-alive h-14 w-full whitespace-normal rounded-lg px-3 text-base" disabled={pixRetryBusy}
+            <Button size="lg" className="gold-button h-14 w-full whitespace-normal rounded-lg px-3 text-base" disabled={pixRetryBusy}
               onClick={retryPix}>
               {pixRetryBusy ? "Consultando a Wyvi Pay…" : "Gerar Pix automático novamente"}
             </Button>
@@ -680,7 +679,7 @@ function Index() {
             ) : slow ? (
               <p role="status" className="rounded-md border border-gold bg-gold/10 p-3 text-sm text-foreground">{pixCode ? "Ainda não identificamos sua transferência. Confira se o Pix foi concluído no app do banco." : "Ainda estamos tentando emitir o Pix automático. Você não precisa realizar transferência manual."}</p>
             ) : null}
-            <p role="status" className="cc-payment-pulse flex min-w-0 items-start justify-center gap-3 rounded-md border border-gold/60 bg-gold/10 p-4 text-left text-base font-semibold leading-relaxed text-foreground"><span aria-hidden="true" className="mt-2 inline-block h-3 w-3 shrink-0 rounded-full bg-gold motion-safe:animate-pulse" /><span className="min-w-0 flex-1 break-words">{pixCode ? "Aguardando pagamento… sua leitura abre sozinha ao confirmar." : "Aguardando geração de Pix automático na Wyvi Pay."}</span></p>
+            <p role="status" className="flex min-w-0 items-start justify-center gap-3 rounded-md border border-gold/60 bg-gold/10 p-4 text-left text-base font-semibold leading-relaxed text-foreground"><span aria-hidden="true" className="mt-2 inline-block h-3 w-3 shrink-0 rounded-full bg-gold" /><span className="min-w-0 flex-1 break-words">{pixCode ? "Aguardando pagamento… sua leitura abre sozinha ao confirmar." : "Aguardando geração de Pix automático na Wyvi Pay."}</span></p>
             <Button variant="outline" className="h-auto min-h-11 w-full whitespace-normal text-base" onClick={() => setPixOpen(false)}>Voltar à consulta sem pagar</Button>
             <Button asChild variant="link" className="h-auto min-h-11 w-full whitespace-normal text-base">
               <a href={helpLink("pagamento", orderCode)} target="_blank" rel="noopener noreferrer"><MessageCircle aria-hidden="true" />Preciso de ajuda com o Pix</a>

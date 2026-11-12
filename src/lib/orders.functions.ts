@@ -55,10 +55,11 @@ export const createOrder = createServerFn({ method: "POST" })
       const { createAsaasPix } = await import("./asaas.server");
       const q = await createAsaasPix({ orderId: row.id, orderCode, valueCents: PLANS[data.plan].priceCents, apiVersion: "v2" });
       if (q) {
-        const { error: saveError } = await (supabaseAdmin.from("orders") as any)
+        const { data: saved, error: saveError } = await (supabaseAdmin.from("orders") as any)
           .update({ asaas_qr_id: q.id, pix_payload: q.payload, pix_qr_image: q.image })
-          .eq("id", row.id).eq("status", "pending").is("asaas_qr_id", null);
-        if (saveError) console.error("[wyvi] pix persistence failed", saveError.code);
+          .eq("id", row.id).eq("status", "pending").is("asaas_qr_id", null)
+          .select("id").maybeSingle();
+        if (saveError || !saved) console.error("[wyvi] pix persistence failed", saveError?.code ?? "no_row_updated");
         else pix = { payload: q.payload, image: q.image };
       }
     } catch (e) { console.warn("[wyvi] create exception", e instanceof Error ? e.name : "unknown"); }

@@ -384,7 +384,7 @@ function Index() {
   }, [picked.length, p, token]);
 
   return (
-    <div className="mystic cc-live-backdrop min-h-screen">
+    <div className="mystic min-h-screen">
     <main className="mx-auto min-h-screen max-w-xl px-5 pb-20">
       {step > 0 && (
         <div className="flex items-center gap-3 pt-5">
@@ -395,24 +395,15 @@ function Index() {
       )}
 
       {step === 0 && (<>
-      <header className="cc-enter mb-10 pt-12 text-center">
+      <header className="mb-10 pt-12 text-center">
         <h1 className="sr-only">Caminho das Cartas — Baralho Cigano</h1>
-        <div className="cc-hero-stage -mx-5 w-[calc(100%+2.5rem)]" aria-label="Caminho das Cartas">
-          <img src={heroSrc} alt="Caminho das Cartas" width={1200} height={564} fetchPriority="high"
-            className="cc-hero-breathe block w-full max-w-none [mask-image:linear-gradient(to_bottom,transparent,black_15%,black_80%,transparent)]" />
-          <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-            <span className="cc-spark left-[11%] top-[27%]">✦</span>
-            <span className="cc-spark right-[14%] top-[19%]">✧</span>
-            <span className="cc-spark left-[24%] top-[67%]">✧</span>
-            <span className="cc-spark right-[27%] top-[57%]">✦</span>
-            <span className="cc-spark left-[52%] top-[12%]">✧</span>
-          </div>
-        </div>
-        <div aria-hidden="true" className="cc-living-rule gold-rule mx-auto mt-1 w-44" />
+        <img src={heroSrc} alt="Caminho das Cartas" width={1200} height={564} fetchPriority="high"
+          className="-mx-5 block w-[calc(100%+2.5rem)] max-w-none [mask-image:linear-gradient(to_bottom,transparent,black_15%,black_80%,transparent)]" />
+        <div aria-hidden="true" className="gold-rule mx-auto mt-1 w-44" />
         <p className="mt-1 text-xs uppercase tracking-[0.3em] text-gold/80">Baralho Cigano tradicional</p>
         <p className="mx-auto mt-5 max-w-sm font-display text-[1.7rem] font-semibold leading-tight text-gold">{freePending ? "Uma pergunta. Uma leitura feita para você." : freeEligible ? "Sua primeira tiragem de 3 cartas é por nossa conta." : "Continue seu caminho com uma nova leitura."}</p>
         <p className="mx-auto mt-3 max-w-sm text-base leading-relaxed text-foreground/85">{freeEligible ? "Faça sua pergunta e escolha 3 cartas. Sua primeira leitura é gratuita, online e sem cadastro." : "Escolha seu assunto, faça uma pergunta e receba uma interpretação personalizada do Baralho Cigano."}</p>
-        <Button size="lg" className="gold-button cc-cta-alive cc-soft-interact mt-6 h-14 w-full rounded-xl text-lg" disabled={freePending} onClick={() => startWith(null)}>
+        <Button size="lg" className="gold-button mt-6 h-14 w-full rounded-xl text-lg" disabled={freePending} onClick={() => startWith(null)}>
           {primaryAction}
         </Button>
         <p className="mt-3 text-xs tracking-wide text-muted-foreground">100% online · Consulta privada · Sem cadastro</p>
@@ -458,7 +449,7 @@ function Index() {
         <div className="mt-6 grid grid-cols-2 gap-3">
           {CATEGORIES.map((c, i) => (
             <button key={c} type="button" disabled={freePending} onClick={() => startWith(c)}
-              className={`cc-tile-alive cc-soft-interact flex min-h-[3.25rem] items-center justify-center rounded-xl border border-gold/25 bg-gold/[0.04] px-3 py-2 text-sm font-medium leading-tight text-gold/90 backdrop-blur-sm transition-colors hover:border-gold/50 active:bg-gold/20 ${i === CATEGORIES.length - 1 && CATEGORIES.length % 2 === 1 ? "col-span-2" : ""}`}>
+              className={`flex min-h-[3.25rem] items-center justify-center rounded-xl border border-gold/25 bg-gold/[0.04] px-3 py-2 text-sm font-medium leading-tight text-gold/90 backdrop-blur-sm  hover:border-gold/50 active:bg-gold/20 ${i === CATEGORIES.length - 1 && CATEGORIES.length % 2 === 1 ? "col-span-2" : ""}`}>
               {c}
             </button>
           ))}
@@ -467,7 +458,7 @@ function Index() {
       <div className="mt-8 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
         <span>🔒 Consulta privada</span><span>✦ Sem cadastro</span><span>⚡ Leitura online</span>
       </div>
-      <Button size="lg" className="gold-button cc-cta-alive cc-soft-interact mt-6 h-14 w-full rounded-xl text-lg" disabled={freePending} onClick={() => startWith(null)}>
+      <Button size="lg" className="gold-button mt-6 h-14 w-full rounded-xl text-lg" disabled={freePending} onClick={() => startWith(null)}>
         {freePending ? "Verificando disponibilidade…" : "✦ Abrir minha mesa de cartas"}
       </Button>
       <HomeTrust />
@@ -482,7 +473,7 @@ function Index() {
             <div className="flex flex-wrap gap-2">
               {CATEGORIES.map((c) => (
                 <button key={c} type="button" onClick={() => { setCategory(c); if (!question.trim() || Object.values(QUESTION_SUGGESTIONS).some((l) => l.includes(question))) setQuestion((QUESTION_SUGGESTIONS[c] ?? QUESTION_SUGGESTIONS["Outros assuntos"]!)[0]!); scrollToId("escolher-cartas"); }} aria-pressed={category === c}
-                  className={`cc-soft-interact rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${category === c ? "border-gold bg-gold text-background shadow-lg" : "border-gold/70 bg-background text-gold hover:bg-gold hover:text-background"}`}>
+                  className={`rounded-full border px-4 py-1.5 text-sm font-medium  ${category === c ? "border-gold bg-gold text-background shadow-lg" : "border-gold/70 bg-background text-gold hover:bg-gold hover:text-background"}`}>
                   {c}
                 </button>
               ))}
@@ -515,7 +506,7 @@ function Index() {
               const active = plan === id;
               return (
                 <button key={id} type="button" onClick={() => choosePlan(id)} aria-pressed={active}
-                  className={`cc-tile-alive cc-soft-interact flex w-full items-center justify-between gap-3 rounded-xl border-2 px-4 py-3 text-left transition-all ${active ? "border-gold bg-secondary shadow-[0_0_24px_-8px] shadow-gold" : "border-border bg-card"}`}>
+                  className={`flex w-full items-center justify-between gap-3 rounded-xl border-2 px-4 py-3 text-left  ${active ? "border-gold bg-secondary shadow-[0_0_24px_-8px] shadow-gold" : "border-border bg-card"}`}>
                   <span className="min-w-0">
                     <span className="block font-display text-xl font-semibold leading-tight">{pl.count} cartas · {pl.name}{id === "profunda" && <span className="ml-2 align-middle text-[10px] uppercase tracking-wider text-gold">✦ Bom equilíbrio</span>}</span>
                     <span className="block text-xs text-muted-foreground">{PLAN_HINT[id]}</span>
@@ -533,8 +524,8 @@ function Index() {
       )}
 
       {p && step === 2 && !ritualDone && (
-        <section className="flex min-h-[calc(100dvh-5rem)] flex-col justify-center py-4 animate-in fade-in duration-1000 text-center">
-          <div className="cc-soft-float mx-auto flex h-20 w-20 items-center justify-center rounded-full border border-gold/50 text-4xl text-gold shadow-[0_0_40px_-10px] shadow-gold">☾</div>
+        <section className="flex min-h-[calc(100dvh-5rem)] flex-col justify-center py-4 text-center">
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border border-gold/50 text-4xl text-gold shadow-[0_0_40px_-10px] shadow-gold">☾</div>
           <p className="mt-6 text-xs uppercase tracking-[0.3em] text-gold">✦ Momento de conexão ✦</p>
           <h2 className="mt-3 font-display text-3xl font-semibold text-foreground">Antes de abrir suas cartas…</h2>
           <div className="gold-rule mx-auto mt-4 w-32" />
@@ -575,7 +566,7 @@ function Index() {
               return (
                 <button key={i} type="button" disabled
                   aria-label={filled ? `Carta ${i + 1} escolhida` : `Espaço ${i + 1}`}
-                  className={`flex h-14 w-10 overflow-hidden items-center justify-center rounded-md border font-display text-lg font-bold shadow-inner transition-all ${filled ? "border-gold bg-gold text-background shadow-lg" : "border-gold/40 bg-secondary text-foreground/80"} ${i < lockedPicks ? "ring-2 ring-gold ring-offset-2 ring-offset-background" : ""}`}>
+                  className={`flex h-14 w-10 overflow-hidden items-center justify-center rounded-md border font-display text-lg font-bold shadow-inner  ${filled ? "border-gold bg-gold text-background shadow-lg" : "border-gold/40 bg-secondary text-foreground/80"} ${i < lockedPicks ? "ring-2 ring-gold ring-offset-2 ring-offset-background" : ""}`}>
                   {filled ? <img src={cardImage(picked[i]!)} alt={CARDS[picked[i]!]} className="h-full w-full object-cover" /> : i + 1}
                 </button>
               );
@@ -602,7 +593,7 @@ function Index() {
               </div>
             </div>
           )}
-          <Button id="ver-interpretacao" size="lg" className={`gold-button cc-cta-alive cc-soft-interact mt-8 h-14 w-full scroll-mb-6 rounded-xl text-lg ${picked.length === p.count && !loading ? "motion-safe:animate-pulse [animation-duration:2.5s]" : ""}`} disabled={loading || picked.length < p.count} onClick={submit}>
+          <Button id="ver-interpretacao" size="lg" className={`gold-button mt-8 h-14 w-full scroll-mb-6 rounded-xl text-lg `} disabled={loading || picked.length < p.count} onClick={submit}>
             {loading ? "Preparando sua leitura..." : picked.length < p.count ? `Escolha mais ${p.count - picked.length} carta(s)` : token ? `Continuar pagamento · Pedido ${orderCode}` : `Ver interpretação · ${plan ? priceLabel(plan) : ""}`}
           </Button>
         </section>
@@ -626,10 +617,9 @@ function Index() {
       </Dialog>
 
       <Dialog open={!!token && pixOpen} onOpenChange={(open) => setPixOpen(open)}>
-        <DialogContent className="mystic cc-checkout-live w-[calc(100%-1.5rem)] max-w-lg max-h-[90dvh] min-w-0 overflow-x-hidden overflow-y-auto rounded-lg p-5 pb-8 sm:p-6 [&>button.absolute]:hidden" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
+        <DialogContent className="mystic w-[calc(100%-1.5rem)] max-w-lg max-h-[90dvh] min-w-0 overflow-x-hidden overflow-y-auto rounded-lg p-5 pb-8 sm:p-6 [&>button.absolute]:hidden" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
           <DialogHeader>
-            <DialogTitle className="font-display text-3xl text-primary"><span aria-hidden="true" className="cc-checkout-star mr-2 inline-block text-gold">✦</span>Pague com Pix</DialogTitle>
-            <div aria-hidden="true" className="cc-checkout-line mx-auto mt-2 h-0.5 w-28 rounded-full bg-gold" />
+            <DialogTitle className="font-display text-3xl text-primary">Pague com Pix</DialogTitle>
             <DialogDescription className="text-base">Falta só o pagamento para iniciar a sua interpretação.</DialogDescription>
           </DialogHeader>
           {pixCode ? (
@@ -641,7 +631,7 @@ function Index() {
               <p className="rounded-lg bg-gold/10 px-3 py-3 text-center text-sm leading-relaxed text-foreground">
                 1. Copie o código Pix · 2. Pague no aplicativo do banco · 3. Volte aqui. A liberação é automática após a confirmação.
               </p>
-              <Button size="lg" className="gold-button cc-cta-alive h-14 w-full min-w-0 whitespace-normal rounded-lg px-3 text-base leading-snug" onClick={async () => { if (await copy(pixCode.payload, "Código Pix")) { track("pix_copy", plan ?? "none"); setCopied(true); try { navigator.vibrate?.(60); } catch {} } }}>
+              <Button size="lg" className="gold-button h-14 w-full min-w-0 whitespace-normal rounded-lg px-3 text-base leading-snug" onClick={async () => { if (await copy(pixCode.payload, "Código Pix")) { track("pix_copy", plan ?? "none"); setCopied(true); try { navigator.vibrate?.(60); } catch {} } }}>
                 {copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
                 <span>{copied ? "Código Pix copiado! Abra seu banco" : "Copiar código Pix"}</span>
               </Button>
@@ -654,7 +644,7 @@ function Index() {
             </>
           ) : (
             <>
-            <div role="alert" className="cc-payment-pulse rounded-xl border border-gold/60 bg-gold/10 p-4 text-center">
+            <div role="alert" className="rounded-xl border border-gold/60 bg-gold/10 p-4 text-center">
               <p className="font-display text-xl font-semibold text-gold">Estamos preparando seu Pix</p>
               <p className="mt-2 text-sm leading-relaxed text-foreground">
                 Não foi possível gerar o código de pagamento nesta tentativa. Seu pedido e suas cartas continuam salvos.
@@ -664,7 +654,7 @@ function Index() {
               </p>
             </div>
             <p className="text-center font-display text-4xl font-bold text-gold">{p && formatBRL(p.priceCents)}</p>
-            <Button size="lg" className="gold-button cc-cta-alive h-14 w-full whitespace-normal rounded-lg px-3 text-base" disabled={pixRetryBusy}
+            <Button size="lg" className="gold-button h-14 w-full whitespace-normal rounded-lg px-3 text-base" disabled={pixRetryBusy}
               onClick={retryPix}>
               {pixRetryBusy ? "Consultando a Wyvi Pay…" : "Gerar Pix automático novamente"}
             </Button>
@@ -680,7 +670,7 @@ function Index() {
             ) : slow ? (
               <p role="status" className="rounded-md border border-gold bg-gold/10 p-3 text-sm text-foreground">{pixCode ? "Ainda não identificamos sua transferência. Confira se o Pix foi concluído no app do banco." : "Ainda estamos tentando emitir o Pix automático. Você não precisa realizar transferência manual."}</p>
             ) : null}
-            <p role="status" className="cc-payment-pulse flex min-w-0 items-start justify-center gap-3 rounded-md border border-gold/60 bg-gold/10 p-4 text-left text-base font-semibold leading-relaxed text-foreground"><span aria-hidden="true" className="mt-2 inline-block h-3 w-3 shrink-0 rounded-full bg-gold motion-safe:animate-pulse" /><span className="min-w-0 flex-1 break-words">{pixCode ? "Aguardando pagamento… sua leitura abre sozinha ao confirmar." : "Aguardando geração de Pix automático na Wyvi Pay."}</span></p>
+            <p role="status" className="flex min-w-0 items-start justify-center gap-3 rounded-md border border-gold/60 bg-gold/10 p-4 text-left text-base font-semibold leading-relaxed text-foreground"><span aria-hidden="true" className="mt-2 inline-block h-3 w-3 shrink-0 rounded-full bg-gold" /><span className="min-w-0 flex-1 break-words">{pixCode ? "Aguardando pagamento… sua leitura abre sozinha ao confirmar." : "Aguardando geração de Pix automático na Wyvi Pay."}</span></p>
             <Button variant="outline" className="h-auto min-h-11 w-full whitespace-normal text-base" onClick={() => setPixOpen(false)}>Voltar à consulta sem pagar</Button>
             <Button asChild variant="link" className="h-auto min-h-11 w-full whitespace-normal text-base">
               <a href={helpLink("pagamento", orderCode)} target="_blank" rel="noopener noreferrer"><MessageCircle aria-hidden="true" />Preciso de ajuda com o Pix</a>
@@ -766,26 +756,24 @@ function CardCarousel({ deck, picked, onPick }: { deck: number[]; picked: number
                 zIndex: 10 - Math.round(a),
                 opacity: a >= 3 ? Math.max(0, 1 - (a - 2.5)) : 1,
                 filter: `brightness(${1 - Math.min(a, 1) * 0.25})`,
-                transition: dragging || edge ? "none" : "transform 650ms cubic-bezier(0.16,1,0.3,1), opacity 650ms cubic-bezier(0.16,1,0.3,1), filter 650ms cubic-bezier(0.16,1,0.3,1)",
-                willChange: "transform",
+                transition: "none",
               }}
               className={`absolute left-1/2 top-1/2 w-52 rounded-2xl ${center ? "shadow-xl" : ""}`}
             >
               <div style={{ perspective: 1000 }}>
-                <div className="relative transition-transform duration-700 [transform-style:preserve-3d]" style={{ transform: idx >= 0 ? "rotateY(180deg)" : "none" }}>
+                <div className="relative [transform-style:preserve-3d]" style={{ transform: idx >= 0 ? "rotateY(180deg)" : "none" }}>
                   <div className="[backface-visibility:hidden]"><CardBack /></div>
                   <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]">
                     {(idx >= 0 || Math.abs(off) <= 2) && <CardReveal index={card} order={Math.max(idx, 0) + 1} />}
                   </div>
                 </div>
               </div>
-              {center && idx < 0 && <span aria-hidden="true" className="cc-deck-focus absolute inset-0 rounded-2xl" />}
             </button>
           );
         })}
-        <div aria-hidden="true" className={`pointer-events-none absolute inset-x-0 bottom-3 z-20 flex justify-center transition-opacity duration-700 ${hint && picked.length === 0 ? "opacity-100" : "opacity-0"}`}>
+        <div aria-hidden="true" className={`pointer-events-none absolute inset-x-0 bottom-3 z-20 flex justify-center ${hint && picked.length === 0 ? "opacity-100" : "opacity-0"}`}>
           <span className="flex items-center gap-2 rounded-full border border-gold/60 bg-background/85 px-4 py-2 text-sm font-semibold text-gold shadow-lg backdrop-blur">
-            <span className="motion-safe:animate-[swipe-hint_1.6s_ease-in-out_infinite]">←</span> Deslize e toque na carta do centro <span className="motion-safe:animate-[swipe-hint_1.6s_ease-in-out_infinite_reverse]">→</span>
+            <span>←</span> Deslize e toque na carta do centro <span>→</span>
           </span>
         </div>
       </div>

@@ -16,7 +16,7 @@ export function HomeTrust() {
   return (
     <div className="mt-12 space-y-4">
       {data && data.count > 0 && (
-        <details className="cc-soft-interact group rounded-xl border border-border bg-card/50 p-4">
+        <details className="group rounded-xl border border-border bg-card/50 p-4">
           <summary className={toggle}>
             O que dizem os consulentes <span className="text-gold group-open:hidden">+</span><span className="hidden text-gold group-open:inline">−</span>
             <span className="mt-1 flex items-center justify-center gap-1 font-sans text-sm font-normal text-muted-foreground">
@@ -36,7 +36,7 @@ export function HomeTrust() {
           </div>
         </details>
       )}
-      <details className="cc-soft-interact group rounded-xl border border-border bg-card/50 p-4">
+      <details className="group rounded-xl border border-border bg-card/50 p-4">
         <summary className={toggle}>
           Perguntas frequentes <span className="text-gold group-open:hidden">+</span><span className="hidden text-gold group-open:inline">−</span>
         </summary>
@@ -53,7 +53,7 @@ export function HomeTrust() {
   );
 }
 
-/** Prova social genuína alternando sem mudar o conteúdo indexável da página. */
+/** Prova social genuína, estática e visível, sem mudar a lista indexável. */
 export function HomeProof() {
   const { data } = useQuery({ queryKey: ["public-reviews"], queryFn: () => listPublicReviews(), staleTime: 60_000 });
   if (!data?.count || !data.items.some((review) => !!review.comment?.trim())) return null;

@@ -35,7 +35,7 @@ export function ReviewBox({ token }: { token: string }) {
       <div className="mt-4 flex justify-center gap-2" role="radiogroup" aria-label="Nota de 1 a 5">
         {[1, 2, 3, 4, 5].map((n) => (
           <button key={n} type="button" role="radio" aria-checked={rating === n} aria-label={`${n} estrela${n > 1 ? "s" : ""}`} onClick={() => setRating(n)} className="p-1">
-            <Star className={`h-9 w-9 transition ${n <= rating ? "fill-gold text-gold" : "text-muted-foreground"}`} />
+            <Star className={`h-9 w-9 ${n <= rating ? "fill-gold text-gold" : "text-muted-foreground"}`} />
           </button>
         ))}
       </div>

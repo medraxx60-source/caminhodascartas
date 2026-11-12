@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { CardFace, cardImage } from "@/components/TarotCard";
 import { CARDS, PLANS, formatBRL, type PlanId } from "@/lib/lenormand";
 import { layoutReading } from "@/lib/reading-layout";
+import { EXPANSION_KEY } from "@/lib/reading-expansion";
 import { getOrderByToken, runFreeGeneration, resumePaidGeneration } from "@/lib/orders.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
@@ -278,7 +279,7 @@ function NextReading({ planId, category, isFree, token, advice, question, cards 
     `/?${new URLSearchParams({ ...(plano ? { plano } : {}), categoria }).toString()}`;
   // Expansion keeps the same question and the cards already drawn; the user only picks the missing ones.
   const expandHref = (plano: PlanId) =>
-    `/?${new URLSearchParams({ plano, categoria: cat, pergunta: question, cartas: cards.join(",") }).toString()}`;
+    `/?${new URLSearchParams({ plano, categoria: cat }).toString()}`;
   return (
     <section className="mt-12 rounded-xl border border-gold/50 bg-card/70 p-5 text-center">
       <p className="text-2xl text-gold">✦</p>
@@ -293,7 +294,14 @@ function NextReading({ planId, category, isFree, token, advice, question, cards 
       <div className="mt-5 space-y-3">
         {deeperPlans.map((d, i) => (
           <Button key={d} asChild size="lg" variant={i === 0 ? "default" : "outline"} className={i === 0 ? "gold-button h-auto min-h-14 w-full whitespace-normal rounded-xl py-3 text-base leading-snug" : "h-auto min-h-12 w-full whitespace-normal rounded-xl border-gold py-3 text-base leading-snug text-gold"}>
-            <a href={expandHref(d)}>✦ Expandir para {PLANS[d].count} cartas · {PLANS[d].name} ({formatBRL(PLANS[d].priceCents)})<br /><span className="text-sm opacity-80">Suas {cards.length} cartas continuam na mesa · escolha mais {PLANS[d].count - cards.length}</span></a>
+            <a href={expandHref(d)} onClick={(event) => {
+              try {
+                sessionStorage.setItem(EXPANSION_KEY, JSON.stringify({ plan: d, question, cards, at: Date.now() }));
+              } catch {
+                event.preventDefault();
+                toast.error("Não foi possível preservar sua pergunta neste navegador. Tente novamente.");
+              }
+            }}>✦ Expandir para {PLANS[d].count} cartas · {PLANS[d].name} ({formatBRL(PLANS[d].priceCents)})<br /><span className="text-sm opacity-80">Suas {cards.length} cartas continuam na mesa · escolha mais {PLANS[d].count - cards.length}</span></a>
           </Button>
         ))}
         <Button asChild size="lg" variant="outline" className="h-auto min-h-12 w-full whitespace-normal rounded-xl border-gold py-3 text-base leading-snug text-gold">

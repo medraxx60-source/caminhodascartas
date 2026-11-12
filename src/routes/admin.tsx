@@ -223,7 +223,7 @@ function Orders() {
         <Button variant={tab === "paid" ? "default" : "outline"} onClick={() => setTab("paid")}>Pagos</Button>
         <Button variant={tab === "free" ? "default" : "outline"} onClick={() => setTab("free")}>Grátis</Button>
         <Button variant="ghost" onClick={refresh} disabled={refreshing}>
-          <span className={refreshing ? "inline-block animate-spin" : "inline-block"}>↻</span>
+          <span className="inline-block">↻</span>
           {refreshing ? "Atualizando..." : "Atualizar"}
         </Button>
       </div>

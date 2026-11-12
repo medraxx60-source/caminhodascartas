@@ -46,7 +46,7 @@ describe("geração completa com MandAPI simulada (sem cobranças)", () => {
     const systemPrompt = calls[0]?.messages[0]?.content ?? "";
     expect(systemPrompt).toContain("VOZ ORIGINAL ENTRE CARTAS");
     expect(systemPrompt).toContain("Rato–Árvore–Cobra");
-    expect(systemPrompt).toContain("A leitura deve soar como uma cartomante");
+    expect(systemPrompt).toContain("CALIBRAÇÃO DE VOZ (prioridade de tom)");
     expect(systemPrompt).toContain("CONSELHO DOS ANJOS:");
     expect(systemPrompt).toContain("Saúde: mantenha a leitura no campo simbólico");
     expect(systemPrompt).toContain("Espiritualidade: respeite o universo espiritual");

@@ -6,6 +6,7 @@ import { CardFace, cardImage } from "@/components/TarotCard";
 import { CARDS, PLANS, formatBRL, type PlanId } from "@/lib/lenormand";
 import { layoutReading } from "@/lib/reading-layout";
 import { EXPANSION_KEY } from "@/lib/reading-expansion";
+import { PENDING_UPGRADE_KEY } from "@/lib/conversion-tracking";
 import { useConversion } from "@/lib/use-conversion";
 import { getPostFreeUpgradeOffers } from "@/lib/post-free-upgrades";
 import { getOrderByToken, runFreeGeneration, resumePaidGeneration } from "@/lib/orders.functions";
@@ -313,6 +314,7 @@ function NextReading({ planId, category, isFree, token, advice, question, cards 
   const keepExpansion = (plano: PlanId, event: MouseEvent<HTMLAnchorElement>) => {
     try {
       sessionStorage.setItem(EXPANSION_KEY, JSON.stringify({ plan: plano, question, cards, at: Date.now() }));
+      sessionStorage.setItem(PENDING_UPGRADE_KEY, plano);
       track(plano === "profunda" ? "upgrade_5" : "upgrade_7", plano);
     } catch {
       event.preventDefault();

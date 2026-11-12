@@ -83,3 +83,22 @@ describe("integração da referência na mensagem enviada à IA", () => {
     expect(result).toContain("Na posição: Origem profissional da questão.");
   });
 });
+
+describe("referência curta e contextual do Padrão Ouro", () => {
+  it("envia somente o aspecto da posição, sem despejar toda a ficha", () => {
+    const reference = buildOracularReference(
+      { plan: "essencial", cards: [0, 1, 2], category: "Amor e relacionamentos" },
+      [card(1), card(2), card(3)],
+    )!;
+    const parts = reference.split("\n\n");
+    expect(parts).toHaveLength(3);
+    expect(parts[0]).toContain("Aplicação ao assunto: Significado para amor.");
+    expect(parts[0]).not.toContain("Aspecto favorável");
+    expect(parts[0]).not.toContain("Aspecto desafiador");
+    expect(parts[0]).not.toContain("Tendência simbólica");
+    expect(parts[1]).toContain("Aspecto desafiador: Aspecto difícil.");
+    expect(parts[1]).not.toContain("Aspecto favorável");
+    expect(parts[2]).toContain("Tendência simbólica: Possível tendência.");
+    expect(parts[2]).not.toContain("Aspecto desafiador");
+  });
+});

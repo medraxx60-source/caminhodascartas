@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { HomeTrust, HomeProof } from "@/components/HomeTrust";
 import { useConversion } from "@/lib/use-conversion";
-import { getConversionContext } from "@/lib/conversion-tracking";
+import { getConversionContext, PENDING_UPGRADE_KEY } from "@/lib/conversion-tracking";
 import { Check, Copy, Menu, MessageCircle } from "lucide-react";
 import { CardBack, CardReveal, cardImage } from "@/components/TarotCard";
 import { EXPANSION_KEY, parseExpansion } from "@/lib/reading-expansion";
@@ -102,7 +102,16 @@ function Index() {
   useEffect(() => { const b = new Image(); b.src = cardBackSrc; }, []);
   const checkFree = useServerFn(checkFreeReading);
   const track = useConversion();
-  useEffect(() => { track("landing_view"); }, []);
+  useEffect(() => {
+    track("landing_view");
+    try {
+      const pending = sessionStorage.getItem(PENDING_UPGRADE_KEY);
+      if (pending === "profunda" || pending === "completa") {
+        track(pending === "profunda" ? "upgrade_5" : "upgrade_7", pending);
+        sessionStorage.removeItem(PENDING_UPGRADE_KEY);
+      }
+    } catch {}
+  }, []);
   const createFree = useServerFn(createFreeOrder);
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [fp, setFp] = useState<string | undefined>(undefined);

@@ -64,7 +64,7 @@ function GeneratingProgress({ isFree }: { isFree: boolean }) {
       </div>
       <p className="mt-3 text-xs text-muted-foreground">Os passos abaixo mostram como a tiragem é interpretada, não uma porcentagem de conclusão.</p>
       <ol className="mx-auto mt-5 max-w-sm space-y-2.5 text-left text-base">
-        {PROGRESS_STEPS.map((label, i) => (
+        {PROGRESS_STEPS.map((label) => (
           <li key={label} className="flex gap-2 text-muted-foreground">
             <span className="w-4 shrink-0 text-gold" aria-hidden>✦</span>
             <span>{label}</span>
@@ -247,7 +247,7 @@ function Leitura() {
           <p className="mt-2 text-sm text-muted-foreground">{order.is_free
             ? "Sua leitura de cortesia não foi consumida. Toque abaixo para tentar novamente."
             : "Seu Pix já foi confirmado. A interpretação ainda não terminou; você não precisa pagar novamente."}</p>
-          <Button className="mt-4" disabled={retryBusy} onClick={() => order.is_free ? startFree(true) : retryPaid()}>{retryBusy ? "Tentando…" : "Retomar minha interpretação"}</Button>
+          <Button className="mt-4" disabled={retryBusy} onClick={() => order.is_free ? startFree(true) : retryPaid()}>{retryBusy ? "Tentando…" : order.is_free ? "Tentar novamente" : "Retomar minha interpretação"}</Button>
           {retryError && <p role="alert" className="mt-3 text-sm text-destructive">{retryError}</p>}
         </div>
       ) : order.status === "generating" ? (

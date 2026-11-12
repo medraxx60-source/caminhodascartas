@@ -20,7 +20,7 @@ const CARD_IMAGES = import.meta.glob("@/assets/cards/*.jpg", { eager: true, impo
 export function CardReveal({ index, order }: { index: number; order: number }) {
   const src = cardImage(index);
   return (
-    <div className="relative aspect-[5/8] overflow-hidden rounded-md shadow-lg">
+    <div className="cc-enter relative aspect-[5/8] overflow-hidden rounded-md shadow-lg">
       {src && <img src={src} alt={CARDS[index]} width={640} height={1024} className="h-full w-full object-cover" />}
       <span className="absolute left-2 top-2 flex h-7 w-7 items-center justify-center rounded-full border border-gold bg-card font-display text-base font-bold text-primary shadow">{order}</span>
       <span className="absolute inset-x-2 bottom-2 rounded-sm bg-background/90 px-1 py-1 text-center font-display text-sm font-semibold text-primary">{index + 1} · {CARDS[index]}</span>

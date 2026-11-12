@@ -152,3 +152,48 @@
   0%, 100% { transform: translateX(0); }
   50% { transform: translateX(-6px); }
 }
+
+
+/* Movimento elegante e econômico: apenas transform e pequenos destaques.
+ * Conteúdo continua legível sem JS/CSS animado. Não usar flashes rápidos. */
+@keyframes cc-arrive {
+  from { transform: translateY(8px); }
+  to { transform: translateY(0); }
+}
+@keyframes cc-soft-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+@keyframes cc-pix-wait {
+  0%, 100% {
+    border-color: color-mix(in oklch, var(--gold) 48%, transparent);
+    box-shadow: 0 0 0 0 color-mix(in oklch, var(--gold) 0%, transparent);
+  }
+  50% {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 2px color-mix(in oklch, var(--gold) 18%, transparent),
+                0 0 22px -8px color-mix(in oklch, var(--gold) 50%, transparent);
+  }
+}
+.cc-enter { animation: cc-arrive 650ms ease-out both; }
+.cc-soft-float { animation: cc-soft-float 6s ease-in-out infinite; }
+.cc-payment-pulse { animation: cc-pix-wait 3.2s ease-in-out infinite; }
+.cc-soft-interact {
+  transition: transform 180ms ease-out, box-shadow 180ms ease-out, border-color 180ms ease-out;
+}
+.cc-review-surface { isolation: isolate; }
+@media (hover: hover) and (pointer: fine) {
+  .cc-soft-interact:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 22px -14px color-mix(in oklch, var(--gold) 55%, transparent);
+  }
+}
+.cc-soft-interact:active { transform: scale(.985); }
+@media (prefers-reduced-motion: reduce) {
+  .cc-enter, .cc-soft-float, .cc-payment-pulse { animation: none !important; }
+  .cc-soft-interact, .cc-review-surface * {
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+  .cc-soft-interact:hover, .cc-soft-interact:active { transform: none !important; }
+}

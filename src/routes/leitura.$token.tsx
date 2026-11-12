@@ -203,7 +203,7 @@ function Leitura() {
             )}
             <div className="mt-8 space-y-6">
               {cards.map((c, i) => (
-                <section key={c} className="rounded-xl border border-border bg-card p-4 shadow-sm">
+                <section key={c} className="cc-enter rounded-xl border border-border bg-card p-4 shadow-sm">
                   <div className="flex items-center gap-4">
                     <div className="aspect-[5/8] w-20 shrink-0 overflow-hidden rounded-md shadow-md ring-1 ring-gold/50">
                       {cardImage(c) && <img src={cardImage(c)} alt={CARDS[c]} width={640} height={1024} loading="lazy" className="h-full w-full object-cover" />}
@@ -230,7 +230,7 @@ function Leitura() {
               </section>
             )}
             {angels?.trim() && (
-              <section className="mt-10 rounded-xl border-2 border-gold bg-card p-6 text-center shadow-sm">
+              <section className="cc-enter mt-10 rounded-xl border-2 border-gold bg-card p-6 text-center shadow-sm">
                 <p className="text-2xl text-gold">✦</p>
                 <h2 className="mt-1 font-display text-3xl font-semibold text-primary">Conselho dos Anjos</h2>
                 <div className="gold-rule mx-auto mt-3 w-24" />
@@ -258,7 +258,7 @@ function Leitura() {
       ) : order.status === "generating" ? (
         <GeneratingProgress isFree={!!order.is_free} />
       ) : (
-        <div className="mt-10 rounded-lg border border-gold bg-card p-6 text-center">
+        <div className="cc-payment-pulse mt-10 rounded-lg border border-gold bg-card p-6 text-center" role="status">
           <p className="font-display text-2xl text-primary">Aguardando confirmação do pagamento</p>
           <p className="mt-2 text-sm text-muted-foreground">Assim que seu Pix for confirmado, sua leitura aparecerá aqui automaticamente. Deixe esta página aberta.</p>
         </div>
@@ -322,7 +322,7 @@ function NextReading({ planId, category, isFree, token, advice, question, cards 
     }
   };
   return (
-    <section ref={offerSection} id="aprofundar" className="mt-12 rounded-xl border border-gold/50 bg-card/70 p-5 text-center">
+    <section ref={offerSection} id="aprofundar" className="cc-enter mt-12 rounded-xl border border-gold/50 bg-card/70 p-5 text-center">
       <p className="text-2xl text-gold">✦</p>
       <h2 className="mt-1 font-display text-2xl font-semibold text-primary">{isFree ? "Sua primeira leitura está completa" : "Continue seu caminho"}</h2>
       <p className="mt-2 text-base text-foreground/90">
@@ -337,7 +337,7 @@ function NextReading({ planId, category, isFree, token, advice, question, cards 
           <>
             <div className="space-y-3 text-left" aria-label="Opções pagas para aprofundar a leitura">
               {freeUpgradeOffers.map((item, i) => (
-                <div key={item.plan} className={i === 0 ? "rounded-xl border border-gold bg-gold/[0.06] p-4" : "rounded-xl border border-border bg-background/40 p-4"}>
+                <div key={item.plan} className={i === 0 ? "cc-soft-interact rounded-xl border border-gold bg-gold/[0.06] p-4" : "cc-soft-interact rounded-xl border border-border bg-background/40 p-4"}>
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-xs font-semibold uppercase tracking-wider text-gold">{item.tag}</span>
                     <span className="font-display text-2xl font-semibold text-primary">{formatBRL(item.priceCents)}</span>
@@ -345,7 +345,7 @@ function NextReading({ planId, category, isFree, token, advice, question, cards 
                   <h3 className="mt-2 font-display text-xl font-semibold text-primary">{item.count} cartas — {item.title}</h3>
                   <p className="mt-2 text-sm leading-relaxed text-foreground/85">{item.description}</p>
                   <Button asChild size="lg" variant={i === 0 ? "default" : "outline"}
-                    className={i === 0 ? "gold-button mt-4 h-auto min-h-12 w-full whitespace-normal rounded-xl py-3 text-base" : "mt-4 h-auto min-h-12 w-full whitespace-normal rounded-xl border-gold py-3 text-base text-gold"}>
+                    className={i === 0 ? "gold-button cc-soft-interact mt-4 h-auto min-h-12 w-full whitespace-normal rounded-xl py-3 text-base" : "cc-soft-interact mt-4 h-auto min-h-12 w-full whitespace-normal rounded-xl border-gold py-3 text-base text-gold"}>
                     <a href={expandHref(item.plan)} onClick={(event) => keepExpansion(item.plan, event)}>
                       Continuar com {item.count} cartas · escolher mais {item.extraCards}
                     </a>

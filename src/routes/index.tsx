@@ -365,14 +365,14 @@ function Index() {
       )}
 
       {step === 0 && (<>
-      <header className="mb-10 pt-12 text-center">
+      <header className="cc-enter mb-10 pt-12 text-center">
         <h1 className="sr-only">Caminho das Cartas — Baralho Cigano</h1>
         <img src={heroSrc} alt="Caminho das Cartas" width={1200} height={564} fetchPriority="high"
           className="-mx-5 block w-[calc(100%+2.5rem)] max-w-none [mask-image:linear-gradient(to_bottom,transparent,black_15%,black_80%,transparent)]" />
         <p className="mt-1 text-xs uppercase tracking-[0.3em] text-gold/80">Baralho Cigano tradicional</p>
         <p className="mx-auto mt-5 max-w-sm font-display text-[1.7rem] font-semibold leading-tight text-gold">{freePending ? "Uma pergunta. Uma leitura feita para você." : freeEligible ? "Sua primeira tiragem de 3 cartas é por nossa conta." : "Continue seu caminho com uma nova leitura."}</p>
         <p className="mx-auto mt-3 max-w-sm text-base leading-relaxed text-foreground/85">{freeEligible ? "Faça sua pergunta e escolha 3 cartas. Sua primeira leitura é gratuita, online e sem cadastro." : "Escolha seu assunto, faça uma pergunta e receba uma interpretação personalizada do Baralho Cigano."}</p>
-        <Button size="lg" className="gold-button mt-6 h-14 w-full rounded-xl text-lg" disabled={freePending} onClick={() => startWith(null)}>
+        <Button size="lg" className="gold-button cc-soft-interact mt-6 h-14 w-full rounded-xl text-lg" disabled={freePending} onClick={() => startWith(null)}>
           {primaryAction}
         </Button>
         <p className="mt-3 text-xs tracking-wide text-muted-foreground">100% online · Consulta privada · Sem cadastro</p>
@@ -418,7 +418,7 @@ function Index() {
         <div className="mt-6 grid grid-cols-2 gap-3">
           {CATEGORIES.map((c, i) => (
             <button key={c} type="button" disabled={freePending} onClick={() => startWith(c)}
-              className={`flex min-h-[3.25rem] items-center justify-center rounded-xl border border-gold/25 bg-gold/[0.04] px-3 py-2 text-sm font-medium leading-tight text-gold/90 backdrop-blur-sm transition-colors hover:border-gold/50 active:bg-gold/20 ${i === CATEGORIES.length - 1 && CATEGORIES.length % 2 === 1 ? "col-span-2" : ""}`}>
+              className={`cc-soft-interact flex min-h-[3.25rem] items-center justify-center rounded-xl border border-gold/25 bg-gold/[0.04] px-3 py-2 text-sm font-medium leading-tight text-gold/90 backdrop-blur-sm transition-colors hover:border-gold/50 active:bg-gold/20 ${i === CATEGORIES.length - 1 && CATEGORIES.length % 2 === 1 ? "col-span-2" : ""}`}>
               {c}
             </button>
           ))}
@@ -427,7 +427,7 @@ function Index() {
       <div className="mt-8 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
         <span>🔒 Consulta privada</span><span>✦ Sem cadastro</span><span>⚡ Leitura online</span>
       </div>
-      <Button size="lg" className="gold-button mt-6 h-14 w-full rounded-xl text-lg" disabled={freePending} onClick={() => startWith(null)}>
+      <Button size="lg" className="gold-button cc-soft-interact mt-6 h-14 w-full rounded-xl text-lg" disabled={freePending} onClick={() => startWith(null)}>
         {freePending ? "Verificando disponibilidade…" : "✦ Abrir minha mesa de cartas"}
       </Button>
       <HomeTrust />
@@ -442,7 +442,7 @@ function Index() {
             <div className="flex flex-wrap gap-2">
               {CATEGORIES.map((c) => (
                 <button key={c} type="button" onClick={() => { setCategory(c); if (!question.trim() || Object.values(QUESTION_SUGGESTIONS).some((l) => l.includes(question))) setQuestion((QUESTION_SUGGESTIONS[c] ?? QUESTION_SUGGESTIONS["Outros assuntos"]!)[0]!); scrollToId("escolher-cartas"); }} aria-pressed={category === c}
-                  className={`rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${category === c ? "border-gold bg-gold text-background shadow-lg" : "border-gold/70 bg-background text-gold hover:bg-gold hover:text-background"}`}>
+                  className={`cc-soft-interact rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${category === c ? "border-gold bg-gold text-background shadow-lg" : "border-gold/70 bg-background text-gold hover:bg-gold hover:text-background"}`}>
                   {c}
                 </button>
               ))}
@@ -475,7 +475,7 @@ function Index() {
               const active = plan === id;
               return (
                 <button key={id} type="button" onClick={() => choosePlan(id)} aria-pressed={active}
-                  className={`flex w-full items-center justify-between gap-3 rounded-xl border-2 px-4 py-3 text-left transition-all ${active ? "border-gold bg-secondary shadow-[0_0_24px_-8px] shadow-gold" : "border-border bg-card"}`}>
+                  className={`cc-soft-interact flex w-full items-center justify-between gap-3 rounded-xl border-2 px-4 py-3 text-left transition-all ${active ? "border-gold bg-secondary shadow-[0_0_24px_-8px] shadow-gold" : "border-border bg-card"}`}>
                   <span className="min-w-0">
                     <span className="block font-display text-xl font-semibold leading-tight">{pl.count} cartas · {pl.name}{id === "profunda" && <span className="ml-2 align-middle text-[10px] uppercase tracking-wider text-gold">✦ Bom equilíbrio</span>}</span>
                     <span className="block text-xs text-muted-foreground">{PLAN_HINT[id]}</span>
@@ -494,7 +494,7 @@ function Index() {
 
       {p && step === 2 && !ritualDone && (
         <section className="flex min-h-[calc(100dvh-5rem)] flex-col justify-center py-4 animate-in fade-in duration-1000 text-center">
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border border-gold/50 text-4xl text-gold shadow-[0_0_40px_-10px] shadow-gold animate-pulse [animation-duration:4s]">☾</div>
+          <div className="cc-soft-float mx-auto flex h-20 w-20 items-center justify-center rounded-full border border-gold/50 text-4xl text-gold shadow-[0_0_40px_-10px] shadow-gold">☾</div>
           <p className="mt-6 text-xs uppercase tracking-[0.3em] text-gold">✦ Momento de conexão ✦</p>
           <h2 className="mt-3 font-display text-3xl font-semibold text-foreground">Antes de abrir suas cartas…</h2>
           <div className="gold-rule mx-auto mt-4 w-32" />
@@ -562,7 +562,7 @@ function Index() {
               </div>
             </div>
           )}
-          <Button id="ver-interpretacao" size="lg" className={`gold-button mt-8 h-14 w-full scroll-mb-6 rounded-xl text-lg ${picked.length === p.count && !loading ? "animate-pulse [animation-duration:2.5s]" : ""}`} disabled={loading || picked.length < p.count} onClick={submit}>
+          <Button id="ver-interpretacao" size="lg" className={`gold-button cc-soft-interact mt-8 h-14 w-full scroll-mb-6 rounded-xl text-lg ${picked.length === p.count && !loading ? "motion-safe:animate-pulse [animation-duration:2.5s]" : ""}`} disabled={loading || picked.length < p.count} onClick={submit}>
             {loading ? "Preparando sua leitura..." : picked.length < p.count ? `Escolha mais ${p.count - picked.length} carta(s)` : token ? `Continuar pagamento · Pedido ${orderCode}` : `Ver interpretação · ${plan ? priceLabel(plan) : ""}`}
           </Button>
         </section>
@@ -639,7 +639,7 @@ function Index() {
             ) : slow ? (
               <p role="status" className="rounded-md border border-gold bg-gold/10 p-3 text-sm text-foreground">{pixCode ? "Ainda não identificamos sua transferência. Confira se o Pix foi concluído no app do banco." : "Se você já pagou pela chave Pix, envie o comprovante e o número do pedido pelo botão de ajuda para verificarmos."}</p>
             ) : null}
-            <p role="status" className="flex min-w-0 items-start justify-center gap-3 rounded-md border border-gold/60 bg-gold/10 p-4 text-left text-base font-semibold leading-relaxed text-foreground"><span aria-hidden="true" className="mt-2 inline-block h-3 w-3 shrink-0 rounded-full bg-gold motion-safe:animate-pulse" /><span className="min-w-0 flex-1 break-words">{pixCode ? "Aguardando pagamento… sua leitura abre sozinha ao confirmar." : "Aguardando conferência manual do Pix. Envie o comprovante pelo botão de ajuda após pagar."}</span></p>
+            <p role="status" className="cc-payment-pulse flex min-w-0 items-start justify-center gap-3 rounded-md border border-gold/60 bg-gold/10 p-4 text-left text-base font-semibold leading-relaxed text-foreground"><span aria-hidden="true" className="mt-2 inline-block h-3 w-3 shrink-0 rounded-full bg-gold motion-safe:animate-pulse" /><span className="min-w-0 flex-1 break-words">{pixCode ? "Aguardando pagamento… sua leitura abre sozinha ao confirmar." : "Aguardando conferência manual do Pix. Envie o comprovante pelo botão de ajuda após pagar."}</span></p>
             <Button asChild variant="link" className="h-auto min-h-11 w-full whitespace-normal text-base">
               <a href={helpLink("pagamento", orderCode)} target="_blank" rel="noopener noreferrer"><MessageCircle aria-hidden="true" />Preciso de ajuda com o Pix</a>
             </Button>

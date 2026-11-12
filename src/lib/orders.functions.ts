@@ -487,3 +487,51 @@ export const adminSetFreeSetting = createServerFn({ method: "POST" })
     if (error) throw new Error("Não foi possível salvar");
     return { enabled: data.enabled };
   });
+
+// ================= Modelo de IA (escolhido no painel) =================
+export const adminGetAiModel = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const { getAiModel, DEFAULT_AI_MODEL } = await import("./ai-model.server");
+    return { model: await getAiModel(), fallback: DEFAULT_AI_MODEL };
+  });
+
+export const adminSetAiModel = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { model: string }) => ({ model: String(input.model ?? "").trim() }))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const { MODEL_RE } = await import("./ai-model.server");
+    if (!MODEL_RE.test(data.model)) throw new Error("Nome de modelo inválido");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("app_settings").upsert({ key: "mandapi_model", value: data.model, updated_at: new Date().toISOString() });
+    if (error) throw new Error("Não foi possível salvar");
+    return { model: data.model };
+  });
+
+// Tiny test call (max 5 tokens) so the admin sees if a model answers before saving.
+export const adminTestAiModel = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { model: string }) => ({ model: String(input.model ?? "").trim() }))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const { MODEL_RE } = await import("./ai-model.server");
+    if (!MODEL_RE.test(data.model)) return { ok: false, status: 0, message: "Nome de modelo inválido" };
+    const apiKey = process.env["MANDAPI_API_KEY"];
+    const rawBase = process.env["MANDAPI_BASE_URL"];
+    if (!apiKey || !rawBase) return { ok: false, status: 0, message: "Configuração da MandAPI ausente" };
+    const endpoint = `${rawBase.trim().replace(/\/+$/, "").replace(/\/chat\/completions$/, "")}/chat/completions`;
+    try {
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+        body: JSON.stringify({ model: data.model, stream: false, max_tokens: 5, messages: [{ role: "user", content: "Responda apenas: ok" }] }),
+        signal: AbortSignal.timeout(30000),
+      });
+      if (res.ok) return { ok: true, status: res.status, message: "Modelo respondendo normalmente" };
+      return { ok: false, status: res.status, message: res.status === 404 ? "Modelo não encontrado" : res.status >= 500 ? "Modelo fora do ar no momento" : "A MandAPI recusou o pedido" };
+    } catch {
+      return { ok: false, status: 0, message: "Sem resposta da MandAPI" };
+    }
+  });

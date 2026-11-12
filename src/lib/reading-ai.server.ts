@@ -4,6 +4,7 @@
 // de melhoria/design/textos NÃO autorizam mexer neste prompt.
 // ============================================================================
 import { CARDS, PLANS, type PlanId } from "./lenormand";
+import { getAiModel } from "./ai-model.server";
 
 // Shared MandAPI call used by both the paid (admin) and free flows. Throws a friendly Error on failure.
 export async function generateReadingText(order: { id: string; plan: string; cards: number[]; question: string; category: string | null }): Promise<string> {
@@ -16,13 +17,14 @@ export async function generateReadingText(order: { id: string; plan: string; car
     const spread = (claimed.cards as number[]).map((c, i) => `${i + 1}. ${plan.positions[i]}: ${CARDS[c]}`).join("\n");
     const catLine = order.category ? `Categoria (apenas contexto; não substitua a pergunta por uma pergunta genérica deste tema): ${order.category}\n` : "";
 
+    const model = await getAiModel();
     let reading: string;
     try {
       const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
         body: JSON.stringify({
-          model: "gpt-5.6-sol",
+          model,
           stream: false,
           messages: [
             {

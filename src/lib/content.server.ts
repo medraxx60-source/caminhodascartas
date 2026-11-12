@@ -1,4 +1,5 @@
 import { CARDS } from "./lenormand";
+import { getAiModel } from "./ai-model.server";
 
 export type ContentScript = { titulo: string; gancho: string; mensagem: string; convite: string; legenda: string };
 
@@ -21,10 +22,11 @@ export async function generateContentScript(card: number, theme: string): Promis
     "LEGENDA: legenda da postagem com 1 frase e 5 a 7 hashtags, incluindo #baralhocigano e #caminhodascartas",
   ].join("\n");
   const user = `Carta: ${card + 1} · ${CARDS[card]}\nTema do vídeo: ${theme}`;
+  const model = await getAiModel();
   const res = await fetch(endpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({ model: "gpt-5.6-sol", stream: false, messages: [{ role: "system", content: system }, { role: "user", content: user }] }),
+    body: JSON.stringify({ model, stream: false, messages: [{ role: "system", content: system }, { role: "user", content: user }] }),
   });
   if (!res.ok) {
     console.error(`[content] mandapi status=${res.status}`);

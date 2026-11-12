@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { CARDS, PLANS, formatBRL, type PlanId } from "@/lib/lenormand";
-import { adminGetFreeSetting, adminSetFreeSetting, adminConfirmAndGenerate, adminListOrders, adminRejectOrder, adminNudgePayment, adminSaveReading, adminStatus, claimAdmin } from "@/lib/orders.functions";
+import { adminGetAiModel, adminSetAiModel, adminTestAiModel, adminGetFreeSetting, adminSetFreeSetting, adminConfirmAndGenerate, adminListOrders, adminRejectOrder, adminNudgePayment, adminSaveReading, adminStatus, claimAdmin } from "@/lib/orders.functions";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -206,6 +206,7 @@ function Orders() {
         <Button variant="ghost" onClick={() => supabase.auth.signOut()}>Sair</Button>
       </div>
       <FreeToggle />
+      <AiModelPanel />
       <ReviewsAdmin />
       <Button variant="outline" className="mt-3 w-full" asChild><Link to="/admin/conteudo">✦ Gerador de Carta do Dia (vídeos)</Link></Button>
       <Button variant="outline" className="mt-3 w-full" asChild><Link to="/admin/base-oracular">✦ Base Oracular (36 cartas)</Link></Button>
@@ -296,6 +297,48 @@ function FreeToggle() {
         <p className="text-xs text-muted-foreground">3 cartas grátis para quem ainda não usou.</p>
       </div>
       <Button variant={on ? "default" : "outline"} disabled={on === null} onClick={flip}>{on === null ? "..." : on ? "Ativada" : "Desativada"}</Button>
+    </div>
+  );
+}
+
+const MODEL_OPTIONS = ["gpt-6-sol", "gpt-5.6-sol"];
+
+function AiModelPanel() {
+  const get = useServerFn(adminGetAiModel);
+  const save = useServerFn(adminSetAiModel);
+  const test = useServerFn(adminTestAiModel);
+  const [current, setCurrent] = useState<string | null>(null);
+  const [draft, setDraft] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
+  useEffect(() => { get().then((r) => { setCurrent(r.model); setDraft(r.model); }).catch(() => {}); }, []);
+  const runTest = async () => {
+    setBusy(true); setResult(null);
+    try { setResult(await test({ data: { model: draft } })); } catch { setResult({ ok: false, message: "Erro ao testar" }); }
+    setBusy(false);
+  };
+  const runSave = async () => {
+    setBusy(true);
+    try { const r = await save({ data: { model: draft } }); setCurrent(r.model); toast.success(`Modelo ativo: ${r.model}`); }
+    catch (e) { toast.error(e instanceof Error ? e.message : "Erro"); }
+    setBusy(false);
+  };
+  return (
+    <div className="mt-4 rounded-lg border border-border bg-card p-4">
+      <p className="font-semibold">Modelo de IA das leituras</p>
+      <p className="text-xs text-muted-foreground">Em uso agora: <b>{current ?? "..."}</b>. O texto da cartomante não muda, só o modelo.</p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {MODEL_OPTIONS.map((m) => (
+          <Button key={m} size="sm" variant={draft === m ? "default" : "outline"} onClick={() => { setDraft(m); setResult(null); }}>{m}</Button>
+        ))}
+      </div>
+      <Input className="mt-2" value={draft} onChange={(e) => { setDraft(e.target.value); setResult(null); }} placeholder="ou digite outro modelo da MandAPI" />
+      <div className="mt-2 flex gap-2">
+        <Button variant="outline" disabled={busy || !draft} onClick={runTest}>Testar modelo</Button>
+        <Button disabled={busy || !draft || draft === current} onClick={runSave}>Salvar e usar</Button>
+      </div>
+      {result && <p className={`mt-2 text-sm ${result.ok ? "text-primary" : "text-destructive"}`}>{result.ok ? "✓ " : "✕ "}{result.message}</p>}
+      <p className="mt-2 text-[11px] text-muted-foreground">O teste faz uma chamada mínima à MandAPI (custo quase zero).</p>
     </div>
   );
 }

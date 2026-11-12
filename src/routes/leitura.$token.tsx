@@ -258,7 +258,7 @@ function Leitura() {
       ) : order.status === "generating" ? (
         <GeneratingProgress isFree={!!order.is_free} />
       ) : (
-        <div className="cc-payment-pulse mt-10 rounded-lg border border-gold bg-card p-6 text-center" role="status">
+        <div className="mt-10 rounded-lg border border-gold bg-card p-6 text-center" role="status">
           <p className="font-display text-2xl text-primary">Aguardando confirmação do pagamento</p>
           <p className="mt-2 text-sm text-muted-foreground">Assim que seu Pix for confirmado, sua leitura aparecerá aqui automaticamente. Deixe esta página aberta.</p>
         </div>

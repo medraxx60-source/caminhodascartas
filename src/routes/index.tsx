@@ -660,7 +660,7 @@ function Index() {
                 Não foi possível gerar o código de pagamento nesta tentativa. Seu pedido e suas cartas continuam salvos.
               </p>
               <p className="mt-2 text-xs text-muted-foreground">
-                Não faça Pix por uma chave manual. Assim evitamos pagamentos sem confirmação automática.
+                Não faça Pix por uma chave manual. Se você já transferiu pela chave exibida anteriormente, não pague de novo: use o botão de ajuda com o comprovante e o número do pedido.
               </p>
             </div>
             <p className="text-center font-display text-4xl font-bold text-gold">{p && formatBRL(p.priceCents)}</p>

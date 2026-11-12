@@ -18,7 +18,7 @@ export const recordConversionEvent = createServerFn({ method: "POST" })
   .inputValidator((input) => eventSchema.parse(input))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await (supabaseAdmin.from("conversion_events") as any).upsert({
+    const { error } = await ((supabaseAdmin as any).from("conversion_events") as any).upsert({
       session_id: data.sessionId.toLowerCase(),
       event_name: data.event,
       plan: data.plan,
@@ -39,11 +39,12 @@ export const adminGetConversionMetrics = createServerFn({ method: "POST" })
     if (authError || !authorized) throw new Error("Acesso negado");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const since = new Date(Date.now() - data.days * 86400_000).toISOString();
+    const db = supabaseAdmin as any;
     const [events, orders] = await Promise.all([
-      supabaseAdmin.from("conversion_events")
+      db.from("conversion_events")
         .select("session_id,event_name,plan,source,medium,campaign")
         .gte("created_at", since).limit(10000),
-      supabaseAdmin.from("orders")
+      db.from("orders")
         .select("conversion_session,is_free,status,plan")
         .gte("created_at", since).not("conversion_session", "is", null).limit(10000),
     ]);

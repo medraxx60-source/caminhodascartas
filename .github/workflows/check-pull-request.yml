@@ -1,0 +1,25 @@
+name: Verificar alteracoes antes de publicar
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Obter codigo da branch de revisao
+        uses: actions/checkout@v4
+      - name: Preparar Bun
+        uses: oven-sh/setup-bun@v2
+      - name: Instalar dependencias do lockfile
+        run: bun install --frozen-lockfile
+      - name: Testes automatizados
+        run: bun run test
+      - name: Build de producao
+        run: bun run build

@@ -52,11 +52,17 @@ export const createOrder = createServerFn({ method: "POST" })
     const orderCode = row.id.slice(0, 8).toUpperCase();
     let pix: { payload: string; image: string | null } | null = null;
     try {
-      const { createAsaasPix } = await import("./asaas.server");
-      const q = await createAsaasPix({ orderId: row.id, orderCode, valueCents: PLANS[data.plan].priceCents, apiVersion: "v2" });
+      const { createAsaasPixDetailed } = await import("./asaas.server");
+      const { charge: q, issue } = await createAsaasPixDetailed({ orderId: row.id, orderCode, valueCents: PLANS[data.plan].priceCents, apiVersion: "v2" });
+      if (issue) {
+        const { error: issueSaveError } = await (supabaseAdmin.from("orders") as any)
+          .update({ pix_error_code: issue.code, pix_error_status: issue.status, pix_error_at: new Date().toISOString() })
+          .eq("id", row.id);
+        if (issueSaveError) console.warn("[wyvi] diagnostics persistence failed", issueSaveError.code);
+      }
       if (q) {
         const { data: saved, error: saveError } = await (supabaseAdmin.from("orders") as any)
-          .update({ asaas_qr_id: q.id, pix_payload: q.payload, pix_qr_image: q.image })
+          .update({ asaas_qr_id: q.id, pix_payload: q.payload, pix_qr_image: q.image, pix_error_code: null, pix_error_status: null, pix_error_at: null })
           .eq("id", row.id).eq("status", "pending").is("asaas_qr_id", null)
           .select("id").maybeSingle();
         if (saveError || !saved) console.error("[wyvi] pix persistence failed", saveError?.code ?? "no_row_updated");
@@ -115,14 +121,22 @@ export const retryAutomaticPix = createServerFn({ method: "POST" })
     claim = previous ? claim.eq("pix_last_attempt_at", previous) : claim.is("pix_last_attempt_at", null);
     const { data: locked, error: claimError } = await claim.select("id").maybeSingle();
     if (claimError || !locked) return { ok: false as const, reason: "wait" as const };
-    const { createAsaasPix } = await import("./asaas.server");
-    const charge = await createAsaasPix({
+    const { createAsaasPixDetailed } = await import("./asaas.server");
+    const { charge, issue } = await createAsaasPixDetailed({
       orderId: row.id, orderCode: row.id.slice(0, 8).toUpperCase(),
       valueCents: row.price_cents, apiVersion: row.pix_api_version === "v2" ? "v2" : "v1",
     });
-    if (!charge) return { ok: false as const, reason: "unavailable" as const };
+    if (!charge) {
+      if (issue) {
+        const { error: issueSaveError } = await db
+          .update({ pix_error_code: issue.code, pix_error_status: issue.status, pix_error_at: new Date().toISOString() })
+          .eq("id", row.id).eq("status", "pending");
+        if (issueSaveError) console.warn("[wyvi] retry diagnostics persistence failed", issueSaveError.code);
+      }
+      return { ok: false as const, reason: "unavailable" as const };
+    }
     const { data: saved, error: saveError } = await db
-      .update({ asaas_qr_id: charge.id, pix_payload: charge.payload, pix_qr_image: charge.image })
+      .update({ asaas_qr_id: charge.id, pix_payload: charge.payload, pix_qr_image: charge.image, pix_error_code: null, pix_error_status: null, pix_error_at: null })
       .eq("id", row.id).eq("status", "pending").is("asaas_qr_id", null)
       .select("id").maybeSingle();
     if (saveError) {
@@ -264,7 +278,7 @@ export const adminListOrders = createServerFn({ method: "POST" })
     await assertAdmin(context.supabase, context.userId);
     const { data, error } = await (context.supabase as any)
       .from("orders")
-      .select("id, plan, question, cards, status, price_cents, created_at, paid_at, error_message, generation_started_at, reading, client_stage, stage_updated_at, access_token, is_free, payment_nudged_at")
+      .select("id, plan, question, cards, status, price_cents, created_at, paid_at, error_message, generation_started_at, reading, client_stage, stage_updated_at, access_token, is_free, payment_nudged_at, pix_api_version, pix_error_status, pix_error_code, pix_error_at")
       .order("created_at", { ascending: false })
       .limit(200);
     if (error) throw new Error("Não foi possível carregar os pedidos");

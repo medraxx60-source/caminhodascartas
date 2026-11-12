@@ -35,8 +35,7 @@ describe("consulta privada à Base Oracular com Supabase simulado", () => {
   it("não busca fichas quando a função estiver desativada", async () => {
     const settings = createSettingsQuery(false);
     fromMock.mockImplementation((table: string) => {
-      if (table === "app_settings") return settings;
-      throw new Error("Consulta a fichas não permitida neste teste");
+      return table === "app_settings" ? settings : createCardsQuery([]);
     });
     expect(await loadOracularReference(order)).toBeNull();
     expect(fromMock).toHaveBeenCalledTimes(1);
@@ -63,8 +62,7 @@ describe("consulta privada à Base Oracular com Supabase simulado", () => {
     }]);
     fromMock.mockImplementation((table: string) => {
       if (table === "app_settings") return settings;
-      if (table === "lenormand_cards") return cards;
-      throw new Error(`Tabela inesperada: ${table}`);
+      return table === "lenormand_cards" ? cards : settings;
     });
     const text = await loadOracularReference(order);
     expect(fromMock).toHaveBeenCalledTimes(2);

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createAsaasPix, findAsaasPayment, parseWyviPixResponse } from "@/lib/asaas.server";
+import { createAsaasPix, createAsaasPixDetailed, findAsaasPayment, parseWyviPixResponse } from "@/lib/asaas.server";
 
 afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 const txid = "a1b2c3d4e5f60718293a4b5c6d7e8f90";
@@ -47,6 +47,43 @@ describe("Pix Wyvi oficial com recuperação segura", () => {
     expect(body.expiracao_segundos).toBe(86400);
     expect(body).not.toHaveProperty("expira_em_segundos");
   });
+  it("registra apenas o código seguro de recusa da API v2, sem dados ou token", async () => {
+    vi.stubEnv("WIVYPAY_API_KEY", "wy_live_test");
+    vi.stubGlobal("fetch", vi.fn().mockImplementation(() =>
+      Promise.resolve(new Response(JSON.stringify({ erro: { codigo: "sem_escopo", mensagem: "Chave sem permissão" } }), { status: 403 }))
+    ));
+    const result = await createAsaasPixDetailed({ ...opts, apiVersion: "v2" });
+    expect(result).toEqual({ charge: null, issue: { status: 403, code: "sem_escopo" } });
+    expect(JSON.stringify(result)).not.toContain("wy_live_test");
+    expect(JSON.stringify(result)).not.toContain("mensagem");
+  });
+
+  it("identifica a obrigatoriedade de CPF pela validação da conta, sem preencher dados inventados", async () => {
+    vi.stubEnv("WIVYPAY_API_KEY", "wy_live_test");
+    vi.stubGlobal("fetch", vi.fn().mockImplementation(() =>
+      Promise.resolve(new Response(JSON.stringify({ erro: { codigo: "cpf_obrigatorio", mensagem: "exige identificação" } }), { status: 422 }))
+    ));
+    const result = await createAsaasPixDetailed({ ...opts, apiVersion: "v2" });
+    expect(result.issue).toEqual({ status: 422, code: "cpf_obrigatorio" });
+  });
+
+  it("distingue a ausência de credenciais de falha da rede sem criar cobranças extras", async () => {
+    vi.stubEnv("WIVYPAY_API_KEY", "");
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    expect((await createAsaasPixDetailed(opts)).issue).toEqual({ status: 0, code: "missing_api_key" });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("informa erro de resposta inesperada mesmo com HTTP 201", async () => {
+    vi.stubEnv("WIVYPAY_API_KEY", "wy_live_test");
+    vi.stubGlobal("fetch", vi.fn().mockImplementation(() =>
+      Promise.resolve(new Response(JSON.stringify({ txid, pix: { copia_e_cola: "wrong" } }), { status: 201 }))
+    ));
+    expect((await createAsaasPixDetailed({ ...opts, apiVersion: "v2" })).issue)
+      .toEqual({ status: 201, code: "invalid_pix_payload" });
+  });
+
   it("não cria cobrança nem usa Asaas se a chave oficial da Wyvi estiver ausente",async()=>{
     vi.stubEnv("WIVYPAY_API_KEY","");
     const mock=vi.fn();

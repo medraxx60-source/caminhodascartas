@@ -105,7 +105,7 @@ export const getOrderByToken = createServerFn({ method: "POST" })
   });
 
 // Checks Asaas for a received Pix and, if paid, marks the order and generates the reading (no admin needed).
-async function syncAsaasPayment(token: string) {
+export async function syncAsaasPayment(token: string) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const db = supabaseAdmin.from("orders") as any;
   const { data: o } = await db.select("id, plan, cards, question, category, status, price_cents, asaas_qr_id, asaas_payment_id, generation_started_at, is_free").eq("access_token", token).maybeSingle();

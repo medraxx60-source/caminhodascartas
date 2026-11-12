@@ -21,11 +21,22 @@ export function parseWyviPixResponse(body: unknown): PixCharge | null {
 }
 
 /** Gerar Pix não movimenta dinheiro. Idempotency-Key = pedido: retentativas não criam cobrança diferente. */
-export async function createAsaasPix(opts: { orderId: string; orderCode: string; valueCents: number; apiVersion?: WyviVersion }): Promise<PixCharge | null> {
+/** Códigos seguros para diagnóstico; nunca incluir a resposta bruta da Wyvi. */
+export type WyviIssue = { status: number; code: string };
+export type WyviPixResult = { charge: PixCharge | null; issue: WyviIssue | null };
+function safeIssueCode(raw: unknown): string {
+  const value = typeof raw === "string" ? raw.trim().toLowerCase() : "";
+  return /^[a-z0-9_]{1,64}$/.test(value) ? value : "unknown";
+}
+
+/** Uma única tentativa de emissão: devolve a causa técnica sem expor chave nem dados privados. */
+export async function createAsaasPixDetailed(
+  opts: { orderId: string; orderCode: string; valueCents: number; apiVersion?: WyviVersion },
+): Promise<WyviPixResult> {
   const key = wyKey();
   if (!key) {
-    console.warn("[wyvi] create disabled: missing WIVYPAY_API_KEY");
-    return null;
+    console.warn("[wyvi] create disabled: missing API key");
+    return { charge: null, issue: { status: 0, code: "missing_api_key" } };
   }
   const version = opts.apiVersion === "v1" ? "v1" : "v2";
   const body = version === "v1"
@@ -39,22 +50,43 @@ export async function createAsaasPix(opts: { orderId: string; orderCode: string;
       signal: AbortSignal.timeout(18_000),
     });
     if (!response.ok) {
-      // Nunca colocar token, pergunta, nome de pagador ou JSON completo nos logs.
-      let errorCode = "unknown";
+      let rawCode: unknown = null;
       try {
-        const err = await response.json() as { erro?: { codigo?: string }; codigo?: string };
-        errorCode = err.erro?.codigo ?? err.codigo ?? "unknown";
+        const err = await response.json() as {
+          erro?: { codigo?: unknown };
+          error?: { codigo?: unknown };
+          codigo?: unknown;
+        };
+        rawCode = err.erro?.codigo ?? err.error?.codigo ?? err.codigo;
       } catch {}
-      console.warn("[wyvi] create failed", { version, status: response.status, code: errorCode, requestId: response.headers.get("x-request-id") });
-      return null;
+      const issue = { status: response.status, code: safeIssueCode(rawCode) };
+      console.warn("[wyvi] emission rejected", { version, status: issue.status, code: issue.code });
+      return { charge: null, issue };
     }
-    const charge = parseWyviPixResponse(await response.json());
-    if (!charge) console.warn("[wyvi] unexpected response shape", { version, status: response.status });
-    return charge;
-  } catch (error) {
-    console.warn("[wyvi] network failure", { version, kind: error instanceof Error ? error.name : "unknown" });
-    return null;
+    let decoded: unknown;
+    try { decoded = await response.json(); }
+    catch {
+      console.warn("[wyvi] non-JSON response", { version, status: response.status });
+      return { charge: null, issue: { status: response.status, code: "response_not_json" } };
+    }
+    const charge = parseWyviPixResponse(decoded);
+    if (!charge) {
+      console.warn("[wyvi] unexpected response shape", { version, status: response.status });
+      return { charge: null, issue: { status: response.status, code: "invalid_pix_payload" } };
+    }
+    return { charge, issue: null };
+  } catch (e) {
+    const kind = e instanceof Error && (e.name === "TimeoutError" || e.name === "AbortError") ? "timeout" : "network_error";
+    console.warn("[wyvi] emission network failure", { version, kind });
+    return { charge: null, issue: { status: 0, code: kind } };
   }
+}
+
+/** Mantida a interface antiga usada nos testes e em outras rotinas. */
+export async function createAsaasPix(
+  opts: { orderId: string; orderCode: string; valueCents: number; apiVersion?: WyviVersion },
+): Promise<PixCharge | null> {
+  return (await createAsaasPixDetailed(opts)).charge;
 }
 
 async function findWyviPayment(key: string, txid: string, valueCents: number): Promise<string | null> {

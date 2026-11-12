@@ -133,7 +133,7 @@ export const retryAutomaticPix = createServerFn({ method: "POST" })
           .eq("id", row.id).eq("status", "pending");
         if (issueSaveError) console.warn("[wyvi] retry diagnostics persistence failed", issueSaveError.code);
       }
-      return { ok: false as const, reason: "unavailable" as const };
+      return { ok: false as const, reason: "unavailable" as const, diagnostic: issue ? `W-${issue.status}-${issue.code}` : "W-unknown" };
     }
     const { data: saved, error: saveError } = await db
       .update({ asaas_qr_id: charge.id, pix_payload: charge.payload, pix_qr_image: charge.image, pix_error_code: null, pix_error_status: null, pix_error_at: null })

@@ -48,9 +48,7 @@ function GeneratingProgress({ isFree }: { isFree: boolean }) {
     const id = setInterval(() => setElapsed((e) => e + 1), 1000);
     return () => clearInterval(id);
   }, []);
-  // Paced to the real AI time (~40s): each step ~8s; bar never hits 100% until the reading arrives.
-  const step = Math.min(PROGRESS_STEPS.length - 1, Math.floor(elapsed / 8));
-  const pct = Math.round(96 * (1 - Math.exp(-elapsed / 15)));
+  // O tempo é imprevisível; não apresentar percentuais ou checkmarks falsos.
   const quoteIdx = Math.floor(elapsed / 8) % REFLECTIONS.length;
   return (
     <div className="mt-10 rounded-xl border border-gold bg-card p-6 text-center" role="status" aria-live="polite">
@@ -61,14 +59,15 @@ function GeneratingProgress({ isFree }: { isFree: boolean }) {
       <p className="mt-1 text-base text-muted-foreground">
         {isFree ? "Consultando o Baralho Cigano…" : "A cartomante está diante da sua mesa…"}
       </p>
-      <div className="mx-auto mt-5 h-2 w-full max-w-sm overflow-hidden rounded-full bg-muted" aria-hidden>
-        <div className="h-full rounded-full bg-gold transition-all duration-1000 ease-out" style={{ width: `${Math.max(5, pct)}%` }} />
+      <div className="mx-auto mt-5 h-2 w-full max-w-sm overflow-hidden rounded-full bg-muted" aria-label="Interpretação em preparação">
+        <div className="h-full w-2/5 rounded-full bg-gold motion-safe:animate-pulse" />
       </div>
+      <p className="mt-3 text-xs text-muted-foreground">Os passos abaixo mostram como a tiragem é interpretada, não uma porcentagem de conclusão.</p>
       <ol className="mx-auto mt-5 max-w-sm space-y-2.5 text-left text-base">
         {PROGRESS_STEPS.map((label, i) => (
-          <li key={label} className={`flex gap-2 ${i < step ? "text-muted-foreground" : i === step ? "font-semibold text-primary" : "text-muted-foreground/50"}`}>
-            <span className={`w-4 shrink-0 text-gold ${i === step ? "animate-pulse" : ""}`} aria-hidden>{i < step ? "✓" : i === step ? "✦" : "○"}</span>
-            <span>{label}{i === step ? "…" : ""}</span>
+          <li key={label} className="flex gap-2 text-muted-foreground">
+            <span className="w-4 shrink-0 text-gold" aria-hidden>✦</span>
+            <span>{label}</span>
           </li>
         ))}
       </ol>
@@ -77,7 +76,11 @@ function GeneratingProgress({ isFree }: { isFree: boolean }) {
           “{REFLECTIONS[quoteIdx]}”
         </p>
       </div>
-      <p className="mt-5 text-sm text-muted-foreground">Leva cerca de 40 segundos. Pode deixar esta página aberta.</p>
+      <p className="mt-5 text-sm text-muted-foreground">{elapsed < 45
+        ? "Estamos preparando sua orientação. Você pode manter esta página aberta."
+        : elapsed < 90
+          ? "Está levando um pouco mais que o habitual. Seu pedido continua salvo; não faça outro Pix."
+          : "Sua interpretação está demorando. O sistema pode retomar a geração automaticamente; seu pedido permanece salvo."}</p>
     </div>
   );
 }
@@ -128,6 +131,13 @@ function Leitura() {
   const [started, setStarted] = useState(false);
   const [retryBusy, setRetryBusy] = useState(false);
   const [retryError, setRetryError] = useState<string | null>(null);
+  const retryPaid = () => {
+    setRetryBusy(true); setRetryError(null);
+    resumePaid({ data: { token } })
+      .then((r) => { if (!r?.ok) setRetryError("Ainda não conseguimos concluir. Seu pagamento está registrado; tente novamente em instantes."); })
+      .catch(() => setRetryError("Não foi possível retomar agora. Sua leitura continua disponível neste pedido."))
+      .finally(() => { setRetryBusy(false); qc.invalidateQueries({ queryKey: ["order", token] }); });
+  };
   const startFree = (manual = false) => {
     setStarted(true);
     if (manual) { setRetryBusy(true); setRetryError(null); }
@@ -234,8 +244,10 @@ function Leitura() {
       ) : order.status === "error" ? (
         <div className="mt-10 rounded-lg border border-gold bg-card p-6 text-center">
           <p className="font-display text-2xl text-primary">Não conseguimos concluir sua leitura agora</p>
-          <p className="mt-2 text-sm text-muted-foreground">Sua leitura de cortesia não foi consumida. Toque abaixo para tentar novamente.</p>
-          <Button className="mt-4" disabled={retryBusy} onClick={() => startFree(true)}>{retryBusy ? "Tentando…" : "Tentar novamente"}</Button>
+          <p className="mt-2 text-sm text-muted-foreground">{order.is_free
+            ? "Sua leitura de cortesia não foi consumida. Toque abaixo para tentar novamente."
+            : "Seu Pix já foi confirmado. A interpretação ainda não terminou; você não precisa pagar novamente."}</p>
+          <Button className="mt-4" disabled={retryBusy} onClick={() => order.is_free ? startFree(true) : retryPaid()}>{retryBusy ? "Tentando…" : "Retomar minha interpretação"}</Button>
           {retryError && <p role="alert" className="mt-3 text-sm text-destructive">{retryError}</p>}
         </div>
       ) : order.status === "generating" ? (

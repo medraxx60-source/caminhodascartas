@@ -15,11 +15,11 @@ export const PLANS: Record<PlanId, { name: string; count: number; priceCents: nu
   essencial: { name: "Essencial", count: 3, priceCents: 490, positions: ["Situação atual", "Desafio", "Tendência"] },
   profunda: {
     name: "Profunda", count: 5, priceCents: 890,
-    positions: ["Situação atual", "Desafio", "Influência oculta", "Conselho", "Tendência"],
+    positions: ["Passado/Raiz", "Situação atual", "Desafio", "Tendência", "Conselho"],
   },
   completa: {
     name: "Completa", count: 7, priceCents: 1490,
-    positions: ["Raiz da questão", "Passado recente", "Situação atual", "Desafio", "Influência oculta", "Conselho", "Desfecho provável"],
+    positions: ["Passado/Raiz", "Momento presente", "O que está oculto", "Desafio", "Tendência", "Conselho", "Desfecho"],
   },
 };
 

@@ -13,12 +13,12 @@ import { getConversionContext, PENDING_UPGRADE_KEY } from "@/lib/conversion-trac
 import { Check, Copy, Menu, MessageCircle } from "lucide-react";
 import { CardBack, CardReveal, cardImage } from "@/components/TarotCard";
 import { EXPANSION_KEY, parseExpansion } from "@/lib/reading-expansion";
-import { CARDS, PLANS, PIX_KEY, PIX_QR_SRC, formatBRL, type PlanId , CATEGORIES, type Category } from "@/lib/lenormand";
+import { CARDS, PLANS, formatBRL, type PlanId , CATEGORIES, type Category } from "@/lib/lenormand";
 import { getDeviceFingerprint } from "@/lib/device-fingerprint";
 import { PROGRESS_KEY, parseProgress, keepPicksOnPlanChange } from "@/lib/free-progress";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
-import { createOrder, getOrderStatus, checkFreeReading, createFreeOrder } from "@/lib/orders.functions";
+import { createOrder, retryAutomaticPix, getOrderStatus, checkFreeReading, createFreeOrder } from "@/lib/orders.functions";
 import cardBackSrc from "@/assets/card-back.jpg";
 import heroSrc from "@/assets/caminho-das-cartas-hero.jpg";
 
@@ -96,6 +96,9 @@ function Index() {
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const create = useServerFn(createOrder);
+  const retryPixServer = useServerFn(retryAutomaticPix);
+  const [pixRetryBusy, setPixRetryBusy] = useState(false);
+  const [pixRetryMessage, setPixRetryMessage] = useState<string | null>(null);
   const p = plan ? PLANS[plan] : null;
   const link = useMemo(() => (token && typeof window !== "undefined" ? `${window.location.origin}/leitura/${token}` : ""), [token]);
   const checkStatus = useServerFn(getOrderStatus);
@@ -247,6 +250,32 @@ function Index() {
     goStep(0);
   };
 
+  const retryPix = async () => {
+    if (!token || pixRetryBusy || pixCode) return;
+    setPixRetryBusy(true);
+    setPixRetryMessage(null);
+    try {
+      const r = await retryPixServer({ data: { token } });
+      if (r.ok) {
+        setPixCode({ payload: r.payload, image: r.image });
+        setCopied(false);
+        toast.success("Pix automático gerado! Agora você pode pagar com segurança.");
+      } else {
+        const message = r.reason === "wait"
+          ? "Aguarde alguns segundos antes de tentar novamente. Seu pedido permanece salvo."
+          : r.reason === "expired"
+            ? "Este pedido venceu. Volte ao site para começar uma nova consulta."
+            : r.reason === "not_pending"
+              ? "O status deste pedido mudou. Atualize a página para verificar."
+              : "Não conseguimos gerar o Pix agora. Nenhum pagamento foi solicitado. Tente novamente ou procure o suporte.";
+        setPixRetryMessage(message);
+      }
+    } catch {
+      setPixRetryMessage("Falha de conexão. Seu pedido está salvo, tente novamente em instantes.");
+    } finally {
+      setPixRetryBusy(false);
+    }
+  };
   const submit = async () => {
     if (!plan || !p) return;
     // Reuse the existing unpaid order instead of creating a duplicate.
@@ -273,6 +302,7 @@ function Index() {
       const r = await create({ data: { plan, category: category ?? "Outros assuntos", question, cards: picked, conversionSession: getConversionContext()?.sessionId } });
       setOrderCode(r.orderCode);
       setPixCode(r.pixPayload ? { payload: r.pixPayload, image: r.pixImage } : null);
+      setPixRetryMessage(null);
       setReservedAt(Date.now());
       setToken(r.token);
       setPixOpen(true);
@@ -595,10 +625,11 @@ function Index() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!token} onOpenChange={() => {}}>
-        <DialogContent className="mystic w-[calc(100%-1.5rem)] max-w-lg max-h-[90dvh] min-w-0 overflow-x-hidden overflow-y-auto rounded-lg p-5 pb-8 sm:p-6 [&>button.absolute]:hidden" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
+      <Dialog open={!!token && pixOpen} onOpenChange={(open) => setPixOpen(open)}>
+        <DialogContent className="mystic cc-checkout-live w-[calc(100%-1.5rem)] max-w-lg max-h-[90dvh] min-w-0 overflow-x-hidden overflow-y-auto rounded-lg p-5 pb-8 sm:p-6 [&>button.absolute]:hidden" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
           <DialogHeader>
-            <DialogTitle className="font-display text-3xl text-primary">Pague com Pix</DialogTitle>
+            <DialogTitle className="font-display text-3xl text-primary"><span aria-hidden="true" className="cc-checkout-star mr-2 inline-block text-gold">✦</span>Pague com Pix</DialogTitle>
+            <div aria-hidden="true" className="cc-checkout-line mx-auto mt-2 h-0.5 w-28 rounded-full bg-gold" />
             <DialogDescription className="text-base">Falta só o pagamento para iniciar a sua interpretação.</DialogDescription>
           </DialogHeader>
           {pixCode ? (
@@ -623,33 +654,34 @@ function Index() {
             </>
           ) : (
             <>
-            <p role="alert" className="rounded-md border border-gold/60 bg-gold/10 p-3 text-center text-sm leading-relaxed text-foreground">O Pix automático está indisponível no momento. Você ainda pode pagar pela chave abaixo, mas a liberação será manual, após conferência do comprovante.</p>
-            <p className="text-center font-display text-4xl font-bold text-gold">{p && formatBRL(p.priceCents)}</p>
-            <Button size="lg" className="gold-button cc-cta-alive h-14 w-full min-w-0 whitespace-normal rounded-lg px-3 text-base leading-snug" onClick={async () => { if (await copy(PIX_KEY, "Chave Pix")) { track("pix_copy", plan ?? "none"); setCopied(true); try { navigator.vibrate?.(60); } catch {} } }}>
-              {copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
-              <span>{copied ? "Chave Pix copiada!" : "Copiar chave Pix"}</span>
-            </Button>
-            <p aria-live="polite" className="text-center text-base leading-relaxed text-foreground">{copied ? "Agora abra o app do seu banco e faça um Pix usando a chave copiada." : "No app do banco, faça um Pix usando esta chave."}</p>
-            <code className="block break-all rounded-md bg-muted px-3 py-2 text-center text-xs">{PIX_KEY}</code>
-            <p className="text-center text-base leading-relaxed text-foreground">Digite <strong>{p && formatBRL(p.priceCents)}</strong> e confirme o pagamento. Depois, volte a esta tela.</p>
-            <details className="text-center text-sm text-muted-foreground">
-              <summary className="cursor-pointer py-2">Prefere escanear? Ver QR Code</summary>
-              <img src={PIX_QR_SRC} alt="QR Code Pix" className="mx-auto mt-3 aspect-square w-48 max-w-full rounded-md border border-gold object-contain" />
-            </details>
-            <p className="text-center text-sm leading-relaxed text-muted-foreground">🔒 Seu pedido e suas cartas ficam guardados enquanto você vai ao app do banco. Depois de pagar, use “Preciso de ajuda com o Pix” abaixo para enviar o comprovante e o número do pedido.</p>
-            <div className="flex min-w-0 items-center justify-between gap-3 border-t border-border pt-3">
-              <p className="min-w-0 flex-1 break-words text-sm leading-relaxed">Na descrição do Pix, informe: <span className="break-all font-mono font-bold text-primary">{orderCode}</span></p>
-              <Button size="icon" variant="outline" className="h-11 w-11 shrink-0" aria-label="Copiar número do pedido" title="Copiar número do pedido" onClick={() => copy(orderCode, "Número do pedido")}><Copy aria-hidden="true" /></Button>
+            <div role="alert" className="cc-payment-pulse rounded-xl border border-gold/60 bg-gold/10 p-4 text-center">
+              <p className="font-display text-xl font-semibold text-gold">Estamos preparando seu Pix</p>
+              <p className="mt-2 text-sm leading-relaxed text-foreground">
+                Não foi possível gerar o código de pagamento nesta tentativa. Seu pedido e suas cartas continuam salvos.
+              </p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Não faça Pix por uma chave manual. Se você já transferiu pela chave exibida anteriormente, não pague de novo: use o botão de ajuda com o comprovante e o número do pedido.
+              </p>
             </div>
+            <p className="text-center font-display text-4xl font-bold text-gold">{p && formatBRL(p.priceCents)}</p>
+            <Button size="lg" className="gold-button cc-cta-alive h-14 w-full whitespace-normal rounded-lg px-3 text-base" disabled={pixRetryBusy}
+              onClick={retryPix}>
+              {pixRetryBusy ? "Consultando a Wyvi Pay…" : "Gerar Pix automático novamente"}
+            </Button>
+            {pixRetryMessage && <p role="status" className="rounded-md border border-gold/30 bg-card px-3 py-2 text-sm leading-relaxed text-foreground">{pixRetryMessage}</p>}
+            <p className="text-center text-sm text-muted-foreground">
+              Não haverá uma nova compra: a tentativa usa o mesmo pedido e o mesmo valor.
+            </p>
             </>
           )}
           <div className="space-y-2 border-t border-border pt-3 text-center">
             {nudged ? (
               <p role="alert" className="rounded-md border border-destructive bg-destructive/15 p-3 text-sm font-semibold text-foreground">Atenção: conferimos e o seu Pix ainda não foi identificado. Verifique no app do seu banco se a transferência foi concluída com o valor correto.</p>
             ) : slow ? (
-              <p role="status" className="rounded-md border border-gold bg-gold/10 p-3 text-sm text-foreground">{pixCode ? "Ainda não identificamos sua transferência. Confira se o Pix foi concluído no app do banco." : "Se você já pagou pela chave Pix, envie o comprovante e o número do pedido pelo botão de ajuda para verificarmos."}</p>
+              <p role="status" className="rounded-md border border-gold bg-gold/10 p-3 text-sm text-foreground">{pixCode ? "Ainda não identificamos sua transferência. Confira se o Pix foi concluído no app do banco." : "Ainda estamos tentando emitir o Pix automático. Você não precisa realizar transferência manual."}</p>
             ) : null}
-            <p role="status" className="cc-payment-pulse flex min-w-0 items-start justify-center gap-3 rounded-md border border-gold/60 bg-gold/10 p-4 text-left text-base font-semibold leading-relaxed text-foreground"><span aria-hidden="true" className="mt-2 inline-block h-3 w-3 shrink-0 rounded-full bg-gold motion-safe:animate-pulse" /><span className="min-w-0 flex-1 break-words">{pixCode ? "Aguardando pagamento… sua leitura abre sozinha ao confirmar." : "Aguardando conferência manual do Pix. Envie o comprovante pelo botão de ajuda após pagar."}</span></p>
+            <p role="status" className="cc-payment-pulse flex min-w-0 items-start justify-center gap-3 rounded-md border border-gold/60 bg-gold/10 p-4 text-left text-base font-semibold leading-relaxed text-foreground"><span aria-hidden="true" className="mt-2 inline-block h-3 w-3 shrink-0 rounded-full bg-gold motion-safe:animate-pulse" /><span className="min-w-0 flex-1 break-words">{pixCode ? "Aguardando pagamento… sua leitura abre sozinha ao confirmar." : "Aguardando geração de Pix automático na Wyvi Pay."}</span></p>
+            <Button variant="outline" className="h-auto min-h-11 w-full whitespace-normal text-base" onClick={() => setPixOpen(false)}>Voltar à consulta sem pagar</Button>
             <Button asChild variant="link" className="h-auto min-h-11 w-full whitespace-normal text-base">
               <a href={helpLink("pagamento", orderCode)} target="_blank" rel="noopener noreferrer"><MessageCircle aria-hidden="true" />Preciso de ajuda com o Pix</a>
             </Button>

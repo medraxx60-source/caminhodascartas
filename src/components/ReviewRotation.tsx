@@ -23,6 +23,7 @@ export function ReviewRotation({ reviews, average, count }: Props) {
   const [pageVisible, setPageVisible] = useState(true);
 
   useEffect(() => {
+    if (typeof window.matchMedia !== "function") return;
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
     const sync = () => setReducedMotion(media.matches);
     sync();

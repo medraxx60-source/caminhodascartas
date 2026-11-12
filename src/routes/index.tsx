@@ -205,12 +205,8 @@ function Index() {
   }, [plan, category, question, picked, step, ritualDone, token, free, freeLost]);
   const priceLabel = (id: PlanId) => (isFreePlan(id) ? "Grátis" : formatBRL(PLANS[id].priceCents));
   const [nudged, setNudged] = useState(false);
-  const [slow, setSlow] = useState(false);
   useEffect(() => {
-    if (!token) return;
-    setNudged(false); setSlow(false);
-    const t = setTimeout(() => setSlow(true), 3 * 60 * 1000);
-    return () => clearTimeout(t);
+    if (token) setNudged(false);
   }, [token]);
   useEffect(() => {
     if (!token) return;

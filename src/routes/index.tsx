@@ -473,7 +473,7 @@ function Index() {
             <div className="flex flex-wrap gap-2">
               {CATEGORIES.map((c) => (
                 <button key={c} type="button" onClick={() => { setCategory(c); if (!question.trim() || Object.values(QUESTION_SUGGESTIONS).some((l) => l.includes(question))) setQuestion((QUESTION_SUGGESTIONS[c] ?? QUESTION_SUGGESTIONS["Outros assuntos"]!)[0]!); scrollToId("escolher-cartas"); }} aria-pressed={category === c}
-                  className={`cc-soft-interact rounded-full border px-4 py-1.5 text-sm font-medium  ${category === c ? "border-gold bg-gold text-background shadow-lg" : "border-gold/70 bg-background text-gold hover:bg-gold hover:text-background"}`}>
+                  className={`rounded-full border px-4 py-1.5 text-sm font-medium  ${category === c ? "border-gold bg-gold text-background shadow-lg" : "border-gold/70 bg-background text-gold hover:bg-gold hover:text-background"}`}>
                   {c}
                 </button>
               ))}

@@ -21,3 +21,13 @@ describe("layoutReading", () => {
     expect(all).toBe(text.replace(/\s+/g, ""));
   });
 });
+
+describe("resposta não estruturada da MandAPI", () => {
+  it("não descarta texto quando nenhuma carta é nomeada", () => {
+    const raw = "A situação pede calma e observação.\\n\\nSeu próximo passo deve considerar os fatos.";
+    const r = layoutReading(raw, [0, 20, 30]);
+    expect(r.intro).toEqual([]);
+    expect(r.perCard).toEqual([[], [], []]);
+    expect(r.conclusion.join("\\n\\n")).toBe(raw);
+  });
+});

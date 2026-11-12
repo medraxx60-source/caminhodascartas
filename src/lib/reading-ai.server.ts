@@ -7,6 +7,7 @@ import { CARDS, PLANS, type PlanId } from "./lenormand";
 import { getAiModel } from "./ai-model.server";
 import { loadOracularReference } from "./oracular-context.server";
 import { appendOracularReference } from "./oracular-context";
+import { assessReadingQuality } from "./reading-quality";
 
 // Shared MandAPI call used by both the paid (admin) and free flows. Throws a friendly Error on failure.
 export async function generateReadingText(order: { id: string; plan: string; cards: number[]; question: string; category: string | null }): Promise<string> {
@@ -37,6 +38,8 @@ export async function generateReadingText(order: { id: string; plan: string; car
             { role: "user", content: appendOracularReference(`${catLine}Pergunta do consulente (referência principal da leitura, use exatamente esta pergunta): ${claimed.question}\n\nTiragem (${plan.name}, ${plan.count} cartas):\n${spread}`, oracularReference) },
           ],
         }),
+        // Menor que os prazos de recuperação (90s pago, 120s gratuito).
+        signal: AbortSignal.timeout(70_000),
       });
       if (!res.ok) {
         const body = (await res.text()).slice(0, 300).replace(apiKey, "[redacted]");
@@ -52,8 +55,14 @@ export async function generateReadingText(order: { id: string; plan: string; car
       const json: any = await res.json();
       reading = json?.choices?.[0]?.message?.content?.trim();
       if (!reading) throw new Error("A MandAPI respondeu sem texto.");
+      const qualityIssues = assessReadingQuality(reading, claimed.cards);
+      if (qualityIssues.length) console.warn(`[mandapi] order=${claimed.id} format=${qualityIssues.join(",")}`);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Falha de conexão com a MandAPI.";
+      // DOMException pode não herdar do Error em alguns runtimes de teste/edge.
+      const errorName = typeof e === "object" && e !== null && "name" in e ? String(e.name) : "";
+      const msg = errorName === "TimeoutError" || errorName === "AbortError"
+        ? "A MandAPI demorou a responder. Sua leitura foi preservada; tente novamente."
+        : e instanceof Error ? e.message : "Falha de conexão com a MandAPI.";
       if (!(e instanceof Error)) console.error(`[mandapi] order=${claimed.id} network error`);
       throw new Error(msg);
     }

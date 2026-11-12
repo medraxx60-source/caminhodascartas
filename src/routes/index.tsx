@@ -9,7 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { HomeTrust } from "@/components/HomeTrust";
 import { Check, Copy, Menu, MessageCircle } from "lucide-react";
-import { CardBack, CardReveal, preloadCardImages, cardImage } from "@/components/TarotCard";
+import { CardBack, CardReveal, cardImage } from "@/components/TarotCard";
+import { EXPANSION_KEY, parseExpansion } from "@/lib/reading-expansion";
 import { CARDS, PLANS, PIX_KEY, PIX_QR_SRC, formatBRL, type PlanId , CATEGORIES, type Category } from "@/lib/lenormand";
 import { getDeviceFingerprint } from "@/lib/device-fingerprint";
 import { PROGRESS_KEY, parseProgress, keepPicksOnPlanChange } from "@/lib/free-progress";
@@ -97,7 +98,6 @@ function Index() {
   const link = useMemo(() => (token && typeof window !== "undefined" ? `${window.location.origin}/leitura/${token}` : ""), [token]);
   const checkStatus = useServerFn(getOrderStatus);
   useEffect(() => { const b = new Image(); b.src = cardBackSrc; }, []);
-  useEffect(() => { if (plan) preloadCardImages(); }, [plan]);
   const checkFree = useServerFn(checkFreeReading);
   const createFree = useServerFn(createFreeOrder);
   const [deviceId, setDeviceId] = useState<string | null>(null);
@@ -125,15 +125,19 @@ function Index() {
     try {
       const sp = new URLSearchParams(window.location.search);
       const pl = sp.get("plano"), cat = sp.get("categoria"), q = sp.get("pergunta"), cs = sp.get("cartas");
+      // Expansion data stays in this browser tab; never put private questions in new URLs.
+      const saved = pl ? parseExpansion(sessionStorage.getItem(EXPANSION_KEY), pl) : null;
+      if (saved) sessionStorage.removeItem(EXPANSION_KEY);
       if (!pl && !cat) return;
       if (cat && (CATEGORIES as readonly string[]).includes(cat)) setCategory(cat as Category);
       if (pl && pl in PLANS) {
         setPlan(pl as PlanId); setDeck(shuffle(CARDS.length)); setStep(1);
         // Expansion: keep the previous question and cards, user only picks the remaining ones.
-        const prev = (cs ?? "").split(",").map(Number).filter((n) => Number.isInteger(n) && n >= 0 && n < CARDS.length);
+        const prev = saved?.cards ?? (cs ?? "").split(",").map(Number).filter((n) => Number.isInteger(n) && n >= 0 && n < CARDS.length);
         const uniq = [...new Set(prev)];
-        if (q && q.trim() && uniq.length && uniq.length < PLANS[pl as PlanId].count) {
-          setQuestion(q.slice(0, 1000)); setPicked(uniq); setLockedPicks(uniq.length); setRitualDone(true); setStep(2);
+        const carriedQuestion = saved?.question ?? q;
+        if (carriedQuestion && carriedQuestion.trim() && uniq.length && uniq.length < PLANS[pl as PlanId].count) {
+          setQuestion(carriedQuestion.slice(0, 1000)); setPicked(uniq); setLockedPicks(uniq.length); setRitualDone(true); setStep(2);
         }
       }
       window.history.replaceState(null, "", "/");
@@ -452,7 +456,7 @@ function Index() {
                 <button key={id} type="button" onClick={() => choosePlan(id)} aria-pressed={active}
                   className={`flex w-full items-center justify-between gap-3 rounded-xl border-2 px-4 py-3 text-left transition-all ${active ? "border-gold bg-secondary shadow-[0_0_24px_-8px] shadow-gold" : "border-border bg-card"}`}>
                   <span className="min-w-0">
-                    <span className="block font-display text-xl font-semibold leading-tight">{pl.count} cartas · {pl.name}{id === "profunda" && <span className="ml-2 align-middle text-[10px] uppercase tracking-wider text-gold">✦ Mais escolhida</span>}</span>
+                    <span className="block font-display text-xl font-semibold leading-tight">{pl.count} cartas · {pl.name}{id === "profunda" && <span className="ml-2 align-middle text-[10px] uppercase tracking-wider text-gold">✦ Bom equilíbrio</span>}</span>
                     <span className="block text-xs text-muted-foreground">{PLAN_HINT[id]}</span>
                   </span>
                   <span className="shrink-0 font-display text-xl font-bold text-gold">{priceLabel(id)}</span>

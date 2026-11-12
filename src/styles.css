@@ -294,23 +294,6 @@
   .cc-spark { opacity: .45; }
 }
 
-/* Animação visível na PRIMEIRA DOBRA do checkout mobile, inclusive quando o Pix falha.
- * O aviso de status permanece estático e legível; o brilho é apenas decorativo. */
-@keyframes cc-checkout-breathe {
-  0%, 100% { border-color: color-mix(in oklch, var(--gold) 25%, transparent); box-shadow: 0 0 0 0 transparent; }
-  50% { border-color: color-mix(in oklch, var(--gold) 75%, transparent); box-shadow: 0 0 28px -13px color-mix(in oklch, var(--gold) 70%, transparent); }
-}
-@keyframes cc-checkout-star-dance {
-  0%,100% { transform: rotate(-16deg) scale(.8); opacity: .55; }
-  50% { transform: rotate(18deg) scale(1.24); opacity: 1; }
-}
-@keyframes cc-checkout-line-glow {
-  0%,100% { transform: scaleX(.55); opacity: .55; }
-  50% { transform: scaleX(1); opacity: 1; }
-}
-.cc-checkout-live { border: 1px solid color-mix(in oklch, var(--gold) 40%, transparent); animation: cc-checkout-breathe 3.6s ease-in-out infinite; }
-.cc-checkout-star { animation: cc-checkout-star-dance 2.6s ease-in-out infinite; transform-origin: center; }
-.cc-checkout-line { animation: cc-checkout-line-glow 3.2s ease-in-out infinite; transform-origin: center; }
-@media (prefers-reduced-motion: reduce) {
-  .cc-checkout-live, .cc-checkout-star, .cc-checkout-line { animation: none !important; }
-}
+/* Checkout sem efeitos contínuos enquanto investigamos a falha de Pix. */
+.cc-payment-pulse { animation: none !important; }
+.cc-payment-pulse::after { content: none !important; animation: none !important; }

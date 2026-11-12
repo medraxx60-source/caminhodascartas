@@ -597,13 +597,19 @@ function Index() {
                 <p className="text-sm text-muted-foreground">{p?.name} · {p?.count} cartas · Pedido <span className="font-mono">{orderCode}</span></p>
                 <p className="mt-1 font-display text-4xl font-bold text-gold">{p && formatBRL(p.priceCents)}</p>
               </div>
-              <p className="text-center text-base text-foreground">Escaneie o QR Code ou copie o código Pix</p>
-              {qrSrc && <img src={qrSrc} alt="QR Code Pix" className="mx-auto aspect-square w-56 max-w-full rounded-lg bg-white p-2" />}
+              <p className="rounded-lg bg-gold/10 px-3 py-3 text-center text-sm leading-relaxed text-foreground">
+                1. Copie o código Pix · 2. Pague no aplicativo do banco · 3. Volte aqui. A liberação é automática após a confirmação.
+              </p>
               <Button size="lg" className="gold-button h-14 w-full min-w-0 whitespace-normal rounded-lg px-3 text-base leading-snug" onClick={async () => { if (await copy(pixCode.payload, "Código Pix")) { track("pix_copy", plan ?? "none"); setCopied(true); try { navigator.vibrate?.(60); } catch {} } }}>
                 {copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
-                <span>{copied ? "Código Pix copiado!" : "Copiar código Pix"}</span>
+                <span>{copied ? "Código Pix copiado! Abra seu banco" : "Copiar código Pix"}</span>
               </Button>
-              <code className="block max-h-20 overflow-y-auto break-all rounded-md bg-muted px-3 py-2 text-xs">{pixCode.payload}</code>
+              <p className="text-center text-xs text-muted-foreground">Você não precisa enviar comprovante com o Pix automático.</p>
+              <details className="rounded-lg border border-border bg-background/40 p-3 text-center">
+                <summary className="cursor-pointer py-2 text-sm font-semibold text-gold">Prefere pagar com QR Code?</summary>
+                {qrSrc && <img src={qrSrc} alt="QR Code Pix" className="mx-auto mt-3 aspect-square w-48 max-w-full rounded-lg bg-white p-2" />}
+                <code className="mt-3 block max-h-20 overflow-y-auto break-all rounded-md bg-muted px-3 py-2 text-left text-xs">{pixCode.payload}</code>
+              </details>
             </>
           ) : (
             <>

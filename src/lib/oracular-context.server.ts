@@ -2,18 +2,18 @@ import { buildOracularReference, type OracularReferenceRow } from "./oracular-co
 import type { PlanId } from "./lenormand";
 
 /**
- * Preparação da Base Oracular para o motor de leitura.
- * DESATIVADO por padrão: requer configuração oracular_ai_enabled=true
- * E fichas completas e marcadas para publicação.
- * Ainda não está ligado à chamada da MandAPI (prompt protegido).
+ * Referência editorial privada para a geração de leituras.
+ * O administrador ativa em app_settings.oracular_ai_enabled (ausente = desligada).
+ * Apenas fichas completas e explicitamente autorizadas são consultadas.
+ * Falha na busca não impede a leitura pelo motor original.
  */
 export async function loadOracularReference(order: {
   plan: PlanId;
   cards: number[];
   category: string | null;
 }): Promise<string | null> {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: setting, error: settingsError } = await supabaseAdmin
       .from("app_settings")
       .select("value")

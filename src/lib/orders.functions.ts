@@ -42,7 +42,7 @@ export const createOrder = createServerFn({ method: "POST" })
 
     const { data: row, error } = await supabaseAdmin
       .from("orders")
-      .insert({ plan: data.plan, category: data.category, question: data.question, cards: data.cards, price_cents: PLANS[data.plan].priceCents, client_ip_hash: ipHash, conversion_session: data.conversionSession } as any)
+      .insert({ plan: data.plan, category: data.category, question: data.question, cards: data.cards, price_cents: PLANS[data.plan].priceCents, client_ip_hash: ipHash, conversion_session: data.conversionSession, pix_api_version: "v2", pix_last_attempt_at: new Date().toISOString() } as any)
       .select("id, access_token")
       .single();
     if (error || !row) {
@@ -53,12 +53,15 @@ export const createOrder = createServerFn({ method: "POST" })
     let pix: { payload: string; image: string | null } | null = null;
     try {
       const { createAsaasPix } = await import("./asaas.server");
-      const q = await createAsaasPix({ orderId: row.id, orderCode, valueCents: PLANS[data.plan].priceCents });
+      const q = await createAsaasPix({ orderId: row.id, orderCode, valueCents: PLANS[data.plan].priceCents, apiVersion: "v2" });
       if (q) {
-        pix = { payload: q.payload, image: q.image };
-        await (supabaseAdmin.from("orders") as any).update({ asaas_qr_id: q.id, pix_payload: q.payload, pix_qr_image: q.image }).eq("id", row.id);
+        const { error: saveError } = await (supabaseAdmin.from("orders") as any)
+          .update({ asaas_qr_id: q.id, pix_payload: q.payload, pix_qr_image: q.image })
+          .eq("id", row.id).eq("status", "pending").is("asaas_qr_id", null);
+        if (saveError) console.error("[wyvi] pix persistence failed", saveError.code);
+        else pix = { payload: q.payload, image: q.image };
       }
-    } catch (e) { console.error("[asaas] create", e); }
+    } catch (e) { console.warn("[wyvi] create exception", e instanceof Error ? e.name : "unknown"); }
     try {
       const lk = process.env["LOVABLE_API_KEY"];
       const tk = process.env["TELEGRAM_API_KEY"];
@@ -79,6 +82,58 @@ export const createOrder = createServerFn({ method: "POST" })
       console.error("[telegram] notify failed", e);
     }
     return { token: row.access_token, orderCode, pixPayload: pix?.payload ?? null, pixImage: pix?.image ?? null };
+  });
+
+/**
+ * Tentar novamente no MESMO pedido, sem alterar preço/cartas e sem cobrar duas vezes.
+ * A Wyvi reconhece a mesma Idempotency-Key; pedidos antigos mantêm a versão v1.
+ */
+export const retryAutomaticPix = createServerFn({ method: "POST" })
+  .inputValidator((input: { token: string }) => {
+    if (!/^[a-f0-9]{48}$/.test(input.token ?? "")) throw new Error("Pedido inválido");
+    return input;
+  })
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const db = supabaseAdmin.from("orders") as any;
+    const { data: row, error } = await db
+      .select("id, status, is_free, price_cents, asaas_qr_id, pix_payload, pix_qr_image, pix_api_version, pix_last_attempt_at, created_at")
+      .eq("access_token", data.token).maybeSingle();
+    if (error || !row) return { ok: false as const, reason: "missing" as const };
+    if (row.is_free || row.status !== "pending") return { ok: false as const, reason: "not_pending" as const };
+    if (row.asaas_qr_id && row.pix_payload) {
+      return { ok: true as const, payload: row.pix_payload as string, image: row.pix_qr_image as string | null };
+    }
+    // Uma cobrança Wyvi deve ser paga antes de expirar. Pedidos antigos não são recriados automaticamente.
+    const now = Date.now();
+    if (now - Date.parse(row.created_at) > 24 * 60 * 60 * 1000) return { ok: false as const, reason: "expired" as const };
+    const previous = row.pix_last_attempt_at as string | null;
+    if (previous && now - Date.parse(previous) < 15_000) return { ok: false as const, reason: "wait" as const };
+    let claim = db.update({ pix_last_attempt_at: new Date(now).toISOString() })
+      .eq("id", row.id).eq("status", "pending").is("asaas_qr_id", null);
+    claim = previous ? claim.eq("pix_last_attempt_at", previous) : claim.is("pix_last_attempt_at", null);
+    const { data: locked, error: claimError } = await claim.select("id").maybeSingle();
+    if (claimError || !locked) return { ok: false as const, reason: "wait" as const };
+    const { createAsaasPix } = await import("./asaas.server");
+    const charge = await createAsaasPix({
+      orderId: row.id, orderCode: row.id.slice(0, 8).toUpperCase(),
+      valueCents: row.price_cents, apiVersion: row.pix_api_version === "v2" ? "v2" : "v1",
+    });
+    if (!charge) return { ok: false as const, reason: "unavailable" as const };
+    const { data: saved, error: saveError } = await db
+      .update({ asaas_qr_id: charge.id, pix_payload: charge.payload, pix_qr_image: charge.image })
+      .eq("id", row.id).eq("status", "pending").is("asaas_qr_id", null)
+      .select("id").maybeSingle();
+    if (saveError) {
+      console.warn("[wyvi] retry save failed", saveError.code);
+      return { ok: false as const, reason: "unavailable" as const };
+    }
+    if (!saved) {
+      const { data: latest } = await db.select("pix_payload, pix_qr_image").eq("id", row.id).maybeSingle();
+      return latest?.pix_payload ? { ok: true as const, payload: latest.pix_payload as string, image: latest.pix_qr_image as string | null }
+        : { ok: false as const, reason: "wait" as const };
+    }
+    return { ok: true as const, payload: charge.payload, image: charge.image };
   });
 
 export const getOrderByToken = createServerFn({ method: "POST" })

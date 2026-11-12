@@ -55,6 +55,7 @@ function Base() {
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<string>("todas");
   const [open, setOpen] = useState<CardRow | null>(null);
+  const [bulkBusy, setBulkBusy] = useState(false);
   const load = async () => {
     const { data, error } = await supabase.from("lenormand_cards").select("*").order("card_number");
     if (error) toast.error("Não foi possível carregar as cartas.");
@@ -65,6 +66,26 @@ function Base() {
     (filter === "todas" || c.content_status === filter) &&
     (!q || c.name.toLowerCase().includes(q.toLowerCase()) || String(c.card_number) === q.trim())), [cards, q, filter]);
   const count = (s: string) => cards.filter((c) => c.content_status === s).length;
+  const pendingAuthorization = cards.filter((c) => c.content_status === "completa" && !c.is_published).length;
+  const authorizeCompleted = async () => {
+    if (!pendingAuthorization || bulkBusy) return;
+    if (!window.confirm(`Autorizar o uso de ${pendingAuthorization} ficha(s) completa(s) pela IA? As fichas continuarão privadas e a função geral no painel continuará desativada até você ativá-la.`)) return;
+    setBulkBusy(true);
+    try {
+      const { data, error } = await supabase.from("lenormand_cards")
+        .update({ is_published: true })
+        .eq("content_status", "completa")
+        .eq("is_published", false)
+        .select("card_number");
+      if (error) throw error;
+      toast.success(`${data?.length ?? 0} fichas autorizadas. Agora ative a Base Oracular no painel quando desejar.`);
+      await load();
+    } catch {
+      toast.error("Não foi possível autorizar todas as fichas. Nenhuma leitura foi gerada.");
+    } finally {
+      setBulkBusy(false);
+    }
+  };
 
   if (open) return <Editor card={open} onClose={(saved) => { setOpen(null); if (saved) load(); }} />;
   return (
@@ -72,6 +93,15 @@ function Base() {
       <Link to="/admin" className="text-sm text-muted-foreground hover:text-primary">← Voltar ao painel</Link>
       <h1 className="mt-3 font-display text-2xl text-gold">Base Oracular</h1>
       <p className="mt-1 text-sm text-muted-foreground">Fichas privadas das 36 cartas. Quando a função estiver ativada no painel, somente as fichas completas e autorizadas serão usadas como referência pela IA. O conteúdo não é exibido ao público.</p>
+      {pendingAuthorization > 0 && (
+        <div className="mt-4 rounded-lg border border-gold/40 bg-card p-4">
+          <p className="text-sm text-foreground">{pendingAuthorization} ficha(s) completa(s) ainda não autorizada(s) para referência da IA.</p>
+          <Button className="mt-3 w-full" variant="outline" disabled={bulkBusy} onClick={authorizeCompleted}>
+            {bulkBusy ? "Autorizando fichas..." : `Autorizar ${pendingAuthorization} fichas completas para a IA`}
+          </Button>
+          <p className="mt-2 text-xs text-muted-foreground">Requer confirmação. Mantém as fichas privadas e não ativa a função geral automaticamente.</p>
+        </div>
+      )}
       <div className="mt-4 flex flex-wrap gap-2 text-sm">
         {[["todas", `Todas (${cards.length})`], ["pendente", `Pendentes (${count("pendente")})`], ["em_andamento", `Em andamento (${count("em_andamento")})`], ["completa", `Completas (${count("completa")})`]].map(([k, l]) => (
           <button key={k} onClick={() => setFilter(k!)} className={`rounded-full border px-3 py-1 ${filter === k ? "border-gold text-gold" : "border-gold/20 text-muted-foreground"}`}>{l}</button>

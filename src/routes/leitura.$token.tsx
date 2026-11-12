@@ -209,7 +209,7 @@ function Leitura() {
             </div>
             {lay.conclusion.length > 0 && (
               <section className="mt-10">
-                <h2 className="text-center font-display text-2xl font-semibold text-primary">Conclusão da leitura</h2>
+                <h2 className="text-center font-display text-2xl font-semibold text-primary">{lay.perCard.every((part) => part.length === 0) ? "Interpretação da tiragem" : "Conclusão da leitura"}</h2>
                 <div className="gold-rule mx-auto mt-3 w-24" />
                 <div className="mt-4 space-y-4 leading-relaxed">{lay.conclusion.map((p, k) => <p key={k}>{p}</p>)}</div>
               </section>

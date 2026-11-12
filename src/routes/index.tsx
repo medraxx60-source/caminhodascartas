@@ -267,8 +267,9 @@ function Index() {
             ? "Este pedido venceu. Volte ao site para começar uma nova consulta."
             : r.reason === "not_pending"
               ? "O status deste pedido mudou. Atualize a página para verificar."
-              : "Não conseguimos gerar o Pix agora. Nenhum pagamento foi solicitado. Tente novamente ou procure o suporte.";
-        setPixRetryMessage(message);
+              : "Não recebemos um código Pix válido. Não faça uma transferência. Tente novamente ou procure o suporte.";
+        const diagnostic = "diagnostic" in r && typeof r.diagnostic === "string" ? r.diagnostic : null;
+        setPixRetryMessage(diagnostic ? `${message} Código para o suporte: ${diagnostic}.` : message);
       }
     } catch {
       setPixRetryMessage("Falha de conexão. Seu pedido está salvo, tente novamente em instantes.");

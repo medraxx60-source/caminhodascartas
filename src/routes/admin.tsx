@@ -240,6 +240,13 @@ function Orders() {
               <span className="text-xs text-muted-foreground">{new Date(o.created_at).toLocaleString("pt-BR")}</span>
             </div>
             <p className="text-sm font-semibold">{PLANS[o.plan as PlanId].name} · {(o.cards as number[]).length} cartas · {o.is_free ? "R$ 0 (cortesia)" : formatBRL(o.price_cents)} · {STATUS_LABEL[o.status] ?? o.status}</p>
+            {!o.is_free && o.pix_error_code && (
+              <p className="mt-2 rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-xs leading-relaxed text-foreground">
+                <strong>Falha na emissão Pix ({o.pix_api_version ?? "v1"}):</strong>{" "}
+                código seguro <code>{o.pix_error_code}</code> · HTTP {o.pix_error_status ?? "?"}.
+                O pedido ainda não tem cobrança automática confirmada. Verifique a configuração da Wyvi Pay.
+              </p>
+            )}
             <p className="mt-2 inline-block rounded-full border border-gold bg-gold/10 px-3 py-1 text-xs font-semibold text-primary">Etapa atual: {STAGE_LABEL[o.client_stage] ?? o.client_stage}{o.stage_updated_at ? ` · ${new Date(o.stage_updated_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}` : ""}</p>
             <p className="mt-2">{o.question}</p>
             <p className="mt-1 text-xs text-muted-foreground">{(o.cards as number[]).map((c) => CARDS[c]).join(" · ")}</p>

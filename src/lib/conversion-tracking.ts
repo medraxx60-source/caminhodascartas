@@ -1,6 +1,7 @@
 /** Medição first-party por aba: sem perguntas, cartas, links privados, IP ou pixels. */
 export const CONVERSION_SESSION_KEY = "cc_conversion_session_v1";
 export const CONVERSION_SOURCE_KEY = "cc_conversion_source_v1";
+export const PENDING_UPGRADE_KEY = "cc_upgrade_click_pending_v1";
 export const CONVERSION_EVENTS = ["landing_view","free_start","upgrade_view","upgrade_5","upgrade_7","pix_view","pix_copy"] as const;
 export type ConversionEvent = (typeof CONVERSION_EVENTS)[number];
 export type ConversionPlan = "none" | "essencial" | "profunda" | "completa";

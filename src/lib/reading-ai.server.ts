@@ -58,7 +58,9 @@ export async function generateReadingText(order: { id: string; plan: string; car
       const qualityIssues = assessReadingQuality(reading, claimed.cards);
       if (qualityIssues.length) console.warn(`[mandapi] order=${claimed.id} format=${qualityIssues.join(",")}`);
     } catch (e) {
-      const msg = e instanceof Error && (e.name === "TimeoutError" || e.name === "AbortError")
+      // DOMException pode não herdar do Error em alguns runtimes de teste/edge.
+      const errorName = typeof e === "object" && e !== null && "name" in e ? String(e.name) : "";
+      const msg = errorName === "TimeoutError" || errorName === "AbortError"
         ? "A MandAPI demorou a responder. Sua leitura foi preservada; tente novamente."
         : e instanceof Error ? e.message : "Falha de conexão com a MandAPI.";
       if (!(e instanceof Error)) console.error(`[mandapi] order=${claimed.id} network error`);

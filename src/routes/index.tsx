@@ -354,7 +354,7 @@ function Index() {
   }, [picked.length, p, token]);
 
   return (
-    <div className="mystic min-h-screen">
+    <div className="mystic cc-live-backdrop min-h-screen">
     <main className="mx-auto min-h-screen max-w-xl px-5 pb-20">
       {step > 0 && (
         <div className="flex items-center gap-3 pt-5">
@@ -367,12 +367,22 @@ function Index() {
       {step === 0 && (<>
       <header className="cc-enter mb-10 pt-12 text-center">
         <h1 className="sr-only">Caminho das Cartas — Baralho Cigano</h1>
-        <img src={heroSrc} alt="Caminho das Cartas" width={1200} height={564} fetchPriority="high"
-          className="-mx-5 block w-[calc(100%+2.5rem)] max-w-none [mask-image:linear-gradient(to_bottom,transparent,black_15%,black_80%,transparent)]" />
+        <div className="cc-hero-stage -mx-5 w-[calc(100%+2.5rem)]" aria-label="Caminho das Cartas">
+          <img src={heroSrc} alt="Caminho das Cartas" width={1200} height={564} fetchPriority="high"
+            className="cc-hero-breathe block w-full max-w-none [mask-image:linear-gradient(to_bottom,transparent,black_15%,black_80%,transparent)]" />
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+            <span className="cc-spark left-[11%] top-[27%]">✦</span>
+            <span className="cc-spark right-[14%] top-[19%]">✧</span>
+            <span className="cc-spark left-[24%] top-[67%]">✧</span>
+            <span className="cc-spark right-[27%] top-[57%]">✦</span>
+            <span className="cc-spark left-[52%] top-[12%]">✧</span>
+          </div>
+        </div>
+        <div aria-hidden="true" className="cc-living-rule gold-rule mx-auto mt-1 w-44" />
         <p className="mt-1 text-xs uppercase tracking-[0.3em] text-gold/80">Baralho Cigano tradicional</p>
         <p className="mx-auto mt-5 max-w-sm font-display text-[1.7rem] font-semibold leading-tight text-gold">{freePending ? "Uma pergunta. Uma leitura feita para você." : freeEligible ? "Sua primeira tiragem de 3 cartas é por nossa conta." : "Continue seu caminho com uma nova leitura."}</p>
         <p className="mx-auto mt-3 max-w-sm text-base leading-relaxed text-foreground/85">{freeEligible ? "Faça sua pergunta e escolha 3 cartas. Sua primeira leitura é gratuita, online e sem cadastro." : "Escolha seu assunto, faça uma pergunta e receba uma interpretação personalizada do Baralho Cigano."}</p>
-        <Button size="lg" className="gold-button cc-soft-interact mt-6 h-14 w-full rounded-xl text-lg" disabled={freePending} onClick={() => startWith(null)}>
+        <Button size="lg" className="gold-button cc-cta-alive cc-soft-interact mt-6 h-14 w-full rounded-xl text-lg" disabled={freePending} onClick={() => startWith(null)}>
           {primaryAction}
         </Button>
         <p className="mt-3 text-xs tracking-wide text-muted-foreground">100% online · Consulta privada · Sem cadastro</p>
@@ -418,7 +428,7 @@ function Index() {
         <div className="mt-6 grid grid-cols-2 gap-3">
           {CATEGORIES.map((c, i) => (
             <button key={c} type="button" disabled={freePending} onClick={() => startWith(c)}
-              className={`cc-soft-interact flex min-h-[3.25rem] items-center justify-center rounded-xl border border-gold/25 bg-gold/[0.04] px-3 py-2 text-sm font-medium leading-tight text-gold/90 backdrop-blur-sm transition-colors hover:border-gold/50 active:bg-gold/20 ${i === CATEGORIES.length - 1 && CATEGORIES.length % 2 === 1 ? "col-span-2" : ""}`}>
+              className={`cc-tile-alive cc-soft-interact flex min-h-[3.25rem] items-center justify-center rounded-xl border border-gold/25 bg-gold/[0.04] px-3 py-2 text-sm font-medium leading-tight text-gold/90 backdrop-blur-sm transition-colors hover:border-gold/50 active:bg-gold/20 ${i === CATEGORIES.length - 1 && CATEGORIES.length % 2 === 1 ? "col-span-2" : ""}`}>
               {c}
             </button>
           ))}
@@ -427,7 +437,7 @@ function Index() {
       <div className="mt-8 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
         <span>🔒 Consulta privada</span><span>✦ Sem cadastro</span><span>⚡ Leitura online</span>
       </div>
-      <Button size="lg" className="gold-button cc-soft-interact mt-6 h-14 w-full rounded-xl text-lg" disabled={freePending} onClick={() => startWith(null)}>
+      <Button size="lg" className="gold-button cc-cta-alive cc-soft-interact mt-6 h-14 w-full rounded-xl text-lg" disabled={freePending} onClick={() => startWith(null)}>
         {freePending ? "Verificando disponibilidade…" : "✦ Abrir minha mesa de cartas"}
       </Button>
       <HomeTrust />
@@ -475,7 +485,7 @@ function Index() {
               const active = plan === id;
               return (
                 <button key={id} type="button" onClick={() => choosePlan(id)} aria-pressed={active}
-                  className={`cc-soft-interact flex w-full items-center justify-between gap-3 rounded-xl border-2 px-4 py-3 text-left transition-all ${active ? "border-gold bg-secondary shadow-[0_0_24px_-8px] shadow-gold" : "border-border bg-card"}`}>
+                  className={`cc-tile-alive cc-soft-interact flex w-full items-center justify-between gap-3 rounded-xl border-2 px-4 py-3 text-left transition-all ${active ? "border-gold bg-secondary shadow-[0_0_24px_-8px] shadow-gold" : "border-border bg-card"}`}>
                   <span className="min-w-0">
                     <span className="block font-display text-xl font-semibold leading-tight">{pl.count} cartas · {pl.name}{id === "profunda" && <span className="ml-2 align-middle text-[10px] uppercase tracking-wider text-gold">✦ Bom equilíbrio</span>}</span>
                     <span className="block text-xs text-muted-foreground">{PLAN_HINT[id]}</span>
@@ -562,7 +572,7 @@ function Index() {
               </div>
             </div>
           )}
-          <Button id="ver-interpretacao" size="lg" className={`gold-button cc-soft-interact mt-8 h-14 w-full scroll-mb-6 rounded-xl text-lg ${picked.length === p.count && !loading ? "motion-safe:animate-pulse [animation-duration:2.5s]" : ""}`} disabled={loading || picked.length < p.count} onClick={submit}>
+          <Button id="ver-interpretacao" size="lg" className={`gold-button cc-cta-alive cc-soft-interact mt-8 h-14 w-full scroll-mb-6 rounded-xl text-lg ${picked.length === p.count && !loading ? "motion-safe:animate-pulse [animation-duration:2.5s]" : ""}`} disabled={loading || picked.length < p.count} onClick={submit}>
             {loading ? "Preparando sua leitura..." : picked.length < p.count ? `Escolha mais ${p.count - picked.length} carta(s)` : token ? `Continuar pagamento · Pedido ${orderCode}` : `Ver interpretação · ${plan ? priceLabel(plan) : ""}`}
           </Button>
         </section>
@@ -600,7 +610,7 @@ function Index() {
               <p className="rounded-lg bg-gold/10 px-3 py-3 text-center text-sm leading-relaxed text-foreground">
                 1. Copie o código Pix · 2. Pague no aplicativo do banco · 3. Volte aqui. A liberação é automática após a confirmação.
               </p>
-              <Button size="lg" className="gold-button h-14 w-full min-w-0 whitespace-normal rounded-lg px-3 text-base leading-snug" onClick={async () => { if (await copy(pixCode.payload, "Código Pix")) { track("pix_copy", plan ?? "none"); setCopied(true); try { navigator.vibrate?.(60); } catch {} } }}>
+              <Button size="lg" className="gold-button cc-cta-alive h-14 w-full min-w-0 whitespace-normal rounded-lg px-3 text-base leading-snug" onClick={async () => { if (await copy(pixCode.payload, "Código Pix")) { track("pix_copy", plan ?? "none"); setCopied(true); try { navigator.vibrate?.(60); } catch {} } }}>
                 {copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
                 <span>{copied ? "Código Pix copiado! Abra seu banco" : "Copiar código Pix"}</span>
               </Button>
@@ -615,7 +625,7 @@ function Index() {
             <>
             <p role="alert" className="rounded-md border border-gold/60 bg-gold/10 p-3 text-center text-sm leading-relaxed text-foreground">O Pix automático está indisponível no momento. Você ainda pode pagar pela chave abaixo, mas a liberação será manual, após conferência do comprovante.</p>
             <p className="text-center font-display text-4xl font-bold text-gold">{p && formatBRL(p.priceCents)}</p>
-            <Button size="lg" className="gold-button h-14 w-full min-w-0 whitespace-normal rounded-lg px-3 text-base leading-snug" onClick={async () => { if (await copy(PIX_KEY, "Chave Pix")) { track("pix_copy", plan ?? "none"); setCopied(true); try { navigator.vibrate?.(60); } catch {} } }}>
+            <Button size="lg" className="gold-button cc-cta-alive h-14 w-full min-w-0 whitespace-normal rounded-lg px-3 text-base leading-snug" onClick={async () => { if (await copy(PIX_KEY, "Chave Pix")) { track("pix_copy", plan ?? "none"); setCopied(true); try { navigator.vibrate?.(60); } catch {} } }}>
               {copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
               <span>{copied ? "Chave Pix copiada!" : "Copiar chave Pix"}</span>
             </Button>
@@ -737,6 +747,7 @@ function CardCarousel({ deck, picked, onPick }: { deck: number[]; picked: number
                   </div>
                 </div>
               </div>
+              {center && idx < 0 && <span aria-hidden="true" className="cc-deck-focus absolute inset-0 rounded-2xl" />}
             </button>
           );
         })}

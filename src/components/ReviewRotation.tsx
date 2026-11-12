@@ -40,7 +40,7 @@ export function ReviewRotation({ reviews, average, count }: Props) {
 
   useEffect(() => {
     if (items.length < 2 || paused || reducedMotion || !pageVisible) return;
-    const timer = window.setInterval(() => setActive(i => nextReviewIndex(i, items.length)), 9000);
+    const timer = window.setInterval(() => setActive(i => nextReviewIndex(i, items.length)), 6000);
     return () => window.clearInterval(timer);
   }, [items.length, paused, reducedMotion, pageVisible]);
 
@@ -50,7 +50,7 @@ export function ReviewRotation({ reviews, average, count }: Props) {
   return (
     <aside className="cc-review-surface mx-auto mt-5 w-full max-w-sm rounded-xl border border-gold/30 bg-card/80 px-4 py-4 text-left"
       role="region" aria-label="Avaliações reais dos consulentes"
-      onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}
+      onMouseEnter={() => { if (window.matchMedia?.("(hover: hover) and (pointer: fine)")?.matches) setPaused(true); }} onMouseLeave={() => setPaused(false)}
       onFocusCapture={() => setPaused(true)}
       onBlurCapture={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setPaused(false); }}>
       <div className="flex items-center justify-between gap-3">
@@ -63,7 +63,7 @@ export function ReviewRotation({ reviews, average, count }: Props) {
       <div className="mt-3 grid" aria-live="off">
         {items.map((review, i) => (
           <figure key={review.id} aria-hidden={i !== index}
-            className={`col-start-1 row-start-1 flex min-w-0 flex-col justify-between gap-3 motion-safe:transition-opacity motion-safe:duration-700 ${i === index ? "z-10 opacity-100" : "pointer-events-none opacity-0"}`}>
+            className={`col-start-1 row-start-1 flex min-w-0 flex-col justify-between gap-3 motion-safe:transition-[opacity,transform] motion-safe:duration-700 ${i === index ? "z-10 translate-y-0 opacity-100" : "pointer-events-none translate-y-3 opacity-0"}`}>
             <div>
               <div className="flex gap-1" aria-label={`${review.rating} de 5 estrelas`}>
                 {Array.from({ length: 5 }, (_, n) => (
@@ -77,6 +77,11 @@ export function ReviewRotation({ reviews, average, count }: Props) {
         ))}
       </div>
       {items.length > 1 && (
+        <>
+        <div aria-hidden="true" className="mt-3 h-0.5 w-full overflow-hidden rounded-full bg-gold/15">
+          <span key={index} className="cc-review-clock block h-full w-full origin-left bg-gold/75"
+            style={{ animationPlayState: paused || reducedMotion || !pageVisible ? "paused" : "running" }} />
+        </div>
         <div className="mt-3 flex items-center justify-between gap-2 border-t border-border/50 pt-2">
           <button type="button" aria-label="Avaliação anterior" onClick={() => setActive(i => nextReviewIndex(i, items.length, -1))}
             className="cc-soft-interact flex h-11 w-11 items-center justify-center rounded-full border border-gold/30 text-gold hover:bg-gold/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold">
@@ -96,6 +101,7 @@ export function ReviewRotation({ reviews, average, count }: Props) {
             <ChevronRight className="h-5 w-5" aria-hidden="true" />
           </button>
         </div>
+        </>
       )}
     </aside>
   );

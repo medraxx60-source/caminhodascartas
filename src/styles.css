@@ -197,3 +197,99 @@
   }
   .cc-soft-interact:hover, .cc-soft-interact:active { transform: none !important; }
 }
+
+/* V2: movimento perceptível também em telas touch; sem JS no loop.
+ * Não altera os dados nem a estrutura de leitura e não causa CLS. */
+@keyframes cc-ambient-drift {
+  0%,100% { transform: translate3d(-3%, -2%, 0); opacity: .32; }
+  50% { transform: translate3d(3%, 3%, 0); opacity: .62; }
+}
+@keyframes cc-hero-breathe {
+  0%,100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(0, -9px, 0) scale(1.018); }
+}
+@keyframes cc-sparkle {
+  0%, 100% { transform: translate3d(0, 5px, 0) scale(.65) rotate(-18deg); opacity: .18; }
+  45% { transform: translate3d(0, -8px, 0) scale(1.2) rotate(15deg); opacity: 1; }
+  65% { transform: translate3d(3px, -11px, 0) scale(.9) rotate(22deg); opacity: .75; }
+}
+@keyframes cc-cta-sheen {
+  0%, 12% { transform: translate3d(-160%, 0, 0) skewX(-18deg); }
+  40%, 100% { transform: translate3d(380%, 0, 0) skewX(-18deg); }
+}
+@keyframes cc-cta-breathe {
+  0%,100% { box-shadow: 0 5px 20px -10px color-mix(in oklch, var(--gold) 35%, transparent); }
+  50% { box-shadow: 0 8px 29px -5px color-mix(in oklch, var(--gold) 58%, transparent); }
+}
+@keyframes cc-living-rule {
+  0%,100% { opacity: .42; transform: scaleX(.65); }
+  50% { opacity: 1; transform: scaleX(1); }
+}
+@keyframes cc-tile-glow {
+  0%,100% { border-color: color-mix(in oklch, var(--gold) 25%, transparent); }
+  50% { border-color: color-mix(in oklch, var(--gold) 62%, transparent); }
+}
+@keyframes cc-card-halo {
+  0%,100% { opacity: .35; box-shadow: 0 0 0 2px color-mix(in oklch, var(--gold) 25%, transparent), 0 0 15px color-mix(in oklch, var(--gold) 24%, transparent); }
+  50% { opacity: 1; box-shadow: 0 0 0 3px color-mix(in oklch, var(--gold) 65%, transparent), 0 0 26px color-mix(in oklch, var(--gold) 50%, transparent); }
+}
+@keyframes cc-review-progress {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+.cc-review-clock { animation: cc-review-progress 6s linear forwards; }
+@keyframes cc-payment-progress {
+  0%, 5% { transform: translate3d(-120%, 0, 0); opacity: .8; }
+  65%,100% { transform: translate3d(300%, 0, 0); opacity: 1; }
+}
+.cc-live-backdrop { position: relative; isolation: isolate; }
+.cc-live-backdrop::before {
+  content: "";
+  pointer-events: none;
+  position: fixed; inset: 0; z-index: 0;
+  background:
+    radial-gradient(ellipse 65% 35% at 25% 8%, color-mix(in oklch, var(--gold) 12%, transparent), transparent 78%),
+    radial-gradient(ellipse 68% 40% at 70% 75%, oklch(0.36 0.12 352 / .27), transparent 83%);
+  animation: cc-ambient-drift 14s ease-in-out infinite;
+}
+.cc-live-backdrop > main { position: relative; z-index: 1; }
+.cc-hero-stage { position: relative; isolation: isolate; }
+.cc-hero-breathe { animation: cc-hero-breathe 5.5s ease-in-out infinite; transform-origin: center center; }
+.cc-spark { position: absolute; color: var(--gold); font-family: Georgia,serif; font-size: 1.65rem; text-shadow: 0 0 12px color-mix(in oklch, var(--gold) 75%, transparent); opacity: .7; animation: cc-sparkle 3.8s ease-in-out infinite; }
+.cc-spark:nth-child(2) { animation-delay: -1.4s; font-size: 1.25rem; }
+.cc-spark:nth-child(3) { animation-delay: -2.7s; font-size: 1.85rem; }
+.cc-spark:nth-child(4) { animation-delay: -.6s; font-size: 1.1rem; }
+.cc-spark:nth-child(5) { animation-delay: -3.2s; font-size: 1.35rem; }
+.cc-living-rule { transform-origin: center; animation: cc-living-rule 4.2s ease-in-out infinite; }
+.cc-cta-alive { position: relative; isolation: isolate; overflow: hidden; animation: cc-cta-breathe 3.8s ease-in-out infinite; }
+.cc-cta-alive::after {
+  content: ""; position: absolute; pointer-events: none; inset: 0;
+  width: 40%; height: 100%;
+  background: linear-gradient(95deg, transparent, color-mix(in oklch, var(--gold) 43%, transparent), transparent);
+  transform: translateX(-160%) skewX(-18deg);
+  animation: cc-cta-sheen 5.2s ease-in-out infinite;
+}
+.cc-cta-alive:disabled { animation: none; }
+.cc-cta-alive:disabled::after { display: none; }
+.cc-tile-alive { animation: cc-tile-glow 6s ease-in-out infinite; }
+.cc-tile-alive:nth-child(2n) { animation-delay: -3s; }
+.cc-deck-focus {
+  pointer-events: none; border: 2px solid color-mix(in oklch, var(--gold) 50%, transparent);
+  animation: cc-card-halo 2.8s ease-in-out infinite;
+}
+.cc-payment-pulse { position: relative; isolation: isolate; overflow: hidden; }
+.cc-payment-pulse::after {
+  content: ""; position: absolute; pointer-events: none; bottom: 0; left: 0;
+  width: 34%; height: 3px; border-radius: 999px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  animation: cc-payment-progress 3.4s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cc-live-backdrop::before, .cc-hero-breathe, .cc-spark,
+  .cc-living-rule, .cc-cta-alive, .cc-cta-alive::after,
+  .cc-tile-alive, .cc-deck-focus, .cc-payment-pulse::after, .cc-review-clock {
+    animation: none !important;
+  }
+  .cc-live-backdrop::before { opacity: .22; }
+  .cc-spark { opacity: .45; }
+}

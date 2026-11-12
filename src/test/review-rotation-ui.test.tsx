@@ -21,16 +21,25 @@ describe("depoimentos rotativos e estáveis", () => {
     expect(screen.getByText("1/2")).toBeInTheDocument();
   });
 
-  it("troca com o controle manual e pausa no hover", () => {
+  it("troca com o controle manual e pausa quando um controle recebe foco", () => {
     vi.useFakeTimers();
     const { container } = render(<ReviewRotation reviews={reviews} average={4.5} count={2} />);
-    const region = screen.getByRole("region", { name: "Avaliações reais dos consulentes" });
-    fireEvent.mouseEnter(region);
+    fireEvent.focus(screen.getByRole("button", { name: "Próxima avaliação" }));
     act(() => vi.advanceTimersByTime(10000));
     expect(screen.getByText("1/2")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Próxima avaliação" }));
     expect(screen.getByText("2/2")).toBeInTheDocument();
     expect(container.querySelectorAll("figure")[1]).toHaveAttribute("aria-hidden", "false");
+  });
+
+  it("avança automaticamente em seis segundos sem exigir mouse no celular", () => {
+    vi.useFakeTimers();
+    const { container } = render(<ReviewRotation reviews={reviews} average={4.5} count={2} />);
+    expect(screen.getByText("1/2")).toBeInTheDocument();
+    act(() => vi.advanceTimersByTime(6100));
+    expect(screen.getByText("2/2")).toBeInTheDocument();
+    expect(container.querySelectorAll("figure")[1]).toHaveAttribute("aria-hidden", "false");
+    expect(screen.getByText(/A primeira avaliação verdadeira/)).toBeInTheDocument();
   });
 
   it("não cria setas nem rotação para um único depoimento", () => {

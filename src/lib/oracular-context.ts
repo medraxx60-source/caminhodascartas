@@ -62,7 +62,7 @@ export function buildOracularReference(
     if (!Number.isInteger(index) || index < 0 || index >= CARDS.length) return;
     const record = allowed.get(index + 1);
     if (!record) return;
-    const positionLabel = plan.positions[position];
+    const positionLabel = plan.positions[position] ?? `Posição ${position + 1}`;
     const positionKey = POSITION_KEY[positionLabel];
     const chunks: string[] = [];
     const add = (label: string, value: unknown, limit = 220) => {

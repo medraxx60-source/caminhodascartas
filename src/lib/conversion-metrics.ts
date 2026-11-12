@@ -1,4 +1,4 @@
-import { CONVERSION_EVENTS, type ConversionEvent, type ConversionPlan, type ConversionContext, cleanCampaignLabel, sanitizeConversionContext } from "./conversion-tracking";
+import { type ConversionEvent, type ConversionPlan, cleanCampaignLabel } from "./conversion-tracking";
 
 /** São contagens de etapas, não prova causal da venda. */
 export type ConversionEventRow = { session_id: string; event_name: ConversionEvent; plan: ConversionPlan; source: string; medium: string; campaign: string };
@@ -6,7 +6,6 @@ export type ConversionOrderRow = { conversion_session: string | null; is_free: b
 
 export function summarizeConversionFunnel(events: ConversionEventRow[], orders: ConversionOrderRow[]) {
   const byEvent = (event: ConversionEvent) => new Set(events.filter(e => e.event_name === event).map(e => e.session_id)).size;
-  const hasEvent = (session: string, event: ConversionEvent) => events.some(e => e.session_id === session && e.event_name === event);
   const trackedOrders = orders.filter(o => !!o.conversion_session);
   const completedFree = new Set(trackedOrders.filter(o => o.is_free && o.status === "done").map(o => o.conversion_session)).size;
   const paid = trackedOrders.filter(o => !o.is_free && o.status === "done");

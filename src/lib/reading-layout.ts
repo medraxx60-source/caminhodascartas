@@ -47,5 +47,10 @@ export function layoutReading(main: string, cards: number[]): ReadingLayout {
     const hit = all.filter((s) => patterns[i]!.test(s));
     if (hit.length) pc.push(hit.join(" "));
   });
+  // Se a IA escreveu a leitura inteira sem nomear cada carta, mostre o texto
+  // completo como interpretação conjunta em vez de deixá-lo sobre cartões vazios.
+  if (perCard.every((part) => part.length === 0) && paragraphs.length > 0) {
+    return { intro: [], perCard, conclusion: paragraphs };
+  }
   return { intro, perCard, conclusion };
 }

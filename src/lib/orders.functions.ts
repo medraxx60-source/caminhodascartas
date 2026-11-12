@@ -503,6 +503,42 @@ export const adminSetFreeSetting = createServerFn({ method: "POST" })
     return { enabled: data.enabled };
   });
 
+// ================= Base Oracular para IA (ativação opcional pelo administrador) =================
+async function oracularAiInfo() {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const [{ data: setting, error: settingError }, { count, error: cardsError }] = await Promise.all([
+    supabaseAdmin.from("app_settings").select("value").eq("key", "oracular_ai_enabled").maybeSingle(),
+    supabaseAdmin.from("lenormand_cards")
+      .select("card_number", { count: "exact", head: true })
+      .eq("content_status", "completa").eq("is_published", true),
+  ]);
+  if (settingError || cardsError) throw new Error("Não foi possível consultar a Base Oracular");
+  return { enabled: setting?.value === true, readyCards: count ?? 0 };
+}
+
+export const adminGetOracularAiSetting = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    return oracularAiInfo();
+  });
+
+export const adminSetOracularAiSetting = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { enabled: boolean }) => ({ enabled: input.enabled === true }))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const info = await oracularAiInfo();
+    if (data.enabled && info.readyCards === 0) {
+      throw new Error("Marque ao menos uma carta completa para uso na IA antes de ativar.");
+    }
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("app_settings")
+      .upsert({ key: "oracular_ai_enabled", value: data.enabled, updated_at: new Date().toISOString() });
+    if (error) throw new Error("Não foi possível alterar a Base Oracular");
+    return { enabled: data.enabled, readyCards: info.readyCards };
+  });
+
 // ================= Modelo de IA (escolhido no painel) =================
 export const adminGetAiModel = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

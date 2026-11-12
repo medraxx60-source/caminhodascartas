@@ -3,6 +3,7 @@ import { getRequestHeader } from "@tanstack/react-start/server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { CARDS, CATEGORIES, PLANS, type PlanId } from "./lenormand";
 import { freeReason, FREE_IP_LIMIT, FREE_IP_WINDOW_MS, type FreeReason } from "./free-eligibility";
+import { UUID_PATTERN } from "./conversion-tracking";
 
 const IP_LIMIT = 20; // orders per IP per window
 const GLOBAL_LIMIT = 300; // orders per window across all clients
@@ -14,7 +15,7 @@ async function sha256(text: string) {
 }
 
 export const createOrder = createServerFn({ method: "POST" })
-  .inputValidator((input: { plan: PlanId; category?: string; question: string; cards: number[] }) => {
+  .inputValidator((input: { plan: PlanId; category?: string; question: string; cards: number[]; conversionSession?: string }) => {
     const plan = PLANS[input.plan];
     if (!plan) throw new Error("Plano inválido");
     const question = String(input.question ?? "").trim();
@@ -23,7 +24,8 @@ export const createOrder = createServerFn({ method: "POST" })
     if (cards.length !== plan.count || new Set(cards).size !== cards.length || cards.some((c) => !Number.isInteger(c) || c < 0 || c >= CARDS.length))
       throw new Error("Seleção de cartas inválida");
     const category = (CATEGORIES as readonly string[]).includes(String(input.category)) ? String(input.category) : null;
-    return { plan: input.plan, category, question, cards };
+    const conversionSession = typeof input.conversionSession === "string" && UUID_PATTERN.test(input.conversionSession) ? input.conversionSession : null;
+    return { plan: input.plan, category, question, cards, conversionSession };
   })
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -40,7 +42,7 @@ export const createOrder = createServerFn({ method: "POST" })
 
     const { data: row, error } = await supabaseAdmin
       .from("orders")
-      .insert({ plan: data.plan, category: data.category, question: data.question, cards: data.cards, price_cents: PLANS[data.plan].priceCents, client_ip_hash: ipHash })
+      .insert({ plan: data.plan, category: data.category, question: data.question, cards: data.cards, price_cents: PLANS[data.plan].priceCents, client_ip_hash: ipHash, conversion_session: data.conversionSession } as any)
       .select("id, access_token")
       .single();
     if (error || !row) {
@@ -358,7 +360,7 @@ function freeError(msg?: string) {
 }
 
 export const createFreeOrder = createServerFn({ method: "POST" })
-  .inputValidator((input: { deviceId: string; fp?: string | undefined; category?: string; question: string; cards: number[] }) => {
+  .inputValidator((input: { deviceId: string; fp?: string | undefined; category?: string; question: string; cards: number[]; conversionSession?: string }) => {
     const plan = PLANS.essencial;
     const question = String(input.question ?? "").trim();
     if (question.length < 5 || question.length > 1000) throw new Error("Pergunta deve ter entre 5 e 1000 caracteres");
@@ -366,7 +368,8 @@ export const createFreeOrder = createServerFn({ method: "POST" })
     if (cards.length !== plan.count || new Set(cards).size !== cards.length || cards.some((c) => !Number.isInteger(c) || c < 0 || c >= CARDS.length))
       throw new Error("Seleção de cartas inválida");
     const category = (CATEGORIES as readonly string[]).includes(String(input.category)) ? String(input.category) : null;
-    return { deviceId: validDevice(input.deviceId), fp: validFp(input.fp), category, question, cards };
+    const conversionSession = typeof input.conversionSession === "string" && UUID_PATTERN.test(input.conversionSession) ? input.conversionSession : null;
+    return { deviceId: validDevice(input.deviceId), fp: validFp(input.fp), category, question, cards, conversionSession };
   })
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -383,7 +386,7 @@ export const createFreeOrder = createServerFn({ method: "POST" })
     if (rErr || !claimId) throw freeError(rErr?.message);
     const { data: row, error } = await supabaseAdmin
       .from("orders")
-      .insert({ plan: "essencial", category: data.category, question: data.question, cards: data.cards, price_cents: 0, is_free: true, client_ip_hash: ipHash, client_stage: "waiting" })
+      .insert({ plan: "essencial", category: data.category, question: data.question, cards: data.cards, price_cents: 0, is_free: true, client_ip_hash: ipHash, client_stage: "waiting", conversion_session: data.conversionSession } as any)
       .select("id, access_token")
       .single();
     if (error || !row) {

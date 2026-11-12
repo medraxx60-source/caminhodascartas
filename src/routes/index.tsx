@@ -610,7 +610,7 @@ function Index() {
               <p className="rounded-lg bg-gold/10 px-3 py-3 text-center text-sm leading-relaxed text-foreground">
                 1. Copie o código Pix · 2. Pague no aplicativo do banco · 3. Volte aqui. A liberação é automática após a confirmação.
               </p>
-              <Button size="lg" className="gold-button h-14 w-full min-w-0 whitespace-normal rounded-lg px-3 text-base leading-snug" onClick={async () => { if (await copy(pixCode.payload, "Código Pix")) { track("pix_copy", plan ?? "none"); setCopied(true); try { navigator.vibrate?.(60); } catch {} } }}>
+              <Button size="lg" className="gold-button cc-cta-alive h-14 w-full min-w-0 whitespace-normal rounded-lg px-3 text-base leading-snug" onClick={async () => { if (await copy(pixCode.payload, "Código Pix")) { track("pix_copy", plan ?? "none"); setCopied(true); try { navigator.vibrate?.(60); } catch {} } }}>
                 {copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
                 <span>{copied ? "Código Pix copiado! Abra seu banco" : "Copiar código Pix"}</span>
               </Button>
@@ -625,7 +625,7 @@ function Index() {
             <>
             <p role="alert" className="rounded-md border border-gold/60 bg-gold/10 p-3 text-center text-sm leading-relaxed text-foreground">O Pix automático está indisponível no momento. Você ainda pode pagar pela chave abaixo, mas a liberação será manual, após conferência do comprovante.</p>
             <p className="text-center font-display text-4xl font-bold text-gold">{p && formatBRL(p.priceCents)}</p>
-            <Button size="lg" className="gold-button h-14 w-full min-w-0 whitespace-normal rounded-lg px-3 text-base leading-snug" onClick={async () => { if (await copy(PIX_KEY, "Chave Pix")) { track("pix_copy", plan ?? "none"); setCopied(true); try { navigator.vibrate?.(60); } catch {} } }}>
+            <Button size="lg" className="gold-button cc-cta-alive h-14 w-full min-w-0 whitespace-normal rounded-lg px-3 text-base leading-snug" onClick={async () => { if (await copy(PIX_KEY, "Chave Pix")) { track("pix_copy", plan ?? "none"); setCopied(true); try { navigator.vibrate?.(60); } catch {} } }}>
               {copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
               <span>{copied ? "Chave Pix copiada!" : "Copiar chave Pix"}</span>
             </Button>
@@ -747,6 +747,7 @@ function CardCarousel({ deck, picked, onPick }: { deck: number[]; picked: number
                   </div>
                 </div>
               </div>
+              {center && idx < 0 && <span aria-hidden="true" className="cc-deck-focus absolute inset-0 rounded-2xl" />}
             </button>
           );
         })}

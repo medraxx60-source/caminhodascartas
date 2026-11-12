@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState, type MouseEvent } from "react";
+import { useEffect, useRef, useState, type MouseEvent } from "react";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { CardFace, cardImage } from "@/components/TarotCard";
 import { CARDS, PLANS, formatBRL, type PlanId } from "@/lib/lenormand";
 import { layoutReading } from "@/lib/reading-layout";
 import { EXPANSION_KEY } from "@/lib/reading-expansion";
+import { useConversion } from "@/lib/use-conversion";
 import { getPostFreeUpgradeOffers } from "@/lib/post-free-upgrades";
 import { getOrderByToken, runFreeGeneration, resumePaidGeneration } from "@/lib/orders.functions";
 import { useServerFn } from "@tanstack/react-start";
@@ -94,6 +95,8 @@ export const Route = createFileRoute("/leitura/$token")({
       { name: "robots", content: "noindex, nofollow" },
       { property: "og:title", content: "Sua leitura — Caminho das Cartas" },
       { property: "og:description", content: "Leitura privada de Baralho Cigano." },
+      { name: "robots", content: "noindex, nofollow" },
+      { name: "referrer", content: "no-referrer" },
     ],
   }),
   loader: ({ context, params }) => context.queryClient.ensureQueryData(orderQuery(params.token)),
@@ -285,6 +288,19 @@ const OTHER_TOPIC: Record<string, string> = {
 
 function NextReading({ planId, category, isFree, token, advice, question, cards }: { planId: PlanId; category: string | null; isFree: boolean; token: string; advice: string; question: string; cards: number[] }) {
   const [showReview, setShowReview] = useState(false);
+  const offerSection = useRef<HTMLElement | null>(null);
+  const track = useConversion();
+  useEffect(() => {
+    if (!isFree || planId !== "essencial" || !offerSection.current || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver((entries) => {
+      if (entries.some(e => e.isIntersecting)) {
+        track("upgrade_view");
+        observer.disconnect();
+      }
+    }, { threshold: 0.25 });
+    observer.observe(offerSection.current);
+    return () => observer.disconnect();
+  }, [isFree, planId]);
   const cat = category && category in OTHER_TOPIC ? category : "Outros assuntos";
   const other = OTHER_TOPIC[cat]!;
   const deeperPlans: PlanId[] = planId === "completa" ? [] : planId === "profunda" ? ["completa"] : ["profunda", "completa"];
@@ -297,13 +313,14 @@ function NextReading({ planId, category, isFree, token, advice, question, cards 
   const keepExpansion = (plano: PlanId, event: MouseEvent<HTMLAnchorElement>) => {
     try {
       sessionStorage.setItem(EXPANSION_KEY, JSON.stringify({ plan: plano, question, cards, at: Date.now() }));
+      track(plano === "profunda" ? "upgrade_5" : "upgrade_7", plano);
     } catch {
       event.preventDefault();
       toast.error("Não foi possível preservar sua pergunta neste navegador. Tente novamente.");
     }
   };
   return (
-    <section className="mt-12 rounded-xl border border-gold/50 bg-card/70 p-5 text-center">
+    <section ref={offerSection} id="aprofundar" className="mt-12 rounded-xl border border-gold/50 bg-card/70 p-5 text-center">
       <p className="text-2xl text-gold">✦</p>
       <h2 className="mt-1 font-display text-2xl font-semibold text-primary">{isFree ? "Sua primeira leitura está completa" : "Continue seu caminho"}</h2>
       <p className="mt-2 text-base text-foreground/90">

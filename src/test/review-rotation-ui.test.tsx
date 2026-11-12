@@ -33,6 +33,16 @@ describe("depoimentos rotativos e estáveis", () => {
     expect(container.querySelectorAll("figure")[1]).toHaveAttribute("aria-hidden", "false");
   });
 
+  it("avança automaticamente em seis segundos sem exigir mouse no celular", () => {
+    vi.useFakeTimers();
+    const { container } = render(<ReviewRotation reviews={reviews} average={4.5} count={2} />);
+    expect(screen.getByText("1/2")).toBeInTheDocument();
+    act(() => vi.advanceTimersByTime(6100));
+    expect(screen.getByText("2/2")).toBeInTheDocument();
+    expect(container.querySelectorAll("figure")[1]).toHaveAttribute("aria-hidden", "false");
+    expect(screen.getByText(/A primeira avaliação verdadeira/)).toBeInTheDocument();
+  });
+
   it("não cria setas nem rotação para um único depoimento", () => {
     render(<ReviewRotation reviews={[reviews[0]!]} average={5} count={1} />);
     expect(screen.queryByRole("button", { name: "Próxima avaliação" })).not.toBeInTheDocument();

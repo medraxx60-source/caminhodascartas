@@ -3,7 +3,7 @@ import { CARDS } from "@/lib/lenormand";
 export type ReadingLayout = { intro: string[]; perCard: string[][]; conclusion: string[] };
 
 const noun = (name: string) => name.replace(/^(O|A|Os|As)\s+/, "");
-const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");");
+const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /**
  * Sinônimos tradicionais usados em fichas do Baralho Cigano.

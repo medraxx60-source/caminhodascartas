@@ -111,11 +111,11 @@ async function syncAsaasPayment(token: string) {
   const { data: o } = await db.select("id, plan, cards, question, category, status, price_cents, asaas_qr_id, asaas_payment_id, generation_started_at, is_free").eq("access_token", token).maybeSingle();
   if (!o || o.is_free || !o.asaas_qr_id) return;
   const staleBefore = new Date(Date.now() - 2 * 60 * 1000).toISOString();
-  if (o.status === "pending") {
-    const { findAsaasPayment } = await import("./asaas.server");
-    const payId = await findAsaasPayment(o.asaas_qr_id, o.price_cents);
-    if (!payId) return;
-  } else if (!(o.asaas_payment_id && (o.status === "error" || (o.status === "generating" && o.generation_started_at < staleBefore)))) return;
+  // Consultamos o intermediador apenas uma vez por verificação de um pedido pendente.
+  const canResume = o.asaas_payment_id && (
+    o.status === "error" || (o.status === "generating" && o.generation_started_at < staleBefore)
+  );
+  if (o.status !== "pending" && !canResume) return;
   const { findAsaasPayment } = await import("./asaas.server");
   const payId = o.asaas_payment_id ?? (await findAsaasPayment(o.asaas_qr_id, o.price_cents));
   if (!payId) return;

@@ -42,7 +42,7 @@ export function getConversionContext(): ConversionContext | null {
       sessionStorage.setItem(CONVERSION_SOURCE_KEY, JSON.stringify(readCampaignParams(params)));
     }
     const stored = JSON.parse(sessionStorage.getItem(CONVERSION_SOURCE_KEY) || "{}");
-    const clean = sanitizeConversionContext({ sessionId, ...stored });
+    const clean = sanitizeConversionContext({ ...stored, sessionId });
     return clean.sessionId ? { ...clean, sessionId: clean.sessionId } : null;
   } catch { return null; }
 }

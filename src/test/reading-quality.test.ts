@@ -12,3 +12,24 @@ describe("qualidade da resposta oracular sem cobrar nova IA", () => {
     expect(assessReadingQuality(reading, [0,20,30])).toEqual([]);
   });
 });
+
+describe("diagnóstico de estilo Padrão Ouro", () => {
+  it("sinaliza aberturas repetitivas sem impedir entrega da resposta", () => {
+    const reading = [
+      "O Sol mostra que a situação tem energia e proximidade.",
+      "O Coração, como desafio, mostra que as expectativas pesam.",
+      "O Caixão aponta para uma transformação ou encerramento.",
+      "CONSELHO DOS ANJOS: observe os sinais com carinho.",
+    ].join("\n\n");
+    expect(assessReadingQuality(reading, [30, 23, 7])).toContain("formulaic_card_openings");
+  });
+  it("não confunde uma narrativa viva com repetição mecânica", () => {
+    const reading = [
+      "O Sol aquece a mesa, mas também ilumina o que ainda falta enxergar.",
+      "Já o Coração pede atenção às expectativas criadas entre vocês.",
+      "Com o Caixão fechando a sequência, uma fase parece se encerrar.",
+      "CONSELHO DOS ANJOS: preserve sua serenidade.",
+    ].join("\n\n");
+    expect(assessReadingQuality(reading, [30, 23, 7])).not.toContain("formulaic_card_openings");
+  });
+});

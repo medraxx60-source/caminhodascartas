@@ -8,6 +8,7 @@ import { getAiModel } from "./ai-model.server";
 import { loadOracularReference } from "./oracular-context.server";
 import { appendOracularReference } from "./oracular-context";
 import { assessReadingQuality } from "./reading-quality";
+import { readingTimeoutMs } from "./reading-timing";
 
 // Shared MandAPI call used by both the paid (admin) and free flows. Throws a friendly Error on failure.
 export async function generateReadingText(order: { id: string; plan: string; cards: number[]; question: string; category: string | null }): Promise<string> {
@@ -16,12 +17,15 @@ export async function generateReadingText(order: { id: string; plan: string; car
     if (!apiKey || !rawBase) throw new Error("Configuração da MandAPI ausente");
     const endpoint = `${rawBase.trim().replace(/\/+$/, "").replace(/\/chat\/completions$/, "")}/chat/completions`;
     const claimed = order;
+    const preparationStartedMs = Date.now();
     const plan = PLANS[claimed.plan as PlanId];
     const spread = (claimed.cards as number[]).map((c, i) => `${i + 1}. ${plan.positions[i]}: ${CARDS[c]}`).join("\n");
     const catLine = order.category ? `Categoria (apenas contexto; não substitua a pergunta por uma pergunta genérica deste tema): ${order.category}\n` : "";
     // Contexto opcional, buscado no servidor. A instrução original da cartomante permanece intacta.
     const oracularReference = await loadOracularReference({ plan: claimed.plan as PlanId, cards: claimed.cards, category: order.category });
     const model = await getAiModel();
+    const timeoutMs = readingTimeoutMs(plan.count);
+    const requestStartedMs = Date.now();
     let reading: string;
     try {
       const res = await fetch(endpoint, {
@@ -38,8 +42,8 @@ export async function generateReadingText(order: { id: string; plan: string; car
             { role: "user", content: appendOracularReference(`${catLine}Pergunta do consulente (referência principal da leitura, use exatamente esta pergunta): ${claimed.question}\n\nTiragem (${plan.name}, ${plan.count} cartas):\n${spread}`, oracularReference) },
           ],
         }),
-        // Menor que os prazos de recuperação (90s pago, 120s gratuito).
-        signal: AbortSignal.timeout(70_000),
+        // Respeita os prazos de recuperação. Tiragens curtas não esperam 70s por uma resposta travada.
+        signal: AbortSignal.timeout(timeoutMs),
       });
       if (!res.ok) {
         const body = (await res.text()).slice(0, 300).replace(apiKey, "[redacted]");
@@ -57,13 +61,16 @@ export async function generateReadingText(order: { id: string; plan: string; car
       if (!reading) throw new Error("A MandAPI respondeu sem texto.");
       const qualityIssues = assessReadingQuality(reading, claimed.cards);
       if (qualityIssues.length) console.warn(`[mandapi] order=${claimed.id} format=${qualityIssues.join(",")}`);
+      const usage = json?.usage;
+      const tokens = typeof usage?.total_tokens === "number" ? usage.total_tokens : "unknown";
+      console.info(`[mandapi] stage=success order=${claimed.id} model=${model} provider_ms=${Date.now() - requestStartedMs} preparation_ms=${requestStartedMs - preparationStartedMs} tokens=${tokens} oracular=${!!oracularReference}`);
     } catch (e) {
       // DOMException pode não herdar do Error em alguns runtimes de teste/edge.
       const errorName = typeof e === "object" && e !== null && "name" in e ? String(e.name) : "";
       const msg = errorName === "TimeoutError" || errorName === "AbortError"
         ? "A MandAPI demorou a responder. Sua leitura foi preservada; tente novamente."
         : e instanceof Error ? e.message : "Falha de conexão com a MandAPI.";
-      if (!(e instanceof Error)) console.error(`[mandapi] order=${claimed.id} network error`);
+      console.warn(`[mandapi] stage=failure order=${claimed.id} model=${model} provider_ms=${Date.now() - requestStartedMs} preparation_ms=${requestStartedMs - preparationStartedMs} error=${errorName || "unknown"}`);
       throw new Error(msg);
     }
     return reading;

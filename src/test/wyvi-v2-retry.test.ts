@@ -56,7 +56,7 @@ describe("Pix Wyvi oficial com recuperação segura", () => {
   });
   it("confirma pagamentos Wyvi somente com valor suficiente e situação concluída",async()=>{
     vi.stubEnv("WIVYPAY_API_KEY","wy_live_test");
-    vi.stubGlobal("fetch",vi.fn().mockResolvedValue(new Response(JSON.stringify({txid,situacao:"concluida",valor_centavos:890}),{status:200})));
+    vi.stubGlobal("fetch",vi.fn().mockImplementation(() => Promise.resolve(new Response(JSON.stringify({txid,situacao:"concluida",valor_centavos:890}),{status:200}))));
     expect(await findAsaasPayment("wy:"+txid,890)).toBe("wy:"+txid);
     expect(await findAsaasPayment("wy:"+txid,1490)).toBeNull();
   });

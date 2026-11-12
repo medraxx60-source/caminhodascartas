@@ -124,14 +124,21 @@ async function syncAsaasPayment(token: string) {
     .update({ status: "generating", paid_at: now, asaas_payment_id: payId, generation_started_at: now, error_message: null })
     .eq("id", o.id).is("reading", null)
     .or(`status.in.(pending,error),and(status.eq.generating,generation_started_at.lt.${staleBefore})`)
-    .select("id").maybeSingle();
+    .select("id, generation_started_at").maybeSingle();
   if (!locked) return;
+  // A resposta desta tentativa não pode sobrescrever uma geração posterior.
+  const startedAt = String(locked.generation_started_at);
   try {
     const { generateReadingText } = await import("./reading-ai.server");
     const reading = await generateReadingText({ id: o.id, plan: o.plan, cards: o.cards as number[], question: o.question, category: o.category ?? null });
-    await supabaseAdmin.from("orders").update({ status: "done", reading, completed_at: new Date().toISOString(), error_message: null }).eq("id", o.id);
+    const { error } = await supabaseAdmin.from("orders")
+      .update({ status: "done", reading, completed_at: new Date().toISOString(), error_message: null })
+      .eq("id", o.id).eq("status", "generating").eq("generation_started_at", startedAt).is("reading", null);
+    if (error) throw error;
   } catch (e) {
-    await supabaseAdmin.from("orders").update({ status: "error", error_message: e instanceof Error ? e.message : "falha" }).eq("id", o.id).is("reading", null);
+    await supabaseAdmin.from("orders")
+      .update({ status: "error", error_message: e instanceof Error ? e.message : "falha" })
+      .eq("id", o.id).eq("status", "generating").eq("generation_started_at", startedAt).is("reading", null);
   }
 }
 
@@ -217,17 +224,20 @@ export const adminConfirmAndGenerate = createServerFn({ method: "POST" })
       reading = await generateReadingText({ id: claimed.id, plan: claimed.plan, cards: claimed.cards as number[], question: claimed.question, category: catRow?.category ?? null });
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Falha de conexão com a MandAPI.";
-      await context.supabase.from("orders").update({ status: "error", error_message: msg }).eq("id", claimed.id).is("reading", null);
+      await context.supabase.from("orders").update({ status: "error", error_message: msg }).eq("id", claimed.id).eq("status", "generating").eq("generation_started_at", claimed.generation_started_at).is("reading", null);
       throw new Error(msg);
     }
 
     // Save with retries; never lose a paid response.
     for (let attempt = 0; attempt < 3; attempt++) {
-      const { error } = await context.supabase
+      const { data: saved, error } = await context.supabase
         .from("orders")
         .update({ status: "done", reading, completed_at: new Date().toISOString(), error_message: null })
-        .eq("id", claimed.id);
-      if (!error) return { ok: true as const, unsavedReading: null };
+        .eq("id", claimed.id).eq("status", "generating")
+        .eq("generation_started_at", claimed.generation_started_at).is("reading", null)
+        .select("id").maybeSingle();
+      if (!error && saved) return { ok: true as const, unsavedReading: null };
+      if (!error && !saved) throw new Error("Esta leitura já foi retomada por outra tentativa. Atualize a lista.");
       console.error(`[orders] save reading failed order=${claimed.id} attempt=${attempt + 1} code=${error.code}`);
       await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
     }
@@ -454,17 +464,22 @@ export const resumePaidGeneration = createServerFn({ method: "POST" })
       .update({ status: "generating", generation_started_at: new Date().toISOString(), error_message: null })
       .eq("access_token", data.token).eq("is_free", false).not("paid_at", "is", null).is("reading", null)
       .or(`status.eq.error,and(status.eq.generating,generation_started_at.lt.${staleBefore})`)
-      .select("id, plan, cards, question, category").maybeSingle();
+      .select("id, plan, cards, question, category, generation_started_at").maybeSingle();
     if (!locked) return { ok: true };
+    const startedAt = String(locked.generation_started_at);
     try {
       const { generateReadingText } = await import("./reading-ai.server");
       const reading = await generateReadingText({ id: locked.id, plan: locked.plan, cards: locked.cards as number[], question: locked.question, category: locked.category });
-      const { error } = await supabaseAdmin.from("orders").update({ status: "done", reading, completed_at: new Date().toISOString() }).eq("id", locked.id);
+      const { error } = await supabaseAdmin.from("orders")
+        .update({ status: "done", reading, completed_at: new Date().toISOString() })
+        .eq("id", locked.id).eq("status", "generating").eq("generation_started_at", startedAt).is("reading", null);
       if (error) throw new Error("Falha ao salvar a leitura");
       return { ok: true };
     } catch (e) {
       console.error(`[paid] resume failed order=${locked.id}`, e instanceof Error ? e.message : e);
-      await supabaseAdmin.from("orders").update({ status: "error", error_message: e instanceof Error ? e.message : "falha" }).eq("id", locked.id).is("reading", null);
+      await supabaseAdmin.from("orders")
+        .update({ status: "error", error_message: e instanceof Error ? e.message : "falha" })
+        .eq("id", locked.id).eq("status", "generating").eq("generation_started_at", startedAt).is("reading", null);
       return { ok: false };
     }
   });

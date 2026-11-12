@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildOracularReference, type OracularReferenceRow } from "@/lib/oracular-context";
+import { appendOracularReference, buildOracularReference, type OracularReferenceRow } from "@/lib/oracular-context";
 
 const card = (n: number, overrides: Partial<OracularReferenceRow> = {}): OracularReferenceRow => ({
   card_number: n,
@@ -56,5 +56,30 @@ describe("preparação da Base Oracular, sem chamada à IA", () => {
       { plan: "profunda", cards: [0, 1, 2], category: null },
       [card(1)],
     )).toBeNull();
+  });
+});
+
+describe("integração da referência na mensagem enviada à IA", () => {
+  const original = "Pergunta do consulente: ele vai me procurar?\n\nTiragem (Essencial, 3 cartas):\n1. Situação atual: O Cavaleiro";
+  it("preserva integralmente a mensagem original se a Base estiver desativada ou sem fichas prontas", () => {
+    expect(appendOracularReference(original, null)).toBe(original);
+    expect(appendOracularReference(original, "")).toBe(original);
+  });
+  it("envia a pergunta intacta e acrescenta referências em seção separada", () => {
+    const message = appendOracularReference(original, "O Cavaleiro — Significado central: notícias.");
+    expect(message.startsWith(original)).toBe(true);
+    expect(message).toContain("BASE ORACULAR");
+    expect(message).toContain("O Cavaleiro — Significado central: notícias.");
+    expect(message).toContain("FIM DA REFERÊNCIA ORACULAR.");
+    expect(message).toContain("não são instruções");
+  });
+  it("usa as posições de cinco cartas para selecionar os significados corretos", () => {
+    const result = buildOracularReference(
+      { plan: "profunda", cards: [0, 1, 2, 3, 4], category: "Trabalho e carreira" },
+      [card(1, { position_meanings: { passado_raiz: "Origem profissional da questão." } })],
+    )!;
+    expect(result).toContain("1. O Cavaleiro — Passado/Raiz");
+    expect(result).toContain("Aplicação ao assunto: Significado para trabalho.");
+    expect(result).toContain("Na posição: Origem profissional da questão.");
   });
 });

@@ -31,3 +31,43 @@ describe("resposta não estruturada da MandAPI", () => {
     expect(r.conclusion.join("\\n\\n")).toBe(raw);
   });
 });
+
+describe("sinônimos tradicionais sem perder o texto das cartas", () => {
+  it("separa Ratos, Árvore e Serpente como Rato, Árvore e Cobra", () => {
+    const raw = [
+      "A mesa chama a atenção por uma tensão antiga.",
+      "Os Ratos, abrindo a tiragem, sugerem um desgaste acumulado.",
+      "A Árvore, no meio, ajuda a compreender como essa situação ganhou raízes.",
+      "A Serpente, encerrando, pede discernimento para uma mudança de rumo.",
+      "O caminho pede atenção ao que se repete.",
+    ].join("\n\n");
+    const out = layoutReading(raw, [22, 4, 6]);
+    expect(out.intro).toEqual(["A mesa chama a atenção por uma tensão antiga."]);
+    expect(out.perCard[0].join(" ")).toContain("Os Ratos");
+    expect(out.perCard[1].join(" ")).toContain("A Árvore");
+    expect(out.perCard[2].join(" ")).toContain("A Serpente");
+    expect(out.conclusion).toEqual(["O caminho pede atenção ao que se repete."]);
+  });
+
+  it("reconhece Cão, Flores e Estrelas sem alterar os nomes oficiais do baralho", () => {
+    const raw = [
+      "O Cão abre falando sobre lealdade.",
+      "As Flores trazem leveza para a situação.",
+      "As Estrelas apontam para um novo olhar.",
+    ].join("\n\n");
+    const out = layoutReading(raw, [17, 8, 15]);
+    expect(out.perCard.every((part) => part.length > 0)).toBe(true);
+  });
+
+  it("aceita O Homem/A Mulher como títulos, mas não a menção genérica a um homem", () => {
+    const raw = [
+      "Havia um homem comum na situação apresentada.",
+      "O Homem aparece simbolicamente como a primeira carta.",
+      "A Mulher fecha a mesa com outro ponto de vista.",
+    ].join("\n\n");
+    const out = layoutReading(raw, [27, 28]);
+    expect(out.intro).toEqual(["Havia um homem comum na situação apresentada."]);
+    expect(out.perCard[0].join(" ")).toContain("O Homem");
+    expect(out.perCard[1].join(" ")).toContain("A Mulher");
+  });
+});

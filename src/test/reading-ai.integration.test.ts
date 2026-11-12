@@ -42,6 +42,15 @@ describe("geração completa com MandAPI simulada (sem cobranças)", () => {
     expect(calls[0]?.messages).toHaveLength(2);
     expect(calls[0]?.messages[0]?.role).toBe("system");
     expect(calls[0]?.messages[0]?.content).toContain("MOTOR DE INTERPRETAÇÃO — CAMINHO DAS CARTAS");
+    // A voz antiga volta sem remover estrutura, proteção nem a Base Oracular.
+    const systemPrompt = calls[0]?.messages[0]?.content ?? "";
+    expect(systemPrompt).toContain("VOZ ORIGINAL ENTRE CARTAS");
+    expect(systemPrompt).toContain("Rato–Árvore–Cobra");
+    expect(systemPrompt).toContain("CALIBRAÇÃO DE VOZ (prioridade de tom)");
+    expect(systemPrompt).toContain("CONSELHO DOS ANJOS:");
+    expect(systemPrompt).toContain("Saúde: mantenha a leitura no campo simbólico");
+    expect(systemPrompt).toContain("Espiritualidade: respeite o universo espiritual");
+    expect(systemPrompt).toContain("12. FORMATO DE SAÍDA — OBRIGATÓRIO");
     const user = calls[0]?.messages[1]?.content ?? "";
     expect(user).toContain("Pergunta do consulente (referência principal da leitura, use exatamente esta pergunta): Devo aguardar uma resposta profissional?");
     expect(user).toContain("1. Situação atual: O Cavaleiro");

@@ -29,60 +29,20 @@ const orderQuery = (token: string) =>
     refetchIntervalInBackground: false,
   });
 
-const PROGRESS_STEPS = [
-  "Cruzando a energia da sua pergunta com as cartas",
-  "Analisando a influência de cada posição",
-  "Conectando as combinações e o que está oculto",
-  "Estruturando a sua orientação prática",
-  "Acolhendo o Conselho dos Anjos",
-];
-
-const REFLECTIONS = [
-  "As cartas não determinam seu destino; elas iluminam as escolhas que você tem nas mãos.",
-  "Respire fundo e mantenha o pensamento na sua pergunta.",
-  "Cada combinação é lida com atenção aos detalhes da sua história.",
-  "O que está oculto aos olhos muitas vezes já é sentido pelo coração.",
-  "Sua orientação está sendo preparada com cuidado e acolhimento.",
-];
-
 function GeneratingProgress({ isFree }: { isFree: boolean }) {
   const [elapsed, setElapsed] = useState(0);
   useEffect(() => {
     const id = setInterval(() => setElapsed((e) => e + 1), 1000);
     return () => clearInterval(id);
   }, []);
-  // O tempo é imprevisível; não apresentar percentuais ou checkmarks falsos.
   return (
-    <div className="mt-10 rounded-xl border border-gold bg-card p-6 text-center" role="status" aria-live="polite">
-      <p className="text-2xl text-gold" aria-hidden>✦</p>
-      <p className="mt-1 font-display text-2xl leading-snug text-primary">
-        {isFree ? "Sua mesa está aberta" : "Pagamento confirmado"}
+    <div className="mt-8 rounded-xl border border-gold/60 bg-card px-5 py-6 text-center" role="status" aria-live="polite">
+      <h2 className="font-display text-2xl text-primary">{isFree ? "Preparando sua interpretação" : "Pagamento confirmado"}</h2>
+      <p className="mt-2 text-sm leading-relaxed text-foreground/85">
+        {elapsed < 60
+          ? "A interpretação aparecerá aqui automaticamente."
+          : "Está levando mais que o habitual. Seu pedido continua salvo; não pague novamente."}
       </p>
-      <p className="mt-1 text-base text-muted-foreground">
-        {isFree ? "Consultando o Baralho Cigano…" : "A cartomante está diante da sua mesa…"}
-      </p>
-      <div className="mx-auto mt-5 h-2 w-full max-w-sm overflow-hidden rounded-full bg-muted" aria-label="Interpretação em preparação">
-        <div className="h-full w-2/5 rounded-full bg-gold" />
-      </div>
-      <p className="mt-3 text-xs text-muted-foreground">Os passos abaixo mostram como a tiragem é interpretada, não uma porcentagem de conclusão.</p>
-      <ol className="mx-auto mt-5 max-w-sm space-y-2.5 text-left text-base">
-        {PROGRESS_STEPS.map((label) => (
-          <li key={label} className="flex gap-2 text-muted-foreground">
-            <span className="w-4 shrink-0 text-gold" aria-hidden>✦</span>
-            <span>{label}</span>
-          </li>
-        ))}
-      </ol>
-      <div className="mx-auto mt-6 flex min-h-24 max-w-sm items-center justify-center rounded-lg border border-gold/40 bg-background/40 px-4 py-3">
-        <p className="font-display text-lg italic leading-relaxed text-foreground/90">
-          “{REFLECTIONS[0]}”
-        </p>
-      </div>
-      <p className="mt-5 text-sm text-muted-foreground">{elapsed < 45
-        ? "Estamos preparando sua orientação. Você pode manter esta página aberta."
-        : elapsed < 90
-          ? "Está levando um pouco mais que o habitual. Seu pedido continua salvo; não faça outro Pix."
-          : "Sua interpretação está demorando. O sistema pode retomar a geração automaticamente; seu pedido permanece salvo."}</p>
     </div>
   );
 }
@@ -187,9 +147,12 @@ function Leitura() {
       <div className="gold-rule mx-auto mt-5 w-40" />
       <blockquote className="mt-8 rounded-lg border border-border bg-card p-4 font-display text-xl italic">“{order.question}”</blockquote>
       {order.status !== "done" && (
-        <div className="mt-8 flex flex-wrap justify-center gap-3">
-          {(order.cards as number[]).map((c, i) => <CardFace key={c} index={c} position={plan.positions[i]} />)}
-        </div>
+        <details className="mt-6 rounded-lg border border-border bg-card/40 p-3">
+          <summary className="cursor-pointer text-center text-sm text-gold">Ver cartas escolhidas</summary>
+          <div className="mt-4 flex flex-wrap justify-center gap-3">
+            {(order.cards as number[]).map((c, i) => <CardFace key={c} index={c} position={plan.positions[i]} />)}
+          </div>
+        </details>
       )}
       {order.status === "done" && order.reading ? (() => {
         const [main, angels] = order.reading.split(/\n*\s*CONSELHO DOS ANJOS:?\s*/i);
@@ -210,7 +173,6 @@ function Leitura() {
                     <div>
                       <p className="text-xs uppercase tracking-[0.2em] text-gold">{i + 1}ª · {plan.positions[i]}</p>
                       <h2 className="mt-1 font-display text-2xl font-semibold text-primary">{CARDS[c]}</h2>
-                      <p className="text-xs text-muted-foreground">Carta {c + 1}</p>
                     </div>
                   </div>
                   {lay.perCard[i]!.length > 0 && (
@@ -259,18 +221,16 @@ function Leitura() {
       ) : (
         <div className="mt-10 rounded-lg border border-gold bg-card p-6 text-center" role="status">
           <p className="font-display text-2xl text-primary">Aguardando confirmação do pagamento</p>
-          <p className="mt-2 text-sm text-muted-foreground">Assim que seu Pix for confirmado, sua leitura aparecerá aqui automaticamente. Deixe esta página aberta.</p>
+          <p className="mt-2 text-sm text-muted-foreground">Se você já pagou, aguarde: sua leitura aparecerá aqui automaticamente. Não pague de novo.</p>
         </div>
       )}
       {order.status === "done" ? (
         <NextReading planId={order.plan as PlanId} category={(order as { category?: string | null }).category ?? null} isFree={!!order.is_free} token={token} advice={(order.reading?.split(/\n*\s*CONSELHO DOS ANJOS:?\s*/i)[1] ?? "").trim()} question={order.question ?? ""} cards={(order.cards as number[]) ?? []} />
-      ) : (
-        <div className="mt-12 rounded-xl border border-gold/50 bg-card/70 p-5 text-center">
-          <Button asChild size="lg" className="gold-button h-14 w-full rounded-xl text-lg">
-            <Link to="/">Fazer nova consulta</Link>
-          </Button>
+      ) : order.status === "rejected" ? (
+        <div className="mt-6 text-center">
+          <Link to="/" className="inline-block min-h-11 py-3 text-sm text-gold underline-offset-4 hover:underline">Voltar ao início</Link>
         </div>
-      )}
+      ) : null}
       <HelpButton screen="leitura" />
     </main>
   );

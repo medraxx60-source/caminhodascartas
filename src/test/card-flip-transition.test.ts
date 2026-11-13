@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-const css = readFileSync(new URL("../styles.css", import.meta.url), "utf8");
-const page = readFileSync(new URL("../routes/index.tsx", import.meta.url), "utf8");
+const css = readFileSync("src/styles.css", "utf8");
+const page = readFileSync("src/routes/index.tsx", "utf8");
 
 describe("virada de cartas sem reativar animações no restante do site", () => {
   it("mantém bloqueio geral de animações e transições", () => {

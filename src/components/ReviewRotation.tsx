@@ -10,10 +10,10 @@ type Props = {
 
 /**
  * Depoimentos estáticos, sem timers, rotação ou transições.
- * Demais avaliações aprovadas continuam acessíveis em HomeTrust, sem repetição.
+ * O restante das avaliações aprovadas continua acessível em HomeTrust.
  */
 export function ReviewRotation({ reviews, average, count }: Props) {
-  const items = reviews.filter((review) => typeof review.comment === "string" && review.comment.trim().length > 0).slice(0, 1);
+  const items = reviews.filter((review) => typeof review.comment === "string" && review.comment.trim().length > 0).slice(0, 3);
   if (items.length === 0) return null;
   return (
     <aside className="mx-auto mt-5 w-full max-w-sm rounded-xl border border-gold/30 bg-card/80 px-4 py-4 text-left"

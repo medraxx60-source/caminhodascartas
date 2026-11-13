@@ -363,9 +363,9 @@ function Index() {
 
   const goStep = (s: number) => { setStep(s); };
   // Home starts with the topic (connection first); the plan is preselected and shown with its price before the cards.
-  const startWith = (c: Category | null) => {
+  const startWith = (c: Category | null, explicitPlan?: PlanId) => {
     if (freePending) return;
-    const def: PlanId = plan ?? (freeEligible ? "essencial" : "profunda");
+    const def: PlanId = explicitPlan ?? plan ?? (freeEligible ? "essencial" : "profunda");
     if (def === "essencial" && freeEligible) track("free_start", def);
     choosePlan(def);
     if (c) {
@@ -403,7 +403,7 @@ function Index() {
         <p className="mt-1 text-xs uppercase tracking-[0.3em] text-gold/80">Baralho Cigano tradicional</p>
         <p className="mx-auto mt-5 max-w-sm font-display text-[1.7rem] font-semibold leading-tight text-gold">{freePending ? "Uma pergunta. Uma leitura feita para você." : freeEligible ? "Sua primeira tiragem de 3 cartas é por nossa conta." : "Continue seu caminho com uma nova leitura."}</p>
         <p className="mx-auto mt-3 max-w-sm text-base leading-relaxed text-foreground/85">{freeEligible ? "Faça sua pergunta e escolha 3 cartas. Sua primeira leitura é gratuita, online e sem cadastro." : "Escolha seu assunto, faça uma pergunta e receba uma interpretação personalizada do Baralho Cigano."}</p>
-        <Button size="lg" className="gold-button mt-6 h-14 w-full rounded-xl text-lg" disabled={freePending} onClick={() => startWith(null)}>
+        <Button size="lg" className="gold-button mt-6 h-14 w-full rounded-xl text-lg" disabled={freePending} onClick={() => startWith(null, freeEligible ? "essencial" : undefined)}>
           {primaryAction}
         </Button>
         <p className="mt-3 text-xs tracking-wide text-muted-foreground">100% online · Consulta privada · Sem cadastro</p>

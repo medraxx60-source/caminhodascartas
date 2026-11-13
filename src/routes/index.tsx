@@ -513,22 +513,14 @@ function Index() {
       {p && step === 2 && !ritualDone && (
         <section className="flex min-h-[calc(100dvh-5rem)] flex-col justify-center py-4 text-center">
           <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border border-gold/50 text-4xl text-gold shadow-[0_0_40px_-10px] shadow-gold">☾</div>
-          <p className="mt-6 text-xs uppercase tracking-[0.3em] text-gold">✦ Momento de conexão ✦</p>
           <h2 className="mt-3 font-display text-3xl font-semibold text-foreground">Antes de abrir suas cartas…</h2>
           <div className="gold-rule mx-auto mt-4 w-32" />
-          <div className="mt-6 space-y-3 text-lg leading-relaxed text-foreground/90">
-            <p>Respire fundo e acalme seus pensamentos.</p>
-            <p>Mentalize com fé a pergunta que trouxe você até aqui.</p>
-          </div>
+          <p className="mx-auto mt-6 max-w-sm text-lg leading-relaxed text-foreground/90">Respire fundo e mentalize sua pergunta. Escolha suas cartas com calma.</p>
           {question.trim() && (
-            <div className="mt-6 rounded-2xl border border-gold/50 bg-card/70 p-6 shadow-[0_0_40px_-15px] shadow-gold">
-              <p className="text-xs uppercase tracking-[0.25em] text-gold">Sua pergunta</p>
-              <p className="mt-2 font-display text-2xl italic text-foreground">“{question.trim()}”</p>
-            </div>
+            <blockquote className="mt-5 rounded-xl border border-gold/40 bg-card/70 px-4 py-3 font-display text-lg italic leading-relaxed text-foreground">“{question.trim()}”</blockquote>
           )}
-          <p className="mt-5 text-sm text-muted-foreground">Não tenha pressa. Quando sentir, abra suas cartas.</p>
           <Button size="lg" className="gold-button mt-8 h-14 w-full rounded-xl text-lg" onClick={() => { setRitualDone(true); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
-            Estou pronto(a), abrir minhas cartas
+            Escolher minhas cartas
           </Button>
         </section>
       )}
@@ -536,16 +528,16 @@ function Index() {
       {p && step === 2 && ritualDone && (
         <section className="mt-6">
           <div className="text-center">
-            <h2 className="font-display text-3xl font-semibold text-foreground">Escolha {p.count} cartas</h2>
+            <h2 className="font-display text-3xl font-semibold text-foreground">Escolha suas cartas</h2>
             {lockedPicks > 0 ? (
-              <p className="mx-auto mt-2 max-w-xs text-base text-foreground/90">Suas {lockedPicks} cartas da leitura anterior continuam na mesa ✦ Escolha mais {p.count - lockedPicks} para aprofundar.</p>
+              <p className="mx-auto mt-2 max-w-xs text-base text-foreground/90">Suas {lockedPicks} cartas foram mantidas. Escolha mais {p.count - lockedPicks}.</p>
             ) : (
-              <p className="mx-auto mt-2 max-w-xs text-muted-foreground">Deslize para os lados e toque na carta do centro ✦</p>
+              <p className="mx-auto mt-2 max-w-xs text-muted-foreground">Deslize e toque na carta central.</p>
             )}
           </div>
           <CardCarousel deck={deck} picked={picked} onPick={toggle} />
           <p className="mb-3 text-center text-sm font-semibold text-gold" aria-live="polite">
-            {picked.length < p.count ? `Cartas escolhidas: ${picked.length} de ${p.count}` : "✦ Sua tiragem está completa ✦"}
+            {picked.length < p.count ? `${picked.length} de ${p.count} cartas escolhidas` : "Todas as cartas escolhidas"}
           </p>
           <div className="flex justify-center gap-2">
             {Array.from({ length: p.count }, (_, i) => {
@@ -568,7 +560,7 @@ function Index() {
           )}
           {freeLost && !token && (
             <div role="status" className="mt-6 rounded-xl border border-gold/50 bg-card/80 p-4 text-center">
-              <p className="text-sm text-foreground">Sua consulta gratuita não está disponível agora. Sua pergunta e suas cartas continuam na mesa — escolha como deseja continuar:</p>
+              <p className="text-sm text-foreground">A consulta grátis não está disponível. Suas cartas continuam aqui; escolha um plano:</p>
               <div className="mt-3 space-y-2">
                 {(Object.keys(PLANS) as PlanId[]).map((id) => (
                   <button key={id} type="button" onClick={() => choosePlan(id)} aria-pressed={plan === id}
@@ -581,7 +573,7 @@ function Index() {
             </div>
           )}
           <Button id="ver-interpretacao" size="lg" className={`gold-button mt-8 h-14 w-full scroll-mb-6 rounded-xl text-lg `} disabled={loading || picked.length < p.count} onClick={submit}>
-            {loading ? "Preparando sua leitura..." : picked.length < p.count ? `Escolha mais ${p.count - picked.length} carta(s)` : token ? `Continuar pagamento · Pedido ${orderCode}` : `Ver interpretação · ${plan ? priceLabel(plan) : ""}`}
+            {loading ? "Preparando sua leitura…" : token ? "Continuar pagamento" : actionForCards(picked.length, p.count, !!plan && isFreePlan(plan), plan ? priceLabel(plan) : "")}
           </Button>
         </section>
       )}

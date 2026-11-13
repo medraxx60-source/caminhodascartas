@@ -8,12 +8,12 @@ const EXPLANATIONS = {
   profunda: {
     tag: "Bom equilíbrio",
     title: "Entenda melhor a sua pergunta",
-    description: "Raiz da situação, desafio, tendência e conselho.",
+    description: "Uma leitura com passado/raiz, situação atual, desafio, tendência e conselho.",
   },
   completa: {
     tag: "Visão mais ampla",
     title: "Explore outros aspectos do caminho",
-    description: "Inclui o que está oculto e um possível desfecho.",
+    description: "Uma leitura com passado, presente, o que está oculto, desafio, tendência, conselho e desfecho.",
   },
 } as const;
 

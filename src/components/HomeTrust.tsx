@@ -4,29 +4,27 @@ import { listPublicReviews } from "@/lib/reviews.functions";
 import { ReviewRotation } from "@/components/ReviewRotation";
 
 const FAQ = [
-  ["Como funciona?", "Você escolhe as cartas. A interpretação é feita por IA, considerando sua pergunta e o Baralho Cigano."],
-  ["Minha pergunta é privada?", "Sim. Não exigimos cadastro. A leitura fica acessível por um link pessoal; compartilhe-o apenas se quiser."],
-  ["Quanto demora?", "O tempo pode variar. Sua consulta fica salva, inclusive se a geração demorar. Não pague novamente."],
+  ["Como a leitura é feita?", "Você escolhe as cartas com a sua intenção. A interpretação é escrita por uma inteligência artificial treinada nos significados tradicionais do Baralho Cigano e nas combinações entre as cartas, seguindo o nosso jeito acolhedor de aconselhar."],
+  ["Minha pergunta fica em sigilo?", "Sim. Não pedimos nome, e-mail nem cadastro. Sua pergunta nunca aparece para outras pessoas, e a leitura só abre pelo seu link pessoal."],
+  ["Quanto tempo demora?", "A interpretação começa após a escolha das cartas (ou confirmação do Pix, nas consultas pagas). O tempo varia conforme a conexão e o processamento. Se houver demora, seu pedido fica salvo e você não precisa pagar novamente."],
 ];
 
 const toggle = "cursor-pointer list-none text-center font-display text-xl font-semibold text-primary";
 
 export function HomeTrust() {
   const { data } = useQuery({ queryKey: ["public-reviews"], queryFn: () => listPublicReviews(), staleTime: 60_000 });
-  const featured = data?.items.find((r) => !!r.comment?.trim());
-  const otherReviews = data?.items.filter((r) => r.id !== featured?.id) ?? [];
   return (
     <div className="mt-12 space-y-4">
-      {data && otherReviews.length > 0 && (
+      {data && data.count > 0 && (
         <details className="group rounded-xl border border-border bg-card/50 p-4">
           <summary className={toggle}>
-            Mais avaliações <span className="text-gold group-open:hidden">+</span><span className="hidden text-gold group-open:inline">−</span>
+            O que dizem os consulentes <span className="text-gold group-open:hidden">+</span><span className="hidden text-gold group-open:inline">−</span>
             <span className="mt-1 flex items-center justify-center gap-1 font-sans text-sm font-normal text-muted-foreground">
               <Star className="h-4 w-4 fill-gold text-gold" /> {data.average.toFixed(1).replace(".", ",")} de 5 · {data.count} avaliação{data.count > 1 ? "ões" : ""}
             </span>
           </summary>
           <div className="mt-4 space-y-3">
-            {otherReviews.map((r) => (
+            {data.items.map((r) => (
               <figure key={r.id} className="rounded-xl border border-border bg-card p-4">
                 <div className="flex gap-0.5" aria-label={`${r.rating} de 5`}>
                   {[1, 2, 3, 4, 5].map((n) => <Star key={n} className={`h-4 w-4 ${n <= r.rating ? "fill-gold text-gold" : "text-muted-foreground"}`} />)}

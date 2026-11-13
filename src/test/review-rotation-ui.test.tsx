@@ -8,12 +8,12 @@ const reviews = [
 ];
 
 describe("depoimentos estáticos sem animação", () => {
-  it("mostra um depoimento verdadeiro no destaque sem repetição automática", () => {
+  it("exibe todos os depoimentos reais imediatamente sem animação ou temporizador", () => {
     const { container } = render(<ReviewRotation reviews={reviews} average={4.5} count={2} />);
     const figures = container.querySelectorAll("figure");
-    expect(figures).toHaveLength(1);
+    expect(figures).toHaveLength(2);
     expect(screen.getByText(/A primeira avaliação verdadeira/)).toBeInTheDocument();
-    expect(screen.queryByText(/A segunda avaliação verdadeira/)).not.toBeInTheDocument();
+    expect(screen.getByText(/A segunda avaliação verdadeira/)).toBeInTheDocument();
     expect(screen.getByText(/4,5\/5/)).toBeInTheDocument();
     expect(container.querySelector(".cc-review-clock")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Próxima avaliação" })).not.toBeInTheDocument();

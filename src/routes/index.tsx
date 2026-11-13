@@ -16,6 +16,7 @@ import { EXPANSION_KEY, parseExpansion } from "@/lib/reading-expansion";
 import { CARDS, PLANS, formatBRL, type PlanId , CATEGORIES, type Category } from "@/lib/lenormand";
 import { getDeviceFingerprint } from "@/lib/device-fingerprint";
 import { PROGRESS_KEY, parseProgress, keepPicksOnPlanChange } from "@/lib/free-progress";
+import { actionForCards, questionAfterCategoryChange } from "@/lib/consultation-flow";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { createOrder, retryAutomaticPix, getOrderStatus, checkFreeReading, createFreeOrder } from "@/lib/orders.functions";
@@ -77,6 +78,7 @@ function Index() {
   const [ritualDone, setRitualDone] = useState(false);
   const [question, setQuestion] = useState("");
   const [category, setCategory] = useState<Category | null>(null);
+  const [showQuestionIdeas, setShowQuestionIdeas] = useState(false);
   const [picked, setPicked] = useState<number[]>([]);
   // Cards carried over from a previous reading when expanding to a bigger plan; they stay fixed.
   const [lockedPicks, setLockedPicks] = useState(0);
@@ -369,7 +371,8 @@ function Index() {
     choosePlan(def);
     if (c) {
       setCategory(c);
-      if (!question.trim()) setQuestion((QUESTION_SUGGESTIONS[c] ?? QUESTION_SUGGESTIONS["Outros assuntos"]!)[0]!);
+      setQuestion((prev) => questionAfterCategoryChange(prev, QUESTION_SUGGESTIONS));
+      setShowQuestionIdeas(false);
     }
     try { navigator.vibrate?.(30); } catch {}
     goStep(1);
@@ -398,12 +401,12 @@ function Index() {
           className="-mx-5 block w-[calc(100%+2.5rem)] max-w-none [mask-image:linear-gradient(to_bottom,transparent,black_15%,black_80%,transparent)]" />
         <div aria-hidden="true" className="gold-rule mx-auto mt-1 w-44" />
         <p className="mt-1 text-xs uppercase tracking-[0.3em] text-gold/80">Baralho Cigano tradicional</p>
-        <p className="mx-auto mt-5 max-w-sm font-display text-[1.7rem] font-semibold leading-tight text-gold">{freePending ? "Uma pergunta. Uma leitura feita para você." : freeEligible ? "Sua primeira tiragem de 3 cartas é por nossa conta." : "Continue seu caminho com uma nova leitura."}</p>
-        <p className="mx-auto mt-3 max-w-sm text-base leading-relaxed text-foreground/85">{freeEligible ? "Faça sua pergunta e escolha 3 cartas. Sua primeira leitura é gratuita, online e sem cadastro." : "Escolha seu assunto, faça uma pergunta e receba uma interpretação personalizada do Baralho Cigano."}</p>
+        <p className="mx-auto mt-5 max-w-sm font-display text-[1.7rem] font-semibold leading-tight text-gold">{freePending ? "Uma pergunta. Uma leitura feita para você." : freeEligible ? "Sua primeira leitura de 3 cartas é grátis." : "Continue seu caminho com uma nova leitura."}</p>
+        <p className="mx-auto mt-3 max-w-sm text-base leading-relaxed text-foreground/85">{freeEligible ? "Faça sua pergunta, escolha as cartas e receba sua interpretação." : "Faça sua pergunta e receba uma interpretação personalizada."}</p>
         <Button size="lg" className="gold-button mt-6 h-14 w-full rounded-xl text-lg" disabled={freePending} onClick={() => startWith(null)}>
-          {primaryAction}
+          {freeEligible ? "Começar gratuitamente" : primaryAction}
         </Button>
-        <p className="mt-3 text-xs tracking-wide text-muted-foreground">100% online · Consulta privada · Sem cadastro</p>
+        <p className="mt-3 text-xs tracking-wide text-muted-foreground">Online · Privada · Sem cadastro</p>
         <HomeProof />
         {free?.enabled && free.reason === "device_already_used" && (
           <p className="mt-2 text-xs text-muted-foreground">Você já aproveitou sua primeira consulta de cortesia neste aparelho.</p>
@@ -441,62 +444,49 @@ function Index() {
         </SheetContent>
       </Sheet>
 
-      <section className="text-center">
-        <h2 className="font-display text-xl text-gold">Ou escolha o assunto que pede luz hoje</h2>
-        <div className="mt-6 grid grid-cols-2 gap-3">
-          {CATEGORIES.map((c, i) => (
-            <button key={c} type="button" disabled={freePending} onClick={() => startWith(c)}
-              className={`flex min-h-[3.25rem] items-center justify-center rounded-xl border border-gold/25 bg-gold/[0.04] px-3 py-2 text-sm font-medium leading-tight text-gold/90 backdrop-blur-sm  hover:border-gold/50 active:bg-gold/20 ${i === CATEGORIES.length - 1 && CATEGORIES.length % 2 === 1 ? "col-span-2" : ""}`}>
-              {c}
-            </button>
-          ))}
-        </div>
-      </section>
-      <div className="mt-8 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-        <span>🔒 Consulta privada</span><span>✦ Sem cadastro</span><span>⚡ Leitura online</span>
-      </div>
-      <Button size="lg" className="gold-button mt-6 h-14 w-full rounded-xl text-lg" disabled={freePending} onClick={() => startWith(null)}>
-        {freePending ? "Verificando disponibilidade…" : "✦ Abrir minha mesa de cartas"}
-      </Button>
       <HomeTrust />
       </>)}
 
       {p && step === 1 && (
         <section className="mt-8">
           <div className="text-center">
-            <h2 className="font-display text-3xl font-semibold text-foreground">Sobre o que é sua consulta?</h2>
+            <h2 className="font-display text-3xl font-semibold text-foreground">Qual assunto você quer consultar?</h2>
           </div>
           <div className="mt-6 rounded-xl border border-border bg-card p-4 shadow-sm">
             <div className="flex flex-wrap gap-2">
               {CATEGORIES.map((c) => (
-                <button key={c} type="button" onClick={() => { setCategory(c); if (!question.trim() || Object.values(QUESTION_SUGGESTIONS).some((l) => l.includes(question))) setQuestion((QUESTION_SUGGESTIONS[c] ?? QUESTION_SUGGESTIONS["Outros assuntos"]!)[0]!); scrollToId("escolher-cartas"); }} aria-pressed={category === c}
+                <button key={c} type="button" onClick={() => { if (category !== c) { setCategory(c); setQuestion((prev) => questionAfterCategoryChange(prev, QUESTION_SUGGESTIONS)); setShowQuestionIdeas(false); } }} aria-pressed={category === c}
                   className={`rounded-full border px-4 py-1.5 text-sm font-medium  ${category === c ? "border-gold bg-gold text-background shadow-lg" : "border-gold/70 bg-background text-gold hover:bg-gold hover:text-background"}`}>
                   {c}
                 </button>
               ))}
             </div>
             {category && (<>
-              <h3 className="mt-6 font-display text-2xl font-semibold text-foreground">Qual é a sua pergunta?</h3>
-              <p className="mt-1 text-sm text-muted-foreground">Conte o que você gostaria de saber. Escreva com suas próprias palavras e receba uma leitura direcionada à sua situação.</p>
-              <Textarea id="pergunta" className="mt-4 min-h-32 bg-background text-base" maxLength={1000}
+              <h3 className="mt-6 font-display text-2xl font-semibold text-foreground">Escreva sua pergunta</h3>
+                <Textarea id="pergunta" aria-label="Sua pergunta para a leitura" placeholder="O que você gostaria de saber? (mínimo 10 caracteres)" className="mt-4 min-h-28 bg-background text-base" maxLength={1000}
                 value={question} onChange={(e) => setQuestion(e.target.value)}
                 onFocus={(e) => { const el = e.currentTarget; setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "center" }), 300); }} />
               {!question.trim() && (
                 <div className="mt-3">
-                  <p className="text-xs text-muted-foreground">Sem ideias? Toque em uma sugestão:</p>
-                  <div className="mt-2 flex flex-col gap-2">
-                    {(QUESTION_SUGGESTIONS[category] ?? QUESTION_SUGGESTIONS["Outros assuntos"]!).map((s) => (
-                      <button key={s} type="button" onClick={() => setQuestion(s)} className="rounded-full border border-gold/50 bg-background/60 px-4 py-2.5 text-left text-sm text-foreground active:bg-gold active:text-background">“{s}”</button>
+                  <button type="button" className="min-h-11 text-sm text-gold underline underline-offset-4"
+                    aria-expanded={showQuestionIdeas} onClick={() => setShowQuestionIdeas((v) => !v)}>
+                    {showQuestionIdeas ? "Ocultar exemplos" : "Ver exemplos de perguntas"}
+                  </button>
+                  {showQuestionIdeas && <div className="mt-2 flex flex-col gap-2">
+                    {(QUESTION_SUGGESTIONS[category] ?? QUESTION_SUGGESTIONS["Outros assuntos"]!).map((suggestion) => (
+                      <button key={suggestion} type="button"
+                        onClick={() => { setQuestion(suggestion); setShowQuestionIdeas(false); }}
+                        className="min-h-11 rounded-xl border border-gold/50 bg-background/60 px-4 py-2.5 text-left text-sm text-foreground">
+                        “{suggestion}”
+                      </button>
                     ))}
-                  </div>
+                  </div>}
                 </div>
               )}
+              {qLen > 0 && !qOk && <p role="status" className="mt-2 text-xs text-muted-foreground">Escreva ao menos 10 caracteres.</p>}
             </>)}
-            <p className={`mt-2 text-sm ${qOk ? "text-gold" : category && qLen > 0 ? "text-destructive" : "text-muted-foreground"}`}>
-              {!category ? "" : qOk ? "Sua pergunta está pronta ✓" : "Conte um pouco mais sobre sua dúvida (ao menos uma frase)"}
-            </p>
           </div>
-          <h3 className="mt-8 font-display text-2xl font-semibold text-foreground">Quantas cartas abrir?</h3>
+          <h3 className="mt-8 font-display text-2xl font-semibold text-foreground">Escolha sua tiragem</h3>
           <div className="mt-3 space-y-2">
             {(Object.keys(PLANS) as PlanId[]).map((id) => {
               const pl = PLANS[id];
@@ -514,8 +504,8 @@ function Index() {
             })}
           </div>
           <Button id="escolher-cartas" size="lg" className="gold-button mt-8 h-14 w-full scroll-mb-6 rounded-xl text-lg"
-            onClick={() => (qOk ? goStep(2) : document.getElementById("pergunta")?.focus())}>
-            {qOk ? "Escolher minhas cartas" : !category ? "Escolha um assunto para continuar" : "Escreva sua pergunta para continuar"}
+            disabled={!qOk} onClick={() => goStep(2)}>
+            Continuar para as cartas
           </Button>
         </section>
       )}

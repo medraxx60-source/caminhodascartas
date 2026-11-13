@@ -29,60 +29,20 @@ const orderQuery = (token: string) =>
     refetchIntervalInBackground: false,
   });
 
-const PROGRESS_STEPS = [
-  "Cruzando a energia da sua pergunta com as cartas",
-  "Analisando a influência de cada posição",
-  "Conectando as combinações e o que está oculto",
-  "Estruturando a sua orientação prática",
-  "Acolhendo o Conselho dos Anjos",
-];
-
-const REFLECTIONS = [
-  "As cartas não determinam seu destino; elas iluminam as escolhas que você tem nas mãos.",
-  "Respire fundo e mantenha o pensamento na sua pergunta.",
-  "Cada combinação é lida com atenção aos detalhes da sua história.",
-  "O que está oculto aos olhos muitas vezes já é sentido pelo coração.",
-  "Sua orientação está sendo preparada com cuidado e acolhimento.",
-];
-
 function GeneratingProgress({ isFree }: { isFree: boolean }) {
   const [elapsed, setElapsed] = useState(0);
   useEffect(() => {
     const id = setInterval(() => setElapsed((e) => e + 1), 1000);
     return () => clearInterval(id);
   }, []);
-  // O tempo é imprevisível; não apresentar percentuais ou checkmarks falsos.
   return (
-    <div className="mt-10 rounded-xl border border-gold bg-card p-6 text-center" role="status" aria-live="polite">
-      <p className="text-2xl text-gold" aria-hidden>✦</p>
-      <p className="mt-1 font-display text-2xl leading-snug text-primary">
-        {isFree ? "Sua mesa está aberta" : "Pagamento confirmado"}
+    <div className="mt-8 rounded-xl border border-gold/60 bg-card px-5 py-6 text-center" role="status" aria-live="polite">
+      <h2 className="font-display text-2xl text-primary">{isFree ? "Preparando sua interpretação" : "Pagamento confirmado"}</h2>
+      <p className="mt-2 text-sm leading-relaxed text-foreground/85">
+        {elapsed < 60
+          ? "A interpretação aparecerá aqui automaticamente."
+          : "Está levando mais que o habitual. Seu pedido continua salvo; não pague novamente."}
       </p>
-      <p className="mt-1 text-base text-muted-foreground">
-        {isFree ? "Consultando o Baralho Cigano…" : "A cartomante está diante da sua mesa…"}
-      </p>
-      <div className="mx-auto mt-5 h-2 w-full max-w-sm overflow-hidden rounded-full bg-muted" aria-label="Interpretação em preparação">
-        <div className="h-full w-2/5 rounded-full bg-gold" />
-      </div>
-      <p className="mt-3 text-xs text-muted-foreground">Os passos abaixo mostram como a tiragem é interpretada, não uma porcentagem de conclusão.</p>
-      <ol className="mx-auto mt-5 max-w-sm space-y-2.5 text-left text-base">
-        {PROGRESS_STEPS.map((label) => (
-          <li key={label} className="flex gap-2 text-muted-foreground">
-            <span className="w-4 shrink-0 text-gold" aria-hidden>✦</span>
-            <span>{label}</span>
-          </li>
-        ))}
-      </ol>
-      <div className="mx-auto mt-6 flex min-h-24 max-w-sm items-center justify-center rounded-lg border border-gold/40 bg-background/40 px-4 py-3">
-        <p className="font-display text-lg italic leading-relaxed text-foreground/90">
-          “{REFLECTIONS[0]}”
-        </p>
-      </div>
-      <p className="mt-5 text-sm text-muted-foreground">{elapsed < 45
-        ? "Estamos preparando sua orientação. Você pode manter esta página aberta."
-        : elapsed < 90
-          ? "Está levando um pouco mais que o habitual. Seu pedido continua salvo; não faça outro Pix."
-          : "Sua interpretação está demorando. O sistema pode retomar a geração automaticamente; seu pedido permanece salvo."}</p>
     </div>
   );
 }
@@ -187,9 +147,12 @@ function Leitura() {
       <div className="gold-rule mx-auto mt-5 w-40" />
       <blockquote className="mt-8 rounded-lg border border-border bg-card p-4 font-display text-xl italic">“{order.question}”</blockquote>
       {order.status !== "done" && (
-        <div className="mt-8 flex flex-wrap justify-center gap-3">
-          {(order.cards as number[]).map((c, i) => <CardFace key={c} index={c} position={plan.positions[i]} />)}
-        </div>
+        <details className="mt-6 rounded-lg border border-border bg-card/40 p-3">
+          <summary className="cursor-pointer text-center text-sm text-gold">Ver cartas escolhidas</summary>
+          <div className="mt-4 flex flex-wrap justify-center gap-3">
+            {(order.cards as number[]).map((c, i) => <CardFace key={c} index={c} position={plan.positions[i]} />)}
+          </div>
+        </details>
       )}
       {order.status === "done" && order.reading ? (() => {
         const [main, angels] = order.reading.split(/\n*\s*CONSELHO DOS ANJOS:?\s*/i);
@@ -210,7 +173,6 @@ function Leitura() {
                     <div>
                       <p className="text-xs uppercase tracking-[0.2em] text-gold">{i + 1}ª · {plan.positions[i]}</p>
                       <h2 className="mt-1 font-display text-2xl font-semibold text-primary">{CARDS[c]}</h2>
-                      <p className="text-xs text-muted-foreground">Carta {c + 1}</p>
                     </div>
                   </div>
                   {lay.perCard[i]!.length > 0 && (
@@ -259,32 +221,20 @@ function Leitura() {
       ) : (
         <div className="mt-10 rounded-lg border border-gold bg-card p-6 text-center" role="status">
           <p className="font-display text-2xl text-primary">Aguardando confirmação do pagamento</p>
-          <p className="mt-2 text-sm text-muted-foreground">Assim que seu Pix for confirmado, sua leitura aparecerá aqui automaticamente. Deixe esta página aberta.</p>
+          <p className="mt-2 text-sm text-muted-foreground">Se você já pagou, aguarde: sua leitura aparecerá aqui automaticamente. Não pague de novo.</p>
         </div>
       )}
       {order.status === "done" ? (
         <NextReading planId={order.plan as PlanId} category={(order as { category?: string | null }).category ?? null} isFree={!!order.is_free} token={token} advice={(order.reading?.split(/\n*\s*CONSELHO DOS ANJOS:?\s*/i)[1] ?? "").trim()} question={order.question ?? ""} cards={(order.cards as number[]) ?? []} />
-      ) : (
-        <div className="mt-12 rounded-xl border border-gold/50 bg-card/70 p-5 text-center">
-          <Button asChild size="lg" className="gold-button h-14 w-full rounded-xl text-lg">
-            <Link to="/">Fazer nova consulta</Link>
-          </Button>
+      ) : order.status === "rejected" ? (
+        <div className="mt-6 text-center">
+          <Link to="/" className="inline-block min-h-11 py-3 text-sm text-gold underline-offset-4 hover:underline">Voltar ao início</Link>
         </div>
-      )}
+      ) : null}
       <HelpButton screen="leitura" />
     </main>
   );
 }
-
-const OTHER_TOPIC: Record<string, string> = {
-  "Amor e relacionamentos": "Dinheiro e prosperidade",
-  "Trabalho e carreira": "Dinheiro e prosperidade",
-  "Dinheiro e prosperidade": "Trabalho e carreira",
-  "Família e vida pessoal": "Amor e relacionamentos",
-  "Espiritualidade e autoconhecimento": "Amor e relacionamentos",
-  "Saúde e bem-estar": "Espiritualidade e autoconhecimento",
-  "Outros assuntos": "Amor e relacionamentos",
-};
 
 function NextReading({ planId, category, isFree, token, advice, question, cards }: { planId: PlanId; category: string | null; isFree: boolean; token: string; advice: string; question: string; cards: number[] }) {
   const [showReview, setShowReview] = useState(false);
@@ -301,12 +251,9 @@ function NextReading({ planId, category, isFree, token, advice, question, cards 
     observer.observe(offerSection.current);
     return () => observer.disconnect();
   }, [isFree, planId]);
-  const cat = category && category in OTHER_TOPIC ? category : "Outros assuntos";
-  const other = OTHER_TOPIC[cat]!;
+  const cat = category || "Outros assuntos";
   const deeperPlans: PlanId[] = planId === "completa" ? [] : planId === "profunda" ? ["completa"] : ["profunda", "completa"];
   const freeUpgradeOffers = isFree && planId === "essencial" ? getPostFreeUpgradeOffers(cards.length) : [];
-  const href = (plano: PlanId | null, categoria: string) =>
-    `/?${new URLSearchParams({ ...(plano ? { plano } : {}), categoria }).toString()}`;
   // Expansion keeps the same question and the cards already drawn; the user only picks the missing ones.
   const expandHref = (plano: PlanId) =>
     `/?${new URLSearchParams({ plano, categoria: cat }).toString()}`;
@@ -322,60 +269,65 @@ function NextReading({ planId, category, isFree, token, advice, question, cards 
   };
   return (
     <section ref={offerSection} id="aprofundar" className="mt-12 rounded-xl border border-gold/50 bg-card/70 p-5 text-center">
-      <p className="text-2xl text-gold">✦</p>
-      <h2 className="mt-1 font-display text-2xl font-semibold text-primary">{isFree ? "Sua primeira leitura está completa" : "Continue seu caminho"}</h2>
-      <p className="mt-2 text-base text-foreground/90">
-        {isFree
-          ? "Você já recebeu sua orientação gratuita com 3 cartas. Se quiser explorar a mesma pergunta por outros ângulos, escolha uma tiragem maior. O aprofundamento é opcional."
-          : deeperPlans.length
-            ? "Se quiser, explore outros aspectos da mesma pergunta em uma tiragem maior. Sua leitura anterior continua salva."
-            : "As cartas mostram um momento. Quando quiser, pergunte sobre outra área da sua vida."}
+      <h2 className="font-display text-2xl font-semibold text-primary">
+        {deeperPlans.length ? "Quer aprofundar sua pergunta?" : "Quer fazer uma nova consulta?"}
+      </h2>
+      <p className="mt-2 text-sm leading-relaxed text-foreground/85">
+        {deeperPlans.length ? `Aproveite as ${cards.length} cartas já escolhidas.` : "Escolha um novo assunto ou faça outra pergunta."}
       </p>
       <div className="mt-5 space-y-3">
         {isFree && freeUpgradeOffers.length > 0 ? (
           <>
-            <div className="space-y-3 text-left" aria-label="Opções pagas para aprofundar a leitura">
+            <div className="space-y-3 text-left" aria-label="Planos de aprofundamento">
               {freeUpgradeOffers.map((item, i) => (
                 <div key={item.plan} className={i === 0 ? "rounded-xl border border-gold bg-gold/[0.06] p-4" : "rounded-xl border border-border bg-background/40 p-4"}>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-gold">{item.tag}</span>
-                    <span className="font-display text-2xl font-semibold text-primary">{formatBRL(item.priceCents)}</span>
+                  <div className="flex items-center justify-between gap-3">
+                    <h3 className="font-display text-xl font-semibold text-primary">{item.count} cartas · {PLANS[item.plan].name}</h3>
+                    <span className="shrink-0 font-display text-xl font-semibold text-gold">{formatBRL(item.priceCents)}</span>
                   </div>
-                  <h3 className="mt-2 font-display text-xl font-semibold text-primary">{item.count} cartas — {item.title}</h3>
                   <p className="mt-2 text-sm leading-relaxed text-foreground/85">{item.description}</p>
                   <Button asChild size="lg" variant={i === 0 ? "default" : "outline"}
                     className={i === 0 ? "gold-button mt-4 h-auto min-h-12 w-full whitespace-normal rounded-xl py-3 text-base" : "mt-4 h-auto min-h-12 w-full whitespace-normal rounded-xl border-gold py-3 text-base text-gold"}>
                     <a href={expandHref(item.plan)} onClick={(event) => keepExpansion(item.plan, event)}>
-                      Continuar com {item.count} cartas · escolher mais {item.extraCards}
+                      Aprofundar com {item.count} cartas
                     </a>
                   </Button>
                 </div>
               ))}
             </div>
             <p className="text-xs leading-relaxed text-muted-foreground">
-              Valores totais das novas consultas, pagos por Pix. As 3 cartas já escolhidas serão aproveitadas e reinterpretadas nas posições da tiragem maior. Você escolhe apenas as cartas restantes. Sua leitura grátis continua salva.
+              Valores totais por Pix. Suas 3 cartas serão reaproveitadas e reinterpretadas nas posições da nova tiragem; você escolhe apenas as restantes.
             </p>
           </>
-        ) : deeperPlans.map((d, i) => (
-          <Button key={d} asChild size="lg" variant={i === 0 ? "default" : "outline"} className={i === 0 ? "gold-button h-auto min-h-14 w-full whitespace-normal rounded-xl py-3 text-base leading-snug" : "h-auto min-h-12 w-full whitespace-normal rounded-xl border-gold py-3 text-base leading-snug text-gold"}>
-            <a href={expandHref(d)} onClick={(event) => keepExpansion(d, event)}>✦ Expandir para {PLANS[d].count} cartas · {PLANS[d].name} ({formatBRL(PLANS[d].priceCents)})<span className="block text-sm opacity-80">Aproveite suas {cards.length} cartas e escolha mais {PLANS[d].count - cards.length}</span></a>
+        ) : deeperPlans.map((plan) => (
+          <Button key={plan} asChild size="lg" className="gold-button h-auto min-h-14 w-full whitespace-normal rounded-xl py-3 text-base leading-snug">
+            <a href={expandHref(plan)} onClick={(event) => keepExpansion(plan, event)}>
+              Aprofundar com {PLANS[plan].count} cartas · {formatBRL(PLANS[plan].priceCents)}
+            </a>
           </Button>
         ))}
-        <Button asChild size="lg" variant="outline" className="h-auto min-h-12 w-full whitespace-normal rounded-xl border-gold py-3 text-base leading-snug text-gold">
-          <a href={href(null, other)}>Perguntar sobre {other}</a>
-        </Button>
-        <Link to="/" className="block py-1 text-sm text-gold underline-offset-4 hover:underline">Fazer outra consulta do zero</Link>
+        {deeperPlans.length === 0 && (
+          <Button asChild size="lg" className="gold-button h-12 w-full rounded-xl text-base">
+            <Link to="/">Fazer nova consulta</Link>
+          </Button>
+        )}
       </div>
-      <div className="mt-5 grid grid-cols-2 gap-2 border-t border-border/60 pt-4 text-sm">
-        <a href={giftWhatsAppHref(advice)} target="_blank" rel="noopener noreferrer" className="rounded-lg border border-border bg-background/40 px-2 py-3 text-foreground/90 hover:border-gold">
-          🎁 Presentear um amigo
-        </a>
-        <button type="button" onClick={() => setShowReview((v) => !v)} aria-expanded={showReview} className="rounded-lg border border-border bg-background/40 px-2 py-3 text-foreground/90 hover:border-gold">
-          ⭐ Avaliar leitura
-        </button>
-      </div>
-      {showReview && <ReviewBox token={token} />}
-      <p className="mt-3 rounded-lg border border-border bg-background/50 p-3 text-sm text-muted-foreground">✓ Esta leitura ficou salva neste aparelho. Releia quando quiser em “Minhas leituras”, no menu ☰ da tela inicial.</p>
+      <details className="mt-5 border-t border-border/60 pt-4 text-left">
+        <summary className="cursor-pointer py-2 text-sm font-medium text-gold">Mais opções</summary>
+        <div className="mt-2 space-y-3 text-sm">
+          {deeperPlans.length > 0 && <Link to="/" className="block min-h-11 rounded-lg border border-border bg-background/40 px-3 py-3 text-foreground">Fazer outra consulta</Link>}
+          <a href={giftWhatsAppHref(advice)} target="_blank" rel="noopener noreferrer"
+            className="block min-h-11 rounded-lg border border-border bg-background/40 px-3 py-3 text-foreground">
+            Indicar para alguém
+          </a>
+          <button type="button" onClick={() => setShowReview((v) => !v)} aria-expanded={showReview}
+            className="block min-h-11 w-full rounded-lg border border-border bg-background/40 px-3 py-3 text-left text-foreground">
+            Avaliar esta leitura
+          </button>
+          {showReview && <ReviewBox token={token} />}
+          <p className="text-xs leading-relaxed text-muted-foreground">Sua leitura fica salva em “Minhas leituras”, no menu da página inicial.</p>
+        </div>
+      </details>
     </section>
   );
 }

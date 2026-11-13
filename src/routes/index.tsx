@@ -16,6 +16,7 @@ import { EXPANSION_KEY, parseExpansion } from "@/lib/reading-expansion";
 import { CARDS, PLANS, formatBRL, type PlanId , CATEGORIES, type Category } from "@/lib/lenormand";
 import { getDeviceFingerprint } from "@/lib/device-fingerprint";
 import { PROGRESS_KEY, parseProgress, keepPicksOnPlanChange } from "@/lib/free-progress";
+import { questionAfterCategoryChange } from "@/lib/question-flow";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { createOrder, retryAutomaticPix, getOrderStatus, checkFreeReading, createFreeOrder } from "@/lib/orders.functions";
@@ -369,7 +370,9 @@ function Index() {
     choosePlan(def);
     if (c) {
       setCategory(c);
-      if (!question.trim()) setQuestion((QUESTION_SUGGESTIONS[c] ?? QUESTION_SUGGESTIONS["Outros assuntos"]!)[0]!);
+      setQuestion((prev) => questionAfterCategoryChange(prev, QUESTION_SUGGESTIONS));
+      // O campo só aparece depois que o passo 1 é renderizado. Sem abrir o teclado.
+      scrollToId("pergunta", 250);
     }
     try { navigator.vibrate?.(30); } catch {}
     goStep(1);
@@ -469,7 +472,7 @@ function Index() {
           <div className="mt-6 rounded-xl border border-border bg-card p-4 shadow-sm">
             <div className="flex flex-wrap gap-2">
               {CATEGORIES.map((c) => (
-                <button key={c} type="button" onClick={() => { setCategory(c); if (!question.trim() || Object.values(QUESTION_SUGGESTIONS).some((l) => l.includes(question))) setQuestion((QUESTION_SUGGESTIONS[c] ?? QUESTION_SUGGESTIONS["Outros assuntos"]!)[0]!); scrollToId("escolher-cartas"); }} aria-pressed={category === c}
+                <button key={c} type="button" onClick={() => { if (category !== c) { setCategory(c); setQuestion((prev) => questionAfterCategoryChange(prev, QUESTION_SUGGESTIONS)); } scrollToId("pergunta", 100); }} aria-pressed={category === c}
                   className={`rounded-full border px-4 py-1.5 text-sm font-medium  ${category === c ? "border-gold bg-gold text-background shadow-lg" : "border-gold/70 bg-background text-gold hover:bg-gold hover:text-background"}`}>
                   {c}
                 </button>

@@ -79,15 +79,15 @@ export function validAppmaxBuyer(buyer: AppmaxBuyer): boolean {
     && buyer.appmaxIp.trim().length >= 7 && buyer.appmaxIp.length <= 64;
 }
 export function parseAppmaxPix(body: unknown, expectedOrderId: number): AppmaxPix | null {
-  const data = object(object(body).data);
-  const payment = object(data.payment);
-  const pix = object(data.pix);
-  const returnedOrder = object(data.order);
-  const id = returnedOrder.id == null ? expectedOrderId : positiveId(returnedOrder.id);
+  const data = object(object(body)["data"]);
+  const payment = object(data["payment"]);
+  const pix = object(data["pix"]);
+  const returnedOrder = object(data["order"]);
+  const id = returnedOrder["id"] == null ? expectedOrderId : positiveId(returnedOrder["id"]);
   if (id !== expectedOrderId) return null;
-  const payload = payment.pix_emv ?? pix.emv_code;
-  const img = payment.pix_qrcode ?? pix.qr_code;
-  const expiration = payment.pix_expiration_date ?? pix.expires_at;
+  const payload = payment["pix_emv"] ?? pix["emv_code"];
+  const img = payment["pix_qrcode"] ?? pix["qr_code"];
+  const expiration = payment["pix_expiration_date"] ?? pix["expires_at"];
   if (typeof payload !== "string" || !payload.startsWith("000201") || payload.length > 5000) return null;
   let image: string | null = null;
   if (typeof img === "string" && img.length <= 250000) {
@@ -97,19 +97,19 @@ export function parseAppmaxPix(body: unknown, expectedOrderId: number): AppmaxPi
   return { appmaxOrderId: expectedOrderId, payload, image, expiresAt: typeof expiration === "string" ? expiration : null };
 }
 export function parseAppmaxStatus(body: unknown, expectedOrderId: number): AppmaxOrderStatus | null {
-  const order = object(object(body).data).order;
+  const order = object(object(body)["data"])["order"];
   const data = object(order);
-  const id = positiveId(data.id);
-  if (id !== expectedOrderId || typeof data.status !== "string") return null;
-  const total = data.total_paid;
+  const id = positiveId(data["id"]);
+  if (id !== expectedOrderId || typeof data["status"] !== "string") return null;
+  const total = data["total_paid"];
   return {
-    appmaxOrderId: expectedOrderId, status: data.status,
+    appmaxOrderId: expectedOrderId, status: data["status"],
     totalPaidCents: typeof total === "number" && Number.isSafeInteger(total) && total >= 0 ? total : null,
   };
 }
 export function isConfirmedAppmaxPix(order: AppmaxOrderStatus, expectedOrderId: number, expectedCents: number) {
   return order.appmaxOrderId === expectedOrderId &&
-    (order.status === "aprovado" || order.status === "integrado") &&
+    (order["status"] === "aprovado" || order["status"] === "integrado") &&
     order.totalPaidCents !== null && order.totalPaidCents >= expectedCents &&
     Number.isSafeInteger(expectedCents) && expectedCents > 0;
 }
@@ -128,10 +128,10 @@ export async function appmaxMerchantToken(config: AppmaxMerchantConfig, fetcher:
       body: params, signal: AbortSignal.timeout(12000),
     });
   } catch { throw new AppmaxApiError("auth", 0); }
-  if (!res.ok) throw new AppmaxApiError("auth", res.status);
+  if (!res.ok) throw new AppmaxApiError("auth", res["status"]);
   let response: unknown;
   try { response = await res.json(); } catch { throw new AppmaxApiError("auth", 0); }
-  const token = object(response).access_token;
+  const token = object(response)["access_token"];
   if (typeof token !== "string" || token.length < 16) throw new AppmaxApiError("auth", 0);
   return token;
 }
@@ -148,7 +148,7 @@ async function requestAppmax(
       signal: AbortSignal.timeout(15000),
     });
   } catch { throw new AppmaxApiError(step, 0); }
-  if (!response.ok) throw new AppmaxApiError(step, response.status);
+  if (!response.ok) throw new AppmaxApiError(step, response["status"]);
   try { return await response.json(); } catch { throw new AppmaxApiError(step, 0); }
 }
 
@@ -165,7 +165,7 @@ export async function appmaxCreateCustomer(
     email: buyer.email.trim(), phone: digits(buyer.phone),
     document_number: digits(buyer.documentNumber), ip: buyer.appmaxIp.trim(),
   }, fetcher);
-  const id = positiveId(object(object(response).data).customer && object(object(object(response).data).customer).id);
+  const id = positiveId(object(object(response)["data"])["customer"] && object(object(object(response)["data"])["customer"])["id"]);
   if (!id) throw new AppmaxApiError("customer", 0);
   return id;
 }
@@ -181,7 +181,7 @@ export async function appmaxCreateOrder(
     customer_id: customerId, products_value: product.valueCents, discount_value: 0, shipping_value: 0,
     products: [{ sku: product.sku, name: product.name, quantity: 1, unit_value: product.valueCents, type: "digital" }],
   }, fetcher);
-  const id = positiveId(object(object(object(response).data).order).id);
+  const id = positiveId(object(object(object(response)["data"])["order"])["id"]);
   if (!id) throw new AppmaxApiError("order", 0);
   return id;
 }

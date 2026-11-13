@@ -32,6 +32,39 @@ export type Database = {
         }
         Relationships: []
       }
+      conversion_events: {
+        Row: {
+          campaign: string
+          created_at: string
+          event_name: string
+          id: string
+          medium: string
+          plan: string
+          session_id: string
+          source: string
+        }
+        Insert: {
+          campaign?: string
+          created_at?: string
+          event_name: string
+          id?: string
+          medium?: string
+          plan?: string
+          session_id: string
+          source?: string
+        }
+        Update: {
+          campaign?: string
+          created_at?: string
+          event_name?: string
+          id?: string
+          medium?: string
+          plan?: string
+          session_id?: string
+          source?: string
+        }
+        Relationships: []
+      }
       free_reading_claims: {
         Row: {
           consumed_at: string | null
@@ -147,6 +180,7 @@ export type Database = {
           client_ip_hash: string | null
           client_stage: string
           completed_at: string | null
+          conversion_session: string | null
           created_at: string
           error_message: string | null
           generation_started_at: string | null
@@ -154,6 +188,11 @@ export type Database = {
           is_free: boolean
           paid_at: string | null
           payment_nudged_at: string | null
+          pix_api_version: string | null
+          pix_error_at: string | null
+          pix_error_code: string | null
+          pix_error_status: number | null
+          pix_last_attempt_at: string | null
           pix_payload: string | null
           pix_qr_image: string | null
           plan: string
@@ -172,6 +211,7 @@ export type Database = {
           client_ip_hash?: string | null
           client_stage?: string
           completed_at?: string | null
+          conversion_session?: string | null
           created_at?: string
           error_message?: string | null
           generation_started_at?: string | null
@@ -179,6 +219,11 @@ export type Database = {
           is_free?: boolean
           paid_at?: string | null
           payment_nudged_at?: string | null
+          pix_api_version?: string | null
+          pix_error_at?: string | null
+          pix_error_code?: string | null
+          pix_error_status?: number | null
+          pix_last_attempt_at?: string | null
           pix_payload?: string | null
           pix_qr_image?: string | null
           plan: string
@@ -197,6 +242,7 @@ export type Database = {
           client_ip_hash?: string | null
           client_stage?: string
           completed_at?: string | null
+          conversion_session?: string | null
           created_at?: string
           error_message?: string | null
           generation_started_at?: string | null
@@ -204,6 +250,11 @@ export type Database = {
           is_free?: boolean
           paid_at?: string | null
           payment_nudged_at?: string | null
+          pix_api_version?: string | null
+          pix_error_at?: string | null
+          pix_error_code?: string | null
+          pix_error_status?: number | null
+          pix_last_attempt_at?: string | null
           pix_payload?: string | null
           pix_qr_image?: string | null
           plan?: string
@@ -279,6 +330,7 @@ export type Database = {
           client_ip_hash: string | null
           client_stage: string
           completed_at: string | null
+          conversion_session: string | null
           created_at: string
           error_message: string | null
           generation_started_at: string | null
@@ -286,6 +338,11 @@ export type Database = {
           is_free: boolean
           paid_at: string | null
           payment_nudged_at: string | null
+          pix_api_version: string | null
+          pix_error_at: string | null
+          pix_error_code: string | null
+          pix_error_status: number | null
+          pix_last_attempt_at: string | null
           pix_payload: string | null
           pix_qr_image: string | null
           plan: string

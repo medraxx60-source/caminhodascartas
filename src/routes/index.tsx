@@ -753,7 +753,7 @@ function CardCarousel({ deck, picked, onPick }: { deck: number[]; picked: number
               className={`absolute left-1/2 top-1/2 w-52 rounded-2xl ${center ? "shadow-xl" : ""}`}
             >
               <div style={{ perspective: 1000 }}>
-                <div className="relative [transform-style:preserve-3d]" style={{ transform: idx >= 0 ? "rotateY(180deg)" : "none" }}>
+                <div className="cc-card-flip relative [transform-style:preserve-3d]" style={{ transform: idx >= 0 ? "rotateY(180deg)" : "rotateY(0deg)" }}>
                   <div className="[backface-visibility:hidden]"><CardBack /></div>
                   <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]">
                     {(idx >= 0 || Math.abs(off) <= 2) && <CardReveal index={card} order={Math.max(idx, 0) + 1} />}

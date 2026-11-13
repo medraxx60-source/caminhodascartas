@@ -236,16 +236,6 @@ function Leitura() {
   );
 }
 
-const OTHER_TOPIC: Record<string, string> = {
-  "Amor e relacionamentos": "Dinheiro e prosperidade",
-  "Trabalho e carreira": "Dinheiro e prosperidade",
-  "Dinheiro e prosperidade": "Trabalho e carreira",
-  "Família e vida pessoal": "Amor e relacionamentos",
-  "Espiritualidade e autoconhecimento": "Amor e relacionamentos",
-  "Saúde e bem-estar": "Espiritualidade e autoconhecimento",
-  "Outros assuntos": "Amor e relacionamentos",
-};
-
 function NextReading({ planId, category, isFree, token, advice, question, cards }: { planId: PlanId; category: string | null; isFree: boolean; token: string; advice: string; question: string; cards: number[] }) {
   const [showReview, setShowReview] = useState(false);
   const offerSection = useRef<HTMLElement | null>(null);
@@ -261,12 +251,9 @@ function NextReading({ planId, category, isFree, token, advice, question, cards 
     observer.observe(offerSection.current);
     return () => observer.disconnect();
   }, [isFree, planId]);
-  const cat = category && category in OTHER_TOPIC ? category : "Outros assuntos";
-  const other = OTHER_TOPIC[cat]!;
+  const cat = category || "Outros assuntos";
   const deeperPlans: PlanId[] = planId === "completa" ? [] : planId === "profunda" ? ["completa"] : ["profunda", "completa"];
   const freeUpgradeOffers = isFree && planId === "essencial" ? getPostFreeUpgradeOffers(cards.length) : [];
-  const href = (plano: PlanId | null, categoria: string) =>
-    `/?${new URLSearchParams({ ...(plano ? { plano } : {}), categoria }).toString()}`;
   // Expansion keeps the same question and the cards already drawn; the user only picks the missing ones.
   const expandHref = (plano: PlanId) =>
     `/?${new URLSearchParams({ plano, categoria: cat }).toString()}`;
@@ -282,60 +269,65 @@ function NextReading({ planId, category, isFree, token, advice, question, cards 
   };
   return (
     <section ref={offerSection} id="aprofundar" className="mt-12 rounded-xl border border-gold/50 bg-card/70 p-5 text-center">
-      <p className="text-2xl text-gold">✦</p>
-      <h2 className="mt-1 font-display text-2xl font-semibold text-primary">{isFree ? "Sua primeira leitura está completa" : "Continue seu caminho"}</h2>
-      <p className="mt-2 text-base text-foreground/90">
-        {isFree
-          ? "Você já recebeu sua orientação gratuita com 3 cartas. Se quiser explorar a mesma pergunta por outros ângulos, escolha uma tiragem maior. O aprofundamento é opcional."
-          : deeperPlans.length
-            ? "Se quiser, explore outros aspectos da mesma pergunta em uma tiragem maior. Sua leitura anterior continua salva."
-            : "As cartas mostram um momento. Quando quiser, pergunte sobre outra área da sua vida."}
+      <h2 className="font-display text-2xl font-semibold text-primary">
+        {deeperPlans.length ? "Quer aprofundar sua pergunta?" : "Quer fazer uma nova consulta?"}
+      </h2>
+      <p className="mt-2 text-sm leading-relaxed text-foreground/85">
+        {deeperPlans.length ? `Aproveite as ${cards.length} cartas já escolhidas.` : "Escolha um novo assunto ou faça outra pergunta."}
       </p>
       <div className="mt-5 space-y-3">
         {isFree && freeUpgradeOffers.length > 0 ? (
           <>
-            <div className="space-y-3 text-left" aria-label="Opções pagas para aprofundar a leitura">
+            <div className="space-y-3 text-left" aria-label="Planos de aprofundamento">
               {freeUpgradeOffers.map((item, i) => (
                 <div key={item.plan} className={i === 0 ? "rounded-xl border border-gold bg-gold/[0.06] p-4" : "rounded-xl border border-border bg-background/40 p-4"}>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-gold">{item.tag}</span>
-                    <span className="font-display text-2xl font-semibold text-primary">{formatBRL(item.priceCents)}</span>
+                  <div className="flex items-center justify-between gap-3">
+                    <h3 className="font-display text-xl font-semibold text-primary">{item.count} cartas · {PLANS[item.plan].name}</h3>
+                    <span className="shrink-0 font-display text-xl font-semibold text-gold">{formatBRL(item.priceCents)}</span>
                   </div>
-                  <h3 className="mt-2 font-display text-xl font-semibold text-primary">{item.count} cartas — {item.title}</h3>
                   <p className="mt-2 text-sm leading-relaxed text-foreground/85">{item.description}</p>
                   <Button asChild size="lg" variant={i === 0 ? "default" : "outline"}
                     className={i === 0 ? "gold-button mt-4 h-auto min-h-12 w-full whitespace-normal rounded-xl py-3 text-base" : "mt-4 h-auto min-h-12 w-full whitespace-normal rounded-xl border-gold py-3 text-base text-gold"}>
                     <a href={expandHref(item.plan)} onClick={(event) => keepExpansion(item.plan, event)}>
-                      Continuar com {item.count} cartas · escolher mais {item.extraCards}
+                      Aprofundar com {item.count} cartas
                     </a>
                   </Button>
                 </div>
               ))}
             </div>
             <p className="text-xs leading-relaxed text-muted-foreground">
-              Valores totais das novas consultas, pagos por Pix. As 3 cartas já escolhidas serão aproveitadas e reinterpretadas nas posições da tiragem maior. Você escolhe apenas as cartas restantes. Sua leitura grátis continua salva.
+              Valores totais por Pix. Suas 3 cartas serão reaproveitadas e reinterpretadas nas posições da nova tiragem; você escolhe apenas as restantes.
             </p>
           </>
-        ) : deeperPlans.map((d, i) => (
-          <Button key={d} asChild size="lg" variant={i === 0 ? "default" : "outline"} className={i === 0 ? "gold-button h-auto min-h-14 w-full whitespace-normal rounded-xl py-3 text-base leading-snug" : "h-auto min-h-12 w-full whitespace-normal rounded-xl border-gold py-3 text-base leading-snug text-gold"}>
-            <a href={expandHref(d)} onClick={(event) => keepExpansion(d, event)}>✦ Expandir para {PLANS[d].count} cartas · {PLANS[d].name} ({formatBRL(PLANS[d].priceCents)})<span className="block text-sm opacity-80">Aproveite suas {cards.length} cartas e escolha mais {PLANS[d].count - cards.length}</span></a>
+        ) : deeperPlans.map((plan) => (
+          <Button key={plan} asChild size="lg" className="gold-button h-auto min-h-14 w-full whitespace-normal rounded-xl py-3 text-base leading-snug">
+            <a href={expandHref(plan)} onClick={(event) => keepExpansion(plan, event)}>
+              Aprofundar com {PLANS[plan].count} cartas · {formatBRL(PLANS[plan].priceCents)}
+            </a>
           </Button>
         ))}
-        <Button asChild size="lg" variant="outline" className="h-auto min-h-12 w-full whitespace-normal rounded-xl border-gold py-3 text-base leading-snug text-gold">
-          <a href={href(null, other)}>Perguntar sobre {other}</a>
-        </Button>
-        <Link to="/" className="block py-1 text-sm text-gold underline-offset-4 hover:underline">Fazer outra consulta do zero</Link>
+        {deeperPlans.length === 0 && (
+          <Button asChild size="lg" className="gold-button h-12 w-full rounded-xl text-base">
+            <Link to="/">Fazer nova consulta</Link>
+          </Button>
+        )}
       </div>
-      <div className="mt-5 grid grid-cols-2 gap-2 border-t border-border/60 pt-4 text-sm">
-        <a href={giftWhatsAppHref(advice)} target="_blank" rel="noopener noreferrer" className="rounded-lg border border-border bg-background/40 px-2 py-3 text-foreground/90 hover:border-gold">
-          🎁 Presentear um amigo
-        </a>
-        <button type="button" onClick={() => setShowReview((v) => !v)} aria-expanded={showReview} className="rounded-lg border border-border bg-background/40 px-2 py-3 text-foreground/90 hover:border-gold">
-          ⭐ Avaliar leitura
-        </button>
-      </div>
-      {showReview && <ReviewBox token={token} />}
-      <p className="mt-3 rounded-lg border border-border bg-background/50 p-3 text-sm text-muted-foreground">✓ Esta leitura ficou salva neste aparelho. Releia quando quiser em “Minhas leituras”, no menu ☰ da tela inicial.</p>
+      <details className="mt-5 border-t border-border/60 pt-4 text-left">
+        <summary className="cursor-pointer py-2 text-sm font-medium text-gold">Mais opções</summary>
+        <div className="mt-2 space-y-3 text-sm">
+          {deeperPlans.length > 0 && <Link to="/" className="block min-h-11 rounded-lg border border-border bg-background/40 px-3 py-3 text-foreground">Fazer outra consulta</Link>}
+          <a href={giftWhatsAppHref(advice)} target="_blank" rel="noopener noreferrer"
+            className="block min-h-11 rounded-lg border border-border bg-background/40 px-3 py-3 text-foreground">
+            Indicar para alguém
+          </a>
+          <button type="button" onClick={() => setShowReview((v) => !v)} aria-expanded={showReview}
+            className="block min-h-11 w-full rounded-lg border border-border bg-background/40 px-3 py-3 text-left text-foreground">
+            Avaliar esta leitura
+          </button>
+          {showReview && <ReviewBox token={token} />}
+          <p className="text-xs leading-relaxed text-muted-foreground">Sua leitura fica salva em “Minhas leituras”, no menu da página inicial.</p>
+        </div>
+      </details>
     </section>
   );
 }

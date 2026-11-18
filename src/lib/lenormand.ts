@@ -14,11 +14,11 @@ export type PlanId = "essencial" | "profunda" | "completa";
 export const PLANS: Record<PlanId, { name: string; count: number; priceCents: number; positions: string[] }> = {
   essencial: { name: "Essencial", count: 3, priceCents: 490, positions: ["Situação atual", "Desafio", "Tendência"] },
   profunda: {
-    name: "Profunda", count: 5, priceCents: 890,
+    name: "Profunda", count: 5, priceCents: 690,
     positions: ["Passado/Raiz", "Situação atual", "Desafio", "Tendência", "Conselho"],
   },
   completa: {
-    name: "Completa", count: 7, priceCents: 1490,
+    name: "Completa", count: 7, priceCents: 999,
     positions: ["Passado/Raiz", "Momento presente", "O que está oculto", "Desafio", "Tendência", "Conselho", "Desfecho"],
   },
 };

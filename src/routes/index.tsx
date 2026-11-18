@@ -1,5 +1,5 @@
 import { HelpButton, helpLink } from "@/components/HelpButton";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -440,6 +440,9 @@ function Index() {
             ))}
           </div>
           <div className="gold-rule my-6" />
+          <Button asChild variant="ghost" className="mb-3 w-full justify-start text-gold">
+            <Link to="/mensagem-do-dia">✦ Mensagem do Dia</Link>
+          </Button>
           <a href={helpLink("planos")} target="_blank" rel="noreferrer" className="block rounded-xl border border-border bg-card px-3 py-3 text-sm text-foreground">Ajuda pelo WhatsApp <span className="float-right text-gold">›</span></a>
         </SheetContent>
       </Sheet>

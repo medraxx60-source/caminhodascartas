@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
+import { Route as MensagemDoDiaRouteImport } from './routes/mensagem-do-dia'
 import { Route as AdminBaseOracularRouteImport } from './routes/admin_.base-oracular'
 import { Route as AdminConteudoRouteImport } from './routes/admin_.conteudo'
 import { Route as LeituraTokenRouteImport } from './routes/leitura.$token'
@@ -23,6 +24,11 @@ const IndexRoute = IndexRouteImport.update({
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MensagemDoDiaRoute = MensagemDoDiaRouteImport.update({
+  id: '/mensagem-do-dia',
+  path: '/mensagem-do-dia',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminBaseOracularRoute = AdminBaseOracularRouteImport.update({
@@ -44,6 +50,7 @@ const LeituraTokenRoute = LeituraTokenRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/mensagem-do-dia': typeof MensagemDoDiaRoute
   '/admin/base-oracular': typeof AdminBaseOracularRoute
   '/admin/conteudo': typeof AdminConteudoRoute
   '/leitura/$token': typeof LeituraTokenRoute
@@ -51,6 +58,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/mensagem-do-dia': typeof MensagemDoDiaRoute
   '/admin/base-oracular': typeof AdminBaseOracularRoute
   '/admin/conteudo': typeof AdminConteudoRoute
   '/leitura/$token': typeof LeituraTokenRoute
@@ -59,6 +67,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/mensagem-do-dia': typeof MensagemDoDiaRoute
   '/admin_/base-oracular': typeof AdminBaseOracularRoute
   '/admin_/conteudo': typeof AdminConteudoRoute
   '/leitura/$token': typeof LeituraTokenRoute
@@ -68,6 +77,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/mensagem-do-dia'
     | '/admin/base-oracular'
     | '/admin/conteudo'
     | '/leitura/$token'
@@ -75,6 +85,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/admin'
+    | '/mensagem-do-dia'
     | '/admin/base-oracular'
     | '/admin/conteudo'
     | '/leitura/$token'
@@ -82,6 +93,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/mensagem-do-dia'
     | '/admin_/base-oracular'
     | '/admin_/conteudo'
     | '/leitura/$token'
@@ -90,6 +102,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
+  MensagemDoDiaRoute: typeof MensagemDoDiaRoute
   AdminBaseOracularRoute: typeof AdminBaseOracularRoute
   AdminConteudoRoute: typeof AdminConteudoRoute
   LeituraTokenRoute: typeof LeituraTokenRoute
@@ -109,6 +122,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mensagem-do-dia': {
+      id: '/mensagem-do-dia'
+      path: '/mensagem-do-dia'
+      fullPath: '/mensagem-do-dia'
+      preLoaderRoute: typeof MensagemDoDiaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin_/base-oracular': {
@@ -138,6 +158,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
+  MensagemDoDiaRoute: MensagemDoDiaRoute,
   AdminBaseOracularRoute: AdminBaseOracularRoute,
   AdminConteudoRoute: AdminConteudoRoute,
   LeituraTokenRoute: LeituraTokenRoute,

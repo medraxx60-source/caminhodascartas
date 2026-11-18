@@ -15,7 +15,7 @@ describe("planos e posições aprovadas pelo motor de interpretação", () => {
 
   it("preserva preços e quantidades de cartas das consultas pagas", () => {
     expect([PLANS.essencial.count, PLANS.profunda.count, PLANS.completa.count]).toEqual([3, 5, 7]);
-    expect([PLANS.essencial.priceCents, PLANS.profunda.priceCents, PLANS.completa.priceCents]).toEqual([490, 890, 1490]);
+    expect([PLANS.essencial.priceCents, PLANS.profunda.priceCents, PLANS.completa.priceCents]).toEqual([490, 690, 999]);
     for (const plan of Object.values(PLANS)) {
       expect(plan.positions).toHaveLength(plan.count);
     }

@@ -15,6 +15,7 @@ import { Route as MensagemDoDiaRouteImport } from './routes/mensagem-do-dia'
 import { Route as AdminBaseOracularRouteImport } from './routes/admin_.base-oracular'
 import { Route as AdminConteudoRouteImport } from './routes/admin_.conteudo'
 import { Route as LeituraTokenRouteImport } from './routes/leitura.$token'
+import { Route as ApiPublicWebhooksAbacatepayRouteImport } from './routes/api/public/webhooks/abacatepay'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -46,6 +47,12 @@ const LeituraTokenRoute = LeituraTokenRouteImport.update({
   path: '/leitura/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicWebhooksAbacatepayRoute =
+  ApiPublicWebhooksAbacatepayRouteImport.update({
+    id: '/api/public/webhooks/abacatepay',
+    path: '/api/public/webhooks/abacatepay',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -54,6 +61,7 @@ export interface FileRoutesByFullPath {
   '/admin/base-oracular': typeof AdminBaseOracularRoute
   '/admin/conteudo': typeof AdminConteudoRoute
   '/leitura/$token': typeof LeituraTokenRoute
+  '/api/public/webhooks/abacatepay': typeof ApiPublicWebhooksAbacatepayRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -62,6 +70,7 @@ export interface FileRoutesByTo {
   '/admin/base-oracular': typeof AdminBaseOracularRoute
   '/admin/conteudo': typeof AdminConteudoRoute
   '/leitura/$token': typeof LeituraTokenRoute
+  '/api/public/webhooks/abacatepay': typeof ApiPublicWebhooksAbacatepayRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -71,6 +80,7 @@ export interface FileRoutesById {
   '/admin_/base-oracular': typeof AdminBaseOracularRoute
   '/admin_/conteudo': typeof AdminConteudoRoute
   '/leitura/$token': typeof LeituraTokenRoute
+  '/api/public/webhooks/abacatepay': typeof ApiPublicWebhooksAbacatepayRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -81,6 +91,7 @@ export interface FileRouteTypes {
     | '/admin/base-oracular'
     | '/admin/conteudo'
     | '/leitura/$token'
+    | '/api/public/webhooks/abacatepay'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -89,6 +100,7 @@ export interface FileRouteTypes {
     | '/admin/base-oracular'
     | '/admin/conteudo'
     | '/leitura/$token'
+    | '/api/public/webhooks/abacatepay'
   id:
     | '__root__'
     | '/'
@@ -97,6 +109,7 @@ export interface FileRouteTypes {
     | '/admin_/base-oracular'
     | '/admin_/conteudo'
     | '/leitura/$token'
+    | '/api/public/webhooks/abacatepay'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -106,6 +119,7 @@ export interface RootRouteChildren {
   AdminBaseOracularRoute: typeof AdminBaseOracularRoute
   AdminConteudoRoute: typeof AdminConteudoRoute
   LeituraTokenRoute: typeof LeituraTokenRoute
+  ApiPublicWebhooksAbacatepayRoute: typeof ApiPublicWebhooksAbacatepayRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -152,6 +166,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LeituraTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/webhooks/abacatepay': {
+      id: '/api/public/webhooks/abacatepay'
+      path: '/api/public/webhooks/abacatepay'
+      fullPath: '/api/public/webhooks/abacatepay'
+      preLoaderRoute: typeof ApiPublicWebhooksAbacatepayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -162,6 +183,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminBaseOracularRoute: AdminBaseOracularRoute,
   AdminConteudoRoute: AdminConteudoRoute,
   LeituraTokenRoute: LeituraTokenRoute,
+  ApiPublicWebhooksAbacatepayRoute: ApiPublicWebhooksAbacatepayRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

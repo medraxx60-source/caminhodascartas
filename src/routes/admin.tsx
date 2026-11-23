@@ -194,7 +194,9 @@ function Orders() {
     tab === "pending" ? !o.is_free && (o.status === "pending" || o.status === "error")
     : tab === "free" ? o.is_free
     : !o.is_free && (o.status === "done" || o.status === "generating" || o.status === "rejected"));
-  const paidDone = all.filter((o) => !o.is_free && (o.status === "done" || o.status === "generating"));
+  // Contadores pagos zerados a pedido do dono; pedidos antigos continuam salvos e listados.
+  const PAID_STATS_SINCE = Date.parse("2026-11-23T06:06:00Z");
+  const paidDone = all.filter((o) => !o.is_free && (o.status === "done" || o.status === "generating") && new Date(o.created_at).getTime() >= PAID_STATS_SINCE);
   const revenue = paidDone.reduce((s, o) => s + o.price_cents, 0);
   const freeDone = all.filter((o) => o.is_free && o.status === "done").length;
   const freeTotal = all.filter((o) => o.is_free).length;

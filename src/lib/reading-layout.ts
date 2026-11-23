@@ -23,7 +23,7 @@ export const CARD_LAYOUT_ALIASES: Partial<Record<number, readonly string[]>> = {
 function cardPattern(index: number): RegExp {
   const terms = [noun(CARDS[index] ?? ""), ...(CARD_LAYOUT_ALIASES[index] ?? [])];
   const joined = terms.map(escape).join("|");
-  return new RegExp(`(^|[^\\p{L}])(?:${joined})(?![\\p{L}])`, "iu");
+  return new RegExp(`(^|[^\\p{L}])(?:${joined})(?![\\p{L}])`, "u");
 }
 
 

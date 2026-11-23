@@ -71,3 +71,16 @@ describe("sinônimos tradicionais sem perder o texto das cartas", () => {
     expect(out.perCard[1]!.join(" ")).toContain("A Mulher");
   });
 });
+
+import { layoutReading as lay2 } from "@/lib/reading-layout";
+import { CARDS as C2 } from "@/lib/lenormand";
+import { describe as d2, it as i2, expect as e2 } from "vitest";
+d2("palavras comuns não são cartas", () => {
+  i2("'seu coração' em minúsculas não pula para a carta O Coração", () => {
+    const a = C2.indexOf("A Chave"), b = C2.indexOf("O Sol"), c = C2.indexOf("O Coração");
+    const text = "A Chave abre caminho e seu coração pede respostas.\n\nO Sol traz clareza.\n\nO Coração fala de amor.";
+    const r = lay2(text, [a, b, c]);
+    e2(r.perCard[0]!.join(" ")).toContain("seu coração pede respostas");
+    e2(r.perCard[2]!.join(" ")).not.toContain("seu coração");
+  });
+});

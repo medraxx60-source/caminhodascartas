@@ -7,7 +7,7 @@ describe("oferta pós-primeira tiragem grátis", () => {
     const offers = getPostFreeUpgradeOffers(3);
     expect(offers.map(o => o.plan)).toEqual(["profunda", "completa"]);
     expect(offers.map(o => o.extraCards)).toEqual([2, 4]);
-    expect(offers.map(o => o.priceCents)).toEqual([890, 1490]);
+    expect(offers.map(o => o.priceCents)).toEqual([690, 999]);
     expect(offers.every(o => o.priceCents === PLANS[o.plan].priceCents)).toBe(true);
   });
   it("não recomenda outras consultas quando não é a leitura grátis de três cartas", () => {

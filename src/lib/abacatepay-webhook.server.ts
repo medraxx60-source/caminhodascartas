@@ -39,8 +39,9 @@ async function processNotice(notice: Notice) {
   if (order.status === "done" || order.status === "rejected") return;
   const { syncAsaasPayment } = await import("./orders.functions");
   // Await durable payment claim / generation outcome before ACK; failures stay retryable.
-  const outcome = await syncAsaasPayment(order.access_token);
-  if (outcome === "unconfirmed" || outcome === "retry") throw new Error("Payment not confirmed yet");
+  await syncAsaasPayment(order.access_token);
+  const { data: after } = await supabaseAdmin.from("orders").select("status").eq("id", order.id).maybeSingle();
+  if (!after || after.status === "pending") throw new Error("Payment not confirmed yet");
 }
 export async function handleAbacateWebhook(req: Request, config: AbacateConfig, process = processNotice): Promise<Response> {
   if (req.method !== "POST") return new Response("Method not allowed", { status: 405 });

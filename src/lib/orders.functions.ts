@@ -52,8 +52,7 @@ export const createOrder = createServerFn({ method: "POST" })
     const orderCode = row.id.slice(0, 8).toUpperCase();
     let pix: { payload: string; image: string | null } | null = null;
     try {
-      const { createAsaasPixDetailed } = await import("./asaas.server");
-      const { charge: q, issue } = await createAsaasPixDetailed({ orderId: row.id, orderCode, valueCents: PLANS[data.plan].priceCents, apiVersion: "v2" });
+      const { charge: q, issue } = await createPixForOrder({ orderId: row.id, orderCode, valueCents: PLANS[data.plan].priceCents, apiVersion: "v2" });
       if (issue) {
         const { error: issueSaveError } = await (supabaseAdmin.from("orders") as any)
           .update({ pix_error_code: issue.code, pix_error_status: issue.status, pix_error_at: new Date().toISOString() })
@@ -91,6 +90,15 @@ export const createOrder = createServerFn({ method: "POST" })
     return { token: row.access_token, orderCode, pixPayload: pix?.payload ?? null, pixImage: pix?.image ?? null };
   });
 
+/** AbacatePay when fully configured (keys + enabled + validated), otherwise the existing Wyvi/Asaas path. */
+async function createPixForOrder(opts: { orderId: string; orderCode: string; valueCents: number; apiVersion: "v1" | "v2" }, recover = false) {
+  const ab = await import("./abacatepay.server");
+  const config = ab.abacateConfig(process.env);
+  if (ab.checkoutReady(config)) return ab.createAbacatePix({ orderId: opts.orderId, orderCode: opts.orderCode, valueCents: opts.valueCents }, config, recover);
+  const { createAsaasPixDetailed } = await import("./asaas.server");
+  return createAsaasPixDetailed(opts);
+}
+
 /**
  * Tentar novamente no MESMO pedido, sem alterar preço/cartas e sem cobrar duas vezes.
  * A Wyvi reconhece a mesma Idempotency-Key; pedidos antigos mantêm a versão v1.
@@ -121,11 +129,10 @@ export const retryAutomaticPix = createServerFn({ method: "POST" })
     claim = previous ? claim.eq("pix_last_attempt_at", previous) : claim.is("pix_last_attempt_at", null);
     const { data: locked, error: claimError } = await claim.select("id").maybeSingle();
     if (claimError || !locked) return { ok: false as const, reason: "wait" as const };
-    const { createAsaasPixDetailed } = await import("./asaas.server");
-    const { charge, issue } = await createAsaasPixDetailed({
+    const { charge, issue } = await createPixForOrder({
       orderId: row.id, orderCode: row.id.slice(0, 8).toUpperCase(),
       valueCents: row.price_cents, apiVersion: row.pix_api_version === "v2" ? "v2" : "v1",
-    });
+    }, true);
     if (!charge) {
       if (issue) {
         const { error: issueSaveError } = await db
@@ -188,8 +195,15 @@ export async function syncAsaasPayment(token: string) {
     o.status === "error" || (o.status === "generating" && o.generation_started_at < staleBefore)
   );
   if (o.status !== "pending" && !canResume) return;
-  const { findAsaasPayment } = await import("./asaas.server");
-  const payId = o.asaas_payment_id ?? (await findAsaasPayment(o.asaas_qr_id, o.price_cents));
+  const qr = String(o.asaas_qr_id);
+  let payId: string | null = o.asaas_payment_id ?? null;
+  if (!payId && qr.startsWith("ab:")) {
+    const ab = await import("./abacatepay.server");
+    payId = await ab.confirmAbacatePayment(qr, { orderId: o.id, orderCode: o.id.slice(0, 8).toUpperCase(), valueCents: o.price_cents }, ab.abacateConfig(process.env)).catch(() => null);
+  } else if (!payId) {
+    const { findAsaasPayment } = await import("./asaas.server");
+    payId = await findAsaasPayment(qr, o.price_cents);
+  }
   if (!payId) return;
   const now = new Date().toISOString();
   const alreadyPaidAt = o.paid_at ?? now; // Não sobrescrever o instante original ao tentar novamente.
@@ -202,7 +216,7 @@ export async function syncAsaasPayment(token: string) {
   // A resposta desta tentativa não pode sobrescrever uma geração posterior.
   const startedAt = String(locked.generation_started_at);
   const attemptStartedMs = Date.now();
-  console.info(`[reading] stage=started path=pix provider=${String(o.asaas_qr_id).startsWith("wy:") ? "wyvi" : "asaas"} order=${o.id}`);
+  console.info(`[reading] stage=started path=pix provider=${qr.startsWith("ab:") ? "abacate" : qr.startsWith("wy:") ? "wyvi" : "asaas"} order=${o.id}`);
   try {
     const { generateReadingText } = await import("./reading-ai.server");
     const reading = await generateReadingText({ id: o.id, plan: o.plan, cards: o.cards as number[], question: o.question, category: o.category ?? null });

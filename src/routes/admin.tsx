@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { CARDS, PLANS, formatBRL, type PlanId } from "@/lib/lenormand";
+import { countPaidSinceReset } from "@/lib/paid-counter";
 import { adminGetAiModel, adminSetAiModel, adminTestAiModel, adminGetOracularAiSetting, adminSetOracularAiSetting, adminGetFreeSetting, adminSetFreeSetting, adminConfirmAndGenerate, adminListOrders, adminRejectOrder, adminNudgePayment, adminSaveReading, adminStatus, claimAdmin } from "@/lib/orders.functions";
 
 export const Route = createFileRoute("/admin")({
@@ -194,9 +195,8 @@ function Orders() {
     tab === "pending" ? !o.is_free && (o.status === "pending" || o.status === "error")
     : tab === "free" ? o.is_free
     : !o.is_free && (o.status === "done" || o.status === "generating" || o.status === "rejected"));
-  // Contadores pagos zerados a pedido do dono; pedidos antigos continuam salvos e listados.
-  const PAID_STATS_SINCE = Date.parse("2026-11-23T06:06:00Z");
-  const paidDone = all.filter((o) => !o.is_free && (o.status === "done" || o.status === "generating") && new Date(o.created_at).getTime() >= PAID_STATS_SINCE);
+  const paidDone = all.filter((o) => !o.is_free && (o.status === "done" || o.status === "generating"));
+  const paidCount = countPaidSinceReset(all);
   const revenue = paidDone.reduce((s, o) => s + o.price_cents, 0);
   const freeDone = all.filter((o) => o.is_free && o.status === "done").length;
   const freeTotal = all.filter((o) => o.is_free).length;
@@ -216,7 +216,7 @@ function Orders() {
       <Button variant="outline" className="mt-3 w-full" asChild><Link to="/admin/conteudo">✦ Gerador de Carta do Dia (vídeos)</Link></Button>
       <Button variant="outline" className="mt-3 w-full" asChild><Link to="/admin/base-oracular">✦ Base Oracular (36 cartas)</Link></Button>
       <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-        <div className="rounded-lg border border-border bg-card p-3"><p className="text-xs text-muted-foreground">Consultas pagas</p><p className="text-2xl font-bold text-primary">{paidDone.length}</p></div>
+        <div className="rounded-lg border border-border bg-card p-3"><p className="text-xs text-muted-foreground">Consultas pagas</p><p className="text-2xl font-bold text-primary">{paidCount}</p></div>
         <div className="rounded-lg border border-border bg-card p-3"><p className="text-xs text-muted-foreground">Receita recebida</p><p className="text-lg font-bold text-primary">{formatBRL(revenue)}</p></div>
         <div className="rounded-lg border border-border bg-card p-3"><p className="text-xs text-muted-foreground">Tiragens grátis</p><p className="text-2xl font-bold text-primary">{freeDone}</p><p className="text-[10px] text-muted-foreground">{freeTotal} no total</p></div>
       </div>
